@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vista Park — Térreo · Levantamento</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F2EE;color:#1C1C1C;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:24px 20px}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1E2D4E}
+.header-left .proj{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.header-left .titulo{font-size:20px;font-weight:600;color:#1E2D4E}
+.header-right{text-align:right}
+.dead{font-size:11px;color:#C0392B;font-weight:600;margin-bottom:2px}
+.clk{font-size:13px;color:#888;font-variant-numeric:tabular-nums}
+.logo{height:36px;object-fit:contain}
+
+/* Progress */
+.prog-wrap{margin-bottom:20px}
+.prog-bar{height:4px;background:#E8E4DE;border-radius:99px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;border-radius:99px;background:#5C8C5A;transition:width .4s}
+.prog-label{font-size:11px;color:#888}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid #E8E4DE;margin-bottom:20px;overflow-x:auto}
+.tab{font-size:12px;padding:10px 16px;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;transition:all .15s}
+.tab:hover{color:#1E2D4E}
+.tab.active{color:#1E2D4E;border-bottom-color:#1E2D4E;font-weight:600}
+
+/* Panes */
+.pane{display:none}.pane.active{display:block}
+
+/* Section header */
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pt{font-size:14px;font-weight:600;color:#1E2D4E}
+.sec-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid #E8E4DE}
+
+/* Badges */
+.badge{display:inline-block;font-size:10px;padding:3px 9px;border-radius:99px;font-weight:500}
+.ok{background:#D5F0D9;color:#27AE60}
+.sug{background:#D6E8F7;color:#2471A3}
+.pend{background:#EEEBE6;color:#888}
+.warn{background:#FCE8D5;color:#E67E22}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
+thead th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:1px solid #E8E4DE;background:#FAF8F5}
+tbody td{padding:8px 10px;border-bottom:1px solid #F0EDE8;color:#1C1C1C;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAF8F5}
+.tr-total td{background:#EEF2F8;font-weight:600;font-size:11px;color:#1E2D4E}
+.m{font-weight:600;font-size:12px}
+.s{font-size:11px;color:#888;margin-top:2px;line-height:1.4}
+a.lnk{font-size:11px;color:#2471A3;text-decoration:none;font-weight:500}
+a.lnk:hover{text-decoration:underline}
+
+/* Tags */
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;margin-right:3px;font-weight:500}
+.tag-k7{background:#D6E8F7;color:#2471A3}
+.tag-sp{background:#FEF3CD;color:#E67E22}
+
+/* PDF card */
+.pdf-card{background:#fff;border:1px solid #E8E4DE;border-radius:12px;padding:40px 24px;text-align:center;margin-top:4px}
+.pdf-icon{font-size:48px;margin-bottom:14px}
+.pdf-name{font-size:15px;font-weight:600;color:#1E2D4E;margin-bottom:6px}
+.pdf-desc{font-size:12px;color:#888;margin-bottom:24px;line-height:1.6;max-width:480px;margin-left:auto;margin-right:auto}
+.pdf-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:#1E2D4E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .15s}
+.pdf-btn:hover{opacity:0.85}
+.pdf-meta{display:flex;justify-content:center;gap:24px;margin-top:18px;font-size:11px;color:#aaa}
+
+/* Ralos summary */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.metric{background:#fff;border:1px solid #E8E4DE;border-radius:10px;padding:12px 14px;text-align:center}
+.metric-val{font-size:18px;font-weight:600;color:#1E2D4E}
+.metric-label{font-size:11px;color:#888;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="proj">Vista Park Residencial</div>
+      <div class="titulo">Térreo — Levantamento para Aprovação</div>
+    </div>
+    <div class="header-right">
+      <div class="dead">⏰ Deadline: 12h00</div>
+      <div class="clk" id="remain">--:--:--</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="show('ac',this)">❄️ Ar-condicionado</button>
+    <button class="tab" onclick="show('elet',this)">🔌 Eletrodomésticos</button>
+    <button class="tab" onclick="show('ralos',this)">📐 Pedras dos Ralos</button>
+    <button class="tab" onclick="show('moveis',this)">🛋️ Móveis e Adornos</button>
+  </div>
+
+  <!-- AR CONDICIONADO -->
+  <div class="pane active" id="pane-ac">
+    <div class="ph"><div class="pt">Ar-condicionado — Térreo</div><span class="badge ok">✓ Levantado</span></div>
+    <table>
+      <thead><tr><th>Ambiente</th><th>Equipamento</th><th style="text-align:right">Total BTUs</th></tr></thead>
+      <tbody>
+        <tr><td>Academia</td><td><span class="tag tag-k7">K7 28k BTUs ×2</span><span class="tag tag-sp">Split 12k ×1</span></td><td style="text-align:right">68.000</td></tr>
+        <tr><td>Salão de festas</td><td><span class="tag tag-k7">K7 24k BTUs ×2</span><span class="tag tag-sp">Split 24k ×1</span></td><td style="text-align:right">72.000</td></tr>
+        <tr><td>Sala de massagem</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Salão de beleza</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Brinquedoteca</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Guarita</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr class="tr-total"><td colspan="2">Total — 4 máquinas K7 · 6 splits · 10 equipamentos</td><td style="text-align:right">188.000 BTUs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ELETROS -->
+  <div class="pane" id="pane-elet">
+    <div class="ph"><div class="pt">Eletrodomésticos · Electrolux</div><span class="badge sug">Sugestão para aprovação</span></div>
+
+    <div class="sec-label">Salão de Festas</div>
+    <table>
+      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
+      <tbody>
+        <tr><td>🧊 Geladeira</td><td><div class="m">TF55S Multidoor</div></td><td><div class="s">590L · Frost Free · 3 portas inox · IceTwister</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-electrolux-frost-free-596l-efficient-com-autosense-3-portas-cor-inox-look--im8s-/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>🔥 Forno embutir</td><td><div class="m">OE8MX</div></td><td><div class="s">80L · PerfectCook360 · grill · inox</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/forno-eletrico-de-embutir-80l-inox-oe8mx-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>📡 Micro-ondas embutir</td><td><div class="m">ME3HP</div></td><td><div class="s">34L · inox · grill · Tira Odor · Home Pro</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/micro-ondas-electrolux-34l-inox-home-pro-com-grill-e-funcao-tira-odor--me3hp-/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>🍳 Cooktop gás</td><td><div class="m">KE4GP</div></td><td><div class="s">4 bocas · vidro preto · acend. automático</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/cooktop-a-gas-4-bocas--ke4gp-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>💨 Coifa ilha</td><td><div class="m">90CIT Blue Touch</div></td><td><div class="s">90cm · inox · timer · depurador + exaustor · sem duto ✓</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/coifa-blue-touch-90cm-de-ilha-inox-90cit-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+      </tbody>
+    </table>
+
+    <div class="sec-label">Copa de Funcionários</div>
+    <table>
+      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
+      <tbody>
+        <tr><td>🧊 Geladeira</td><td><div class="m">TF39S</div></td><td><div class="s">310L · inox · Frost Free · painel externo</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-refrigerador-frost-free-310-litros-platinum-tf39s-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+      </tbody>
+    </table>
+
+    <div class="sec-label">TVs</div>
+    <table>
+      <thead><tr><th>Ambiente</th><th>Tamanho</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Academia</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+        <tr><td>Brinquedoteca</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+        <tr><td>Salão de jogos</td><td><div class="m">75"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RALOS -->
+  <div class="pane" id="pane-ralos">
+    <div class="ph"><div class="pt">Pedras dos Ralos — Seixo Rolado</div><span class="badge ok">✓ Levantado</span></div>
+    <table>
+      <thead><tr><th>Dado</th><th>Valor</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>Comprimento total</td><td>114 m</td><td><div class="s">Ralo linear corrido</div></td></tr>
+        <tr><td>Largura</td><td>12 cm</td><td></td></tr>
+        <tr><td>Profundidade</td><td>4 cm</td><td><div class="s">Preenchimento total</div></td></tr>
+        <tr><td>Área de cobertura</td><td>13,68 m²</td><td><div class="s">114 × 0,12m</div></td></tr>
+        <tr><td>Volume total</td><td>0,5472 m³</td><td><div class="s">114 × 0,12 × 0,04</div></td></tr>
+        <tr><td>Densidade seixo</td><td>1.500 kg/m³</td><td><div class="s">Média para seixo solto/ensacado</div></td></tr>
+        <tr class="tr-total"><td>Quantidade para compra</td><td>≈ 900 kg</td><td>45 sacos de 20kg · inclui 10% folga</td></tr>
+      </tbody>
+    </table>
+    <div class="metrics">
+      <div class="metric"><div class="metric-val">13,68 m²</div><div class="metric-label">Área total</div></div>
+      <div class="metric"><div class="metric-val">≈ 900 kg</div><div class="metric-label">Peso estimado</div></div>
+      <div class="metric"><div class="metric-val">45 sacos</div><div class="metric-label">Sacos de 20kg</div></div>
+    </div>
+  </div>
+
+  <!-- MÓVEIS E ADORNOS -->
+  <div class="pane" id="pane-moveis">
+    <div class="ph"><div class="pt">Móveis e Adornos</div><span class="badge sug">Sugestão para aprovação</span></div>
+    <div class="pdf-card">
+      <div class="pdf-icon">📋</div>
+      <div class="pdf-name">VISTA PARK — Ambientação Térreo</div>
+      <div class="pdf-desc">
+        Documento completo com todas as referências de móveis e adornos organizadas por fornecedor e ambiente.<br/>
+        Aluminas · Matrezan · Delinear · Opera House · Web Cadeiras · Ragonezi · Brinquedoteca · Entrecasa Decor
+      </div>
+      <a class="pdf-btn" href="VISTA_PARK_Ambientacao_Terreo_FINAL.pdf" target="_blank">
+        ↗ Abrir PDF de Móveis e Adornos
+      </a>
+      <div class="pdf-meta">
+        <span>📄 19 páginas</span>
+        <span>🏢 8 fornecedores</span>
+        <span>🛋️ Móveis · Adornos · Referências</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function show(id, btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function tick(){
+  const now=new Date(), dl=new Date(now);
+  dl.setHours(12,0,0,0);
+  if(dl<=now) dl.setDate(dl.getDate()+1);
+  const diff=Math.max(0,Math.floor((dl-now)/1000));
+  const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
+  document.getElementById('remain').textContent=
+    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' restante';
+}
+tick(); setInterval(tick,1000);
+</script>
+</body>
+</html>
