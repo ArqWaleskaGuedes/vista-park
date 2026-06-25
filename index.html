@@ -1,622 +1,220 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Vista Park — Dashboard de Obra</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vista Park — Térreo · Levantamento</title>
 <style>
-:root {
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f5f5f3;
-  --color-border-tertiary: #e8e8e6;
-  --color-border-secondary: #d4d4d0;
-  --border-radius-md: 6px;
-  --border-radius-lg: 10px;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-text-primary: #f0f0ee;
-    --color-text-secondary: #9e9e9a;
-    --color-background-primary: #1c1c1a;
-    --color-background-secondary: #252523;
-    --color-border-tertiary: #2e2e2c;
-    --color-border-secondary: #3a3a38;
-  }
-}
-*{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--font-sans);background:var(--color-background-secondary);color:var(--color-text-primary);min-height:100vh;}
-.page{max-width:1100px;margin:0 auto;padding:1.5rem 1.25rem 3rem;}
-.top-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;}
-.top-header h1{font-size:20px;font-weight:600;color:var(--color-text-primary);letter-spacing:-.01em;}
-.top-header p{font-size:12px;color:var(--color-text-secondary);margin-top:3px;}
-.badge-green{display:inline-flex;align-items:center;gap:5px;background:#EAF3DE;color:#3B6D11;font-size:11px;padding:3px 9px;border-radius:var(--border-radius-md);font-weight:500;}
-.save-bar{display:flex;align-items:center;gap:10px;margin-bottom:1rem;padding:8px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);font-size:11px;color:var(--color-text-secondary);}
-.save-bar .save-status{flex:1;}
-.save-btn{font-size:11px;padding:4px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);display:flex;align-items:center;gap:5px;}
-.save-btn:hover{background:var(--color-background-secondary);}
-.save-btn.saved{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97;}
-.main-tabs{display:flex;gap:0;margin-bottom:1.25rem;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);border-radius:var(--border-radius-lg) var(--border-radius-lg) 0 0;padding:0 1rem;}
-.main-tab{font-size:12px;padding:10px 16px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;display:flex;align-items:center;gap:6px;transition:color .15s;}
-.main-tab:hover{color:var(--color-text-primary);}
-.main-tab.active{color:var(--color-text-primary);border-bottom-color:var(--color-text-primary);font-weight:500;}
-.tab-panel{display:none;}.tab-panel.active{display:block;}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem;}
-.metric{background:var(--color-background-primary);border-radius:var(--border-radius-md);padding:.85rem 1rem;border:0.5px solid var(--color-border-tertiary);}
-.metric .lbl{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;}
-.metric .val{font-size:21px;font-weight:500;color:var(--color-text-primary);}
-.metric .sub{font-size:11px;color:var(--color-text-secondary);margin-top:3px;}
-.pbar-w{height:5px;background:var(--color-border-tertiary);border-radius:99px;margin-top:7px;}
-.pbar{height:5px;border-radius:99px;}
-.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:1rem;}
-.card-title{font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;display:flex;align-items:center;gap:7px;}
-.sector-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-secondary);padding:6px 0 4px;border-bottom:0.5px solid var(--color-border-tertiary);margin-bottom:6px;margin-top:10px;}
-.sector-label:first-child{margin-top:0;}
-.etapa-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.etapa-row:last-child{margin-bottom:0;}
-.enome{font-size:12px;color:var(--color-text-primary);width:180px;flex-shrink:0;}
-.enome-sub{font-size:10px;color:var(--color-text-secondary);display:block;margin-top:1px;line-height:1.3;}
-.ebar-w{flex:1;height:6px;background:var(--color-background-secondary);border-radius:99px;overflow:hidden;}
-.ebar{height:6px;border-radius:99px;transition:width .3s;}
-.epct{font-size:11px;color:var(--color-text-secondary);width:28px;text-align:right;}
-.stag{font-size:10px;padding:2px 6px;border-radius:var(--border-radius-md);font-weight:500;flex-shrink:0;}
-.sc{background:#EAF3DE;color:#3B6D11;}.sa{background:#E6F1FB;color:#185FA5;}
-.sp{background:#F1EFE8;color:#5F5E5A;}.sx{background:#FAEEDA;color:#854F0B;}
-.dep-tag{font-size:10px;color:#854F0B;background:#FAEEDA;padding:1px 6px;border-radius:99px;flex-shrink:0;}
-.color-chips{display:flex;gap:5px;margin-top:4px;flex-wrap:wrap;}
-.chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 7px;border-radius:99px;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);}
-.chip-dot{width:9px;height:9px;border-radius:50%;border:0.5px solid rgba(0,0,0,.12);flex-shrink:0;}
-.chip-input{display:inline-flex;align-items:center;gap:5px;font-size:10px;padding:2px 4px 2px 7px;border-radius:99px;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);}
-.chip-input input{font-size:10px;border:none;background:transparent;color:var(--color-text-primary);width:100px;outline:none;padding:0;}
-.seq-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#E6F1FB;color:#185FA5;font-weight:500;flex-shrink:0;margin-left:4px;}
-.fase-tabs{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px;}
-.fase-tab{font-size:11px;padding:4px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;color:var(--color-text-secondary);background:var(--color-background-primary);position:relative;transition:all .15s;}
-.fase-tab:hover{background:var(--color-background-secondary);}
-.fase-tab.active{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;}
-.fase-tab.has-special::after{content:"";position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:#7F77DD;}
-.apto-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
-.apto-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);cursor:pointer;transition:background .1s;}
-.apto-row:hover{background:var(--color-background-secondary);}
-.apto-num{font-size:12px;font-weight:500;color:var(--color-text-primary);width:38px;flex-shrink:0;}
-.apto-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;cursor:pointer;}
-.apto-label{font-size:11px;color:var(--color-text-secondary);flex:1;}
-.duplex-badge{font-size:9px;padding:1px 5px;border-radius:3px;background:#EEEDFE;color:#3C3489;font-weight:500;flex-shrink:0;}
-.legend-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:0.5px solid var(--color-border-tertiary);}
-.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);}
-.leg-d{width:12px;height:12px;border-radius:3px;}
-.portas-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px;}
-.porta-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;background:var(--color-background-secondary);}
-.porta-num{font-size:12px;font-weight:500;color:var(--color-text-primary);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
-.porta-fields{display:flex;flex-direction:column;gap:6px;}
-.porta-field{display:flex;align-items:center;gap:8px;}
-.porta-field label{font-size:11px;color:var(--color-text-secondary);width:68px;flex-shrink:0;}
-.porta-field input{flex:1;font-size:11px;padding:4px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);}
-.porta-field input:focus{outline:none;border-color:#378ADD;}
-.cswatch{width:18px;height:18px;border-radius:4px;border:0.5px solid var(--color-border-secondary);flex-shrink:0;}
-.info-note{font-size:11px;color:var(--color-text-secondary);background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:8px 10px;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
-.sub-tabs{display:flex;gap:6px;margin-bottom:1rem;}
-.sub-tab{font-size:11px;padding:5px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;color:var(--color-text-secondary);background:var(--color-background-primary);transition:all .15s;}
-.sub-tab:hover{background:var(--color-background-secondary);}
-.sub-tab.active-blue{background:#E6F1FB;color:#185FA5;border-color:#B5D4F4;font-weight:500;}
-.sub-tab.active-red{background:#FDEAEA;color:#B03030;border-color:#F0AAAA;font-weight:500;}
-.sub-panel{display:none;}.sub-panel.active{display:block;}
-.fscard{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:.75rem 1rem;}
-.fscard .fl{font-size:11px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.fscard .fv{font-size:20px;font-weight:500;color:var(--color-text-primary);}
-.fire-item{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary);}
-.fire-item-header{display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;}
-.fire-item-header:hover{background:var(--color-background-secondary);}
-.fire-num{font-size:10px;font-weight:600;color:var(--color-text-secondary);width:20px;flex-shrink:0;text-align:center;}
-.fire-nome{flex:1;font-size:12px;font-weight:500;color:var(--color-text-primary);}
-.fire-nome-sub{font-size:10px;color:var(--color-text-secondary);display:block;margin-top:2px;font-weight:400;line-height:1.4;}
-.fire-status-btn{display:flex;gap:4px;}
-.fsbtn{font-size:10px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .15s;}
-.fsbtn.ok.active{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97;}
-.fsbtn.nok.active{background:#FAEEDA;color:#854F0B;border-color:#FAC775;}
-.fsbtn.na.active{background:#F1EFE8;color:#5F5E5A;border-color:#B4B2A9;}
-.fire-chevron{font-size:14px;color:var(--color-text-secondary);transition:transform .2s;}
-.fire-chevron.open{transform:rotate(180deg);}
-.fire-detail{display:none;padding:12px 14px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);}
-.fire-detail.open{display:block;}
-.fire-checklist{display:flex;flex-direction:column;gap:7px;margin-bottom:10px;}
-.fcheck-row{display:flex;align-items:center;gap:8px;}
-.fcheck-box{width:17px;height:17px;border-radius:4px;border:0.5px solid var(--color-border-secondary);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;font-size:11px;background:var(--color-background-primary);}
-.fcheck-box.checked{background:#EAF3DE;border-color:#C0DD97;color:#3B6D11;}
-.fcheck-label{font-size:11px;color:var(--color-text-primary);}
-.fcheck-label.checked{text-decoration:line-through;color:var(--color-text-secondary);}
-.fire-obs{width:100%;font-size:11px;padding:7px 9px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);resize:vertical;min-height:44px;font-family:var(--font-sans);}
-.fire-obs:focus{outline:none;border-color:#378ADD;}
-.obs-label{font-size:10px;color:var(--color-text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.04em;}
-.tub-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:4px;}
-.tub-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);background:var(--color-background-primary);}
-.tub-swatch{width:34px;height:34px;border-radius:var(--border-radius-md);flex-shrink:0;border:0.5px solid rgba(0,0,0,.1);}
-.tub-nome{font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1;}
-.tub-cor{font-size:11px;color:var(--color-text-secondary);}
-.art-item{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:8px;overflow:hidden;background:var(--color-background-primary);}
-.art-header{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;}
-.art-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
-.art-body{flex:1;}
-.art-nome{font-size:12px;font-weight:500;color:var(--color-text-primary);line-height:1.4;}
-.art-sub{font-size:10px;color:var(--color-text-secondary);margin-top:2px;}
-.art-fields{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px;background:var(--color-background-secondary);border-top:0.5px solid var(--color-border-tertiary);}
-.art-field{display:flex;flex-direction:column;gap:3px;}
-.art-field label{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;}
-.art-field input{font-size:11px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);}
-.art-field input:focus{outline:none;border-color:#378ADD;}
-.art-status{display:flex;gap:4px;align-items:center;flex-shrink:0;}
-.art-stbtn{font-size:10px;padding:3px 10px;border-radius:99px;border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-secondary);transition:all .15s;}
-.art-stbtn.ok.active{background:#EAF3DE;color:#3B6D11;border-color:#C0DD97;}
-.art-stbtn.pend.active{background:#FAEEDA;color:#854F0B;border-color:#FAC775;}
-.ins-table{width:100%;border-collapse:collapse;}
-.ins-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--color-text-secondary);padding:7px 8px;border-bottom:0.5px solid var(--color-border-tertiary);text-align:left;white-space:nowrap;}
-.ins-table td{font-size:12px;padding:8px 8px;border-bottom:0.5px solid var(--color-border-tertiary);color:var(--color-text-primary);vertical-align:middle;}
-.ins-table tr:last-child td{border-bottom:none;}
-.ins-table tr:hover td{background:var(--color-background-secondary);}
-.ins-table input,.ins-table select{font-size:11px;padding:3px 6px;border-radius:var(--border-radius-md);border:0.5px solid transparent;background:transparent;color:var(--color-text-primary);width:100%;min-width:60px;}
-.ins-table input:focus,.ins-table select:focus{outline:none;border-color:#378ADD;background:var(--color-background-primary);}
-.tipo-badge{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:500;}
-.tipo-mat{background:#EAF3DE;color:#3B6D11;}
-.tipo-mao{background:#E6F1FB;color:#185FA5;}
-.tipo-eq{background:#EEEDFE;color:#3C3489;}
-.saldo-ok{color:#3B6D11;font-weight:500;}
-.saldo-low{color:#BA7517;font-weight:500;}
-.saldo-zero{color:#B03030;font-weight:500;}
-.pedido-card{border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;background:var(--color-background-primary);margin-bottom:8px;}
-.ped-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
-.ped-nome{font-size:12px;font-weight:500;color:var(--color-text-primary);flex:1;}
-.ped-fields{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.ped-field{display:flex;flex-direction:column;gap:3px;}
-.ped-field label{font-size:10px;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;}
-.ped-field input,.ped-field select{font-size:11px;padding:5px 8px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);}
-.ped-field input:focus,.ped-field select:focus{outline:none;border-color:#378ADD;}
-.status-pedido{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:500;}
-.ped-aguard{background:#F1EFE8;color:#5F5E5A;}
-.ped-transit{background:#FAEEDA;color:#854F0B;}
-.ped-receb{background:#EAF3DE;color:#3B6D11;}
-.ped-pend{background:#FDEAEA;color:#B03030;}
-.toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:10px;flex-wrap:wrap;}
-.filter-row{display:flex;gap:6px;flex-wrap:wrap;}
-.filter-btn{font-size:11px;padding:4px 12px;border-radius:99px;border:0.5px solid var(--color-border-secondary);cursor:pointer;color:var(--color-text-secondary);background:var(--color-background-primary);transition:all .15s;}
-.filter-btn:hover{background:var(--color-background-secondary);}
-.filter-btn.active{background:var(--color-background-secondary);color:var(--color-text-primary);font-weight:500;}
-.add-btn{font-size:11px;padding:5px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);cursor:pointer;background:var(--color-background-primary);color:var(--color-text-primary);display:flex;align-items:center;gap:5px;white-space:nowrap;transition:background .15s;}
-.add-btn:hover{background:var(--color-background-secondary);}
-.del-btn{font-size:11px;color:var(--color-text-secondary);cursor:pointer;padding:2px 7px;border-radius:4px;border:none;background:none;transition:all .15s;}
-.del-btn:hover{color:#B03030;background:#FDEAEA;}
-.empty-state{text-align:center;padding:2.5rem;color:var(--color-text-secondary);font-size:12px;}
-.obra-etapa-pct{font-size:11px;padding:2px 6px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);width:52px;text-align:center;}
-.obra-etapa-pct:focus{outline:none;border-color:#378ADD;}
-@media(max-width:700px){
-  .metrics{grid-template-columns:repeat(2,1fr);}
-  .apto-grid{grid-template-columns:1fr;}
-  .portas-grid{grid-template-columns:1fr;}
-  .ped-fields{grid-template-columns:1fr 1fr;}
-  .tub-grid{grid-template-columns:1fr;}
-}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F2EE;color:#1C1C1C;min-height:100vh}
+.container{max-width:900px;margin:0 auto;padding:24px 20px}
+
+/* Header */
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1E2D4E}
+.header-left .proj{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.header-left .titulo{font-size:20px;font-weight:600;color:#1E2D4E}
+.header-right{text-align:right}
+.dead{font-size:11px;color:#C0392B;font-weight:600;margin-bottom:2px}
+.clk{font-size:13px;color:#888;font-variant-numeric:tabular-nums}
+.logo{height:36px;object-fit:contain}
+
+/* Progress */
+.prog-wrap{margin-bottom:20px}
+.prog-bar{height:4px;background:#E8E4DE;border-radius:99px;overflow:hidden;margin-bottom:6px}
+.prog-fill{height:100%;border-radius:99px;background:#5C8C5A;transition:width .4s}
+.prog-label{font-size:11px;color:#888}
+
+/* Tabs */
+.tabs{display:flex;gap:0;border-bottom:1px solid #E8E4DE;margin-bottom:20px;overflow-x:auto}
+.tab{font-size:12px;padding:10px 16px;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;transition:all .15s}
+.tab:hover{color:#1E2D4E}
+.tab.active{color:#1E2D4E;border-bottom-color:#1E2D4E;font-weight:600}
+
+/* Panes */
+.pane{display:none}.pane.active{display:block}
+
+/* Section header */
+.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.pt{font-size:14px;font-weight:600;color:#1E2D4E}
+.sec-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid #E8E4DE}
+
+/* Badges */
+.badge{display:inline-block;font-size:10px;padding:3px 9px;border-radius:99px;font-weight:500}
+.ok{background:#D5F0D9;color:#27AE60}
+.sug{background:#D6E8F7;color:#2471A3}
+.pend{background:#EEEBE6;color:#888}
+.warn{background:#FCE8D5;color:#E67E22}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
+thead th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:1px solid #E8E4DE;background:#FAF8F5}
+tbody td{padding:8px 10px;border-bottom:1px solid #F0EDE8;color:#1C1C1C;vertical-align:middle}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:#FAF8F5}
+.tr-total td{background:#EEF2F8;font-weight:600;font-size:11px;color:#1E2D4E}
+.m{font-weight:600;font-size:12px}
+.s{font-size:11px;color:#888;margin-top:2px;line-height:1.4}
+a.lnk{font-size:11px;color:#2471A3;text-decoration:none;font-weight:500}
+a.lnk:hover{text-decoration:underline}
+
+/* Tags */
+.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;margin-right:3px;font-weight:500}
+.tag-k7{background:#D6E8F7;color:#2471A3}
+.tag-sp{background:#FEF3CD;color:#E67E22}
+
+/* PDF card */
+.pdf-card{background:#fff;border:1px solid #E8E4DE;border-radius:12px;padding:40px 24px;text-align:center;margin-top:4px}
+.pdf-icon{font-size:48px;margin-bottom:14px}
+.pdf-name{font-size:15px;font-weight:600;color:#1E2D4E;margin-bottom:6px}
+.pdf-desc{font-size:12px;color:#888;margin-bottom:24px;line-height:1.6;max-width:480px;margin-left:auto;margin-right:auto}
+.pdf-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:#1E2D4E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .15s}
+.pdf-btn:hover{opacity:0.85}
+.pdf-meta{display:flex;justify-content:center;gap:24px;margin-top:18px;font-size:11px;color:#aaa}
+
+/* Ralos summary */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.metric{background:#fff;border:1px solid #E8E4DE;border-radius:10px;padding:12px 14px;text-align:center}
+.metric-val{font-size:18px;font-weight:600;color:#1E2D4E}
+.metric-label{font-size:11px;color:#888;margin-top:2px}
 </style>
 </head>
 <body>
-<div class="page">
+<div class="container">
 
-<div class="top-header">
-  <div>
-    <h1><i class="ti ti-building" style="margin-right:8px;font-size:19px;vertical-align:-2px;"></i>Vista Park</h1>
-    <p>24 unidades · 194 m² · 2 subsolos · Térreo · Andares 1–12 · Ático/Barrilete</p>
-  </div>
-  <span class="badge-green"><i class="ti ti-circle-check"></i>Em andamento</span>
-</div>
-
-<div class="save-bar">
-  <i class="ti ti-device-floppy" style="font-size:14px;"></i>
-  <span class="save-status" id="save-status">Carregando dados salvos...</span>
-  <button class="save-btn" id="save-btn" onclick="saveAll()"><i class="ti ti-check" style="font-size:12px;"></i>Salvar agora</button>
-  <button class="save-btn" onclick="clearAll()" style="color:#B03030;border-color:#F0AAAA;"><i class="ti ti-trash" style="font-size:12px;"></i>Limpar tudo</button>
-</div>
-
-<div class="main-tabs">
-  <div class="main-tab active" onclick="switchTab('obra')"><i class="ti ti-hammer" style="font-size:13px;"></i>Obra</div>
-  <div class="main-tab" onclick="switchTab('pers')"><i class="ti ti-palette" style="font-size:13px;"></i>Personalização</div>
-  <div class="main-tab" onclick="switchTab('insumos')"><i class="ti ti-package" style="font-size:13px;"></i>Insumos</div>
-  <div class="main-tab" onclick="switchTab('bombeiros')"><i class="ti ti-flame" style="font-size:13px;"></i>Bombeiros</div>
-</div>
-
-<!-- OBRA -->
-<div class="tab-panel active" id="tab-obra">
-<div class="metrics" id="obra-metrics">
-  <div class="metric"><div class="lbl">Progresso geral</div><div class="val" id="prog-geral">—</div><div class="pbar-w"><div class="pbar" id="pbar-geral" style="background:#639922;"></div></div></div>
-  <div class="metric"><div class="lbl">Áreas comuns</div><div class="val" id="prog-comum">—</div><div class="sub">subsolos + térreo</div></div>
-  <div class="metric"><div class="lbl">Aptos concluídos</div><div class="val">4 <span style="font-size:13px;color:var(--color-text-secondary)">/ 24</span></div><div class="sub">em personalização: 9</div></div>
-  <div class="metric"><div class="lbl">Atenção</div><div class="val" style="color:#BA7517;" id="atencao-count">—</div><div class="sub">etapas em atenção</div></div>
-</div>
-<div class="card" style="overflow-y:auto;max-height:700px;">
-  <div class="card-title"><i class="ti ti-building-community"></i>Áreas comuns <span style="margin-left:auto;font-size:10px;color:var(--color-text-secondary);font-weight:400;">Clique no % para editar</span></div>
-  <div class="sector-label">🏗️ Estrutura geral</div><div id="setor-estrutura"></div>
-  <div class="sector-label">🅿️ Subsolos (SS1 e SS2)</div><div id="setor-subsolos"></div>
-  <div class="sector-label">🏠 Térreo — interno</div><div id="setor-terreo-int"></div>
-  <div class="sector-label">🌿 Térreo — externo / lazer</div><div id="setor-terreo-ext"></div>
-  <div class="sector-label">✨ Térreo — finalização</div><div id="setor-terreo-fin"></div>
-  <div class="sector-label">🏢 Fachada e elementos externos</div><div id="setor-fachada"></div>
-  <div class="sector-label">🔒 Segurança e automação</div><div id="setor-seguranca"></div>
-</div>
-</div>
-
-<!-- PERSONALIZAÇÃO -->
-<div class="tab-panel" id="tab-pers">
-  <div class="metrics">
-    <div class="metric"><div class="lbl">Total de aptos</div><div class="val">24</div><div class="sub">121 e 122 duplex</div></div>
-    <div class="metric"><div class="lbl">Fases de personaliz.</div><div class="val">19</div></div>
-    <div class="metric"><div class="lbl">Concluídos</div><div class="val" id="pers-conc">—</div></div>
-    <div class="metric"><div class="lbl">Em execução</div><div class="val" id="pers-exec">—</div></div>
-  </div>
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="card-title" style="margin-bottom:0;"><i class="ti ti-door"></i>Status por fase — clique no status para alterar</div>
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="proj">Vista Park Residencial</div>
+      <div class="titulo">Térreo — Levantamento para Aprovação</div>
     </div>
-    <div class="fase-tabs" id="fase-tabs"></div>
-    <div id="main-content"></div>
-    <div class="legend-row" id="legend-row">
-      <div class="leg"><div class="leg-d" style="background:#C0DD97;"></div>Concluído</div>
-      <div class="leg"><div class="leg-d" style="background:#B5D4F4;"></div>Em andamento</div>
-      <div class="leg"><div class="leg-d" style="background:#FAC775;"></div>Atenção</div>
-      <div class="leg"><div class="leg-d" style="background:#D3D1C7;"></div>Pendente</div>
-      <div class="leg"><div class="leg-d" style="background:#F1EFE8;border:0.5px solid #B4B2A9;"></div>N/A</div>
+    <div class="header-right">
+      <div class="dead">⏰ Deadline: 12h00</div>
+      <div class="clk" id="remain">--:--:--</div>
     </div>
   </div>
-</div>
 
-<!-- INSUMOS -->
-<div class="tab-panel" id="tab-insumos">
-  <div class="metrics" id="ins-metrics"></div>
-  <div class="sub-tabs">
-    <div class="sub-tab active-blue" id="ins-tab-estoque" onclick="switchInsTab('estoque')"><i class="ti ti-boxes" style="margin-right:4px;font-size:12px;"></i>Estoque</div>
-    <div class="sub-tab" id="ins-tab-pedidos" onclick="switchInsTab('pedidos')"><i class="ti ti-truck" style="margin-right:4px;font-size:12px;"></i>Pedidos e entregas</div>
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="show('ac',this)">❄️ Ar-condicionado</button>
+    <button class="tab" onclick="show('elet',this)">🔌 Eletrodomésticos</button>
+    <button class="tab" onclick="show('ralos',this)">📐 Pedras dos Ralos</button>
+    <button class="tab" onclick="show('moveis',this)">🛋️ Móveis e Adornos</button>
   </div>
-  <div class="sub-panel active" id="ins-sub-estoque">
-    <div class="card">
-      <div class="toolbar">
-        <div class="filter-row" id="estoque-filter"></div>
-        <button class="add-btn" onclick="addInsumo()"><i class="ti ti-plus" style="font-size:12px;"></i>Novo insumo</button>
+
+  <!-- AR CONDICIONADO -->
+  <div class="pane active" id="pane-ac">
+    <div class="ph"><div class="pt">Ar-condicionado — Térreo</div><span class="badge ok">✓ Levantado</span></div>
+    <table>
+      <thead><tr><th>Ambiente</th><th>Equipamento</th><th style="text-align:right">Total BTUs</th></tr></thead>
+      <tbody>
+        <tr><td>Academia</td><td><span class="tag tag-k7">K7 28k BTUs ×2</span><span class="tag tag-sp">Split 12k ×1</span></td><td style="text-align:right">68.000</td></tr>
+        <tr><td>Salão de festas</td><td><span class="tag tag-k7">K7 24k BTUs ×2</span><span class="tag tag-sp">Split 24k ×1</span></td><td style="text-align:right">72.000</td></tr>
+        <tr><td>Sala de massagem</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Salão de beleza</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Brinquedoteca</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr><td>Guarita</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
+        <tr class="tr-total"><td colspan="2">Total — 4 máquinas K7 · 6 splits · 10 equipamentos</td><td style="text-align:right">188.000 BTUs</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ELETROS -->
+  <div class="pane" id="pane-elet">
+    <div class="ph"><div class="pt">Eletrodomésticos · Electrolux</div><span class="badge sug">Sugestão para aprovação</span></div>
+
+    <div class="sec-label">Salão de Festas</div>
+    <table>
+      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
+      <tbody>
+        <tr><td>🧊 Geladeira</td><td><div class="m">TF55S Multidoor</div></td><td><div class="s">590L · Frost Free · 3 portas inox · IceTwister</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-electrolux-frost-free-596l-efficient-com-autosense-3-portas-cor-inox-look--im8s-/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>🔥 Forno embutir</td><td><div class="m">OE8MX</div></td><td><div class="s">80L · PerfectCook360 · grill · inox</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/forno-eletrico-de-embutir-80l-inox-oe8mx-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>📡 Micro-ondas embutir</td><td><div class="m">ME3HP</div></td><td><div class="s">34L · inox · grill · Tira Odor · Home Pro</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/micro-ondas-electrolux-34l-inox-home-pro-com-grill-e-funcao-tira-odor--me3hp-/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>🍳 Cooktop gás</td><td><div class="m">KE4GP</div></td><td><div class="s">4 bocas · vidro preto · acend. automático</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/cooktop-a-gas-4-bocas--ke4gp-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+        <tr><td>💨 Coifa ilha</td><td><div class="m">90CIT Blue Touch</div></td><td><div class="s">90cm · inox · timer · depurador + exaustor · sem duto ✓</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/coifa-blue-touch-90cm-de-ilha-inox-90cit-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+      </tbody>
+    </table>
+
+    <div class="sec-label">Copa de Funcionários</div>
+    <table>
+      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
+      <tbody>
+        <tr><td>🧊 Geladeira</td><td><div class="m">TF39S</div></td><td><div class="s">310L · inox · Frost Free · painel externo</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-refrigerador-frost-free-310-litros-platinum-tf39s-electrolux/p" target="_blank">↗ Ver</a></td></tr>
+      </tbody>
+    </table>
+
+    <div class="sec-label">TVs</div>
+    <table>
+      <thead><tr><th>Ambiente</th><th>Tamanho</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Academia</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+        <tr><td>Brinquedoteca</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+        <tr><td>Salão de jogos</td><td><div class="m">75"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- RALOS -->
+  <div class="pane" id="pane-ralos">
+    <div class="ph"><div class="pt">Pedras dos Ralos — Seixo Rolado</div><span class="badge ok">✓ Levantado</span></div>
+    <table>
+      <thead><tr><th>Dado</th><th>Valor</th><th>Observação</th></tr></thead>
+      <tbody>
+        <tr><td>Comprimento total</td><td>114 m</td><td><div class="s">Ralo linear corrido</div></td></tr>
+        <tr><td>Largura</td><td>12 cm</td><td></td></tr>
+        <tr><td>Profundidade</td><td>4 cm</td><td><div class="s">Preenchimento total</div></td></tr>
+        <tr><td>Área de cobertura</td><td>13,68 m²</td><td><div class="s">114 × 0,12m</div></td></tr>
+        <tr><td>Volume total</td><td>0,5472 m³</td><td><div class="s">114 × 0,12 × 0,04</div></td></tr>
+        <tr><td>Densidade seixo</td><td>1.500 kg/m³</td><td><div class="s">Média para seixo solto/ensacado</div></td></tr>
+        <tr class="tr-total"><td>Quantidade para compra</td><td>≈ 900 kg</td><td>45 sacos de 20kg · inclui 10% folga</td></tr>
+      </tbody>
+    </table>
+    <div class="metrics">
+      <div class="metric"><div class="metric-val">13,68 m²</div><div class="metric-label">Área total</div></div>
+      <div class="metric"><div class="metric-val">≈ 900 kg</div><div class="metric-label">Peso estimado</div></div>
+      <div class="metric"><div class="metric-val">45 sacos</div><div class="metric-label">Sacos de 20kg</div></div>
+    </div>
+  </div>
+
+  <!-- MÓVEIS E ADORNOS -->
+  <div class="pane" id="pane-moveis">
+    <div class="ph"><div class="pt">Móveis e Adornos</div><span class="badge sug">Sugestão para aprovação</span></div>
+    <div class="pdf-card">
+      <div class="pdf-icon">📋</div>
+      <div class="pdf-name">VISTA PARK — Ambientação Térreo</div>
+      <div class="pdf-desc">
+        Documento completo com todas as referências de móveis e adornos organizadas por fornecedor e ambiente.<br/>
+        Aluminas · Matrezan · Delinear · Opera House · Web Cadeiras · Ragonezi · Brinquedoteca · Entrecasa Decor
       </div>
-      <div style="overflow-x:auto;">
-        <table class="ins-table">
-          <thead><tr><th>Tipo</th><th>Insumo</th><th>Etapa</th><th>Fornecedor</th><th>Unid.</th><th>Entrada</th><th>Saída</th><th>Saldo</th><th></th></tr></thead>
-          <tbody id="estoque-body"></tbody>
-        </table>
+      <a class="pdf-btn" href="VISTA_PARK_Ambientacao_Terreo_FINAL.pdf" target="_blank">
+        ↗ Abrir PDF de Móveis e Adornos
+      </a>
+      <div class="pdf-meta">
+        <span>📄 19 páginas</span>
+        <span>🏢 8 fornecedores</span>
+        <span>🛋️ Móveis · Adornos · Referências</span>
       </div>
     </div>
   </div>
-  <div class="sub-panel" id="ins-sub-pedidos">
-    <div class="card">
-      <div class="toolbar">
-        <div class="filter-row" id="pedidos-filter"></div>
-        <button class="add-btn" onclick="addPedido()"><i class="ti ti-plus" style="font-size:12px;"></i>Novo pedido</button>
-      </div>
-      <div id="pedidos-list"></div>
-    </div>
-  </div>
-</div>
-
-<!-- BOMBEIROS -->
-<div class="tab-panel" id="tab-bombeiros">
-  <div class="sub-tabs">
-    <div class="sub-tab active-red" id="fire-tab-ver" onclick="switchFireTab('verificacao')"><i class="ti ti-clipboard-check" style="margin-right:5px;font-size:12px;"></i>Verificação técnica</div>
-    <div class="sub-tab" id="fire-tab-art" onclick="switchFireTab('arts')"><i class="ti ti-file-certificate" style="margin-right:5px;font-size:12px;"></i>ARTs e atestados</div>
-  </div>
-  <div class="sub-panel active" id="fire-sub-verificacao">
-    <div class="metrics" id="fire-summary"></div>
-    <div id="fire-list"></div>
-  </div>
-  <div class="sub-panel" id="fire-sub-arts">
-    <div class="metrics" id="art-summary"></div>
-    <div id="art-list"></div>
-  </div>
-</div>
 
 </div>
+
 <script>
-const SAVE_KEY = 'vistapark_v1';
-const TABS=["obra","pers","insumos","bombeiros"];
-
-function switchTab(t){
-  document.querySelectorAll(".main-tab").forEach((el,i)=>el.classList.toggle("active",TABS[i]===t));
-  document.querySelectorAll(".tab-panel").forEach(el=>el.classList.remove("active"));
-  document.getElementById("tab-"+t).classList.add("active");
+function show(id, btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  btn.classList.add('active');
 }
-function switchInsTab(t){
-  ["estoque","pedidos"].forEach(k=>{
-    document.getElementById("ins-tab-"+k).className="sub-tab"+(k===t?" active-blue":"");
-    document.getElementById("ins-sub-"+k).className="sub-panel"+(k===t?" active":"");
-  });
+function tick(){
+  const now=new Date(), dl=new Date(now);
+  dl.setHours(12,0,0,0);
+  if(dl<=now) dl.setDate(dl.getDate()+1);
+  const diff=Math.max(0,Math.floor((dl-now)/1000));
+  const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
+  document.getElementById('remain').textContent=
+    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' restante';
 }
-function switchFireTab(t){
-  const map={verificacao:"ver",arts:"art"};
-  ["verificacao","arts"].forEach(k=>{
-    document.getElementById("fire-tab-"+map[k]).className="sub-tab"+(k===t?" active-red":"");
-    document.getElementById("fire-sub-"+k).className="sub-panel"+(k===t?" active":"");
-  });
-}
-
-// ═══ DADOS PADRÃO ═══
-const DEFAULT_SETORES = {
-  "setor-estrutura":[{nome:"Fundação",pct:100,st:"sc"},{nome:"Estrutura",pct:100,st:"sc",sub:"Laje finalizada — todos os andares"},{nome:"Furos e passantes",pct:80,st:"sa",sub:"Mangas pré-inst. · carotagem residual"},{nome:"Selagem e grauteamento",pct:60,st:"sa"}],
-  "setor-subsolos":[{nome:"Impermeabilização",pct:70,st:"sa"},{nome:"Instalação elétrica",pct:50,st:"sa"},{nome:"Instalação hidráulica",pct:45,st:"sa"},{nome:"Ventilação permanente",pct:30,st:"sa",sub:"SS1/SS2 · exaustores + venezianas"},{nome:"Casa do gerador",pct:25,st:"sa",sub:"Ventilação forçada + saída de gases"},{nome:"Piso subsolos",pct:20,st:"sp"},{nome:"Sinalização / demarcação vagas",pct:0,st:"sp"},{nome:"Recebimento marmoraria",pct:0,st:"sp",sub:"Espaço reservado"},{nome:"Recebimento esquadrias",pct:0,st:"sp",sub:"Espaço reservado"}],
-  "setor-terreo-int":[{nome:"Vedações (alvenaria)",pct:65,st:"sa"},{nome:"Janelas com canaletas",pct:40,st:"sa"},{nome:"Portas internas",pct:30,st:"sa"},{nome:"Infraestrutura elétrica",pct:40,st:"sa"},{nome:"Infra iluminação",pct:35,st:"sa"},{nome:"Infraestrutura hidráulica",pct:40,st:"sa"},{nome:"Contrapiso",pct:20,st:"sp"},{nome:"Gesso liso",pct:0,st:"sp"},{nome:"Forro de gesso",pct:0,st:"sp"},{nome:"Revestimentos internos",pct:0,st:"sp"},{nome:"Lixamento",pct:0,st:"sp"},{nome:"1ª demão — branco",pct:0,st:"sp",sub:"Base branca"},{nome:"Soleiras",pct:0,st:"sp"},{nome:"Esquadrias internas",pct:0,st:"sp"},{nome:"Seladora + textura interna",pct:0,st:"sp"}],
-  "setor-terreo-ext":[{nome:"Ralos e pontos hidráulicos",pct:30,st:"sa"},{nome:"Muretas de jardim",pct:20,st:"sp"},{nome:"Pontos elétricos / rabichos",pct:15,st:"sp"},{nome:"Requadração muretas + frisos",pct:0,st:"sp"},{nome:"Manta asfáltica",pct:0,st:"sp"},{nome:"Impermeabilização piscinas",pct:0,st:"sp",sub:"2 piscinas"},{nome:"Trocadores de calor",pct:0,st:"sp",sub:"Localização a confirmar"},{nome:"Contrapiso externo",pct:0,st:"sp"},{nome:"Revestimentos externos",pct:0,st:"sp",sub:"Incl. pedra caco"},{nome:"Pingadeiras — muretas e muros",pct:0,st:"sp",dep:"revestimentos externos"},{nome:"Rufos — muros de divisa",pct:0,st:"sp",dep:"revestimentos externos"},{nome:"Pergolados de alumínio",pct:0,st:"sp"},{nome:"Cadeira PNE — piscina",pct:0,st:"sp"},{nome:"Jardins (terra + plantio)",pct:0,st:"sp"},{nome:"Iluminação externa",pct:0,st:"sp"}],
-  "setor-terreo-fin":[{nome:"Bancadas de pedra",seq:1,pct:0,st:"sp",dep:"revestimentos concluídos"},{nome:"Marcenaria",seq:2,pct:0,st:"sp",dep:"bancadas de pedra"},{nome:"Pintura definitiva",seq:3,pct:0,st:"sp",dep:"marcenaria"},{nome:"Móveis soltos",seq:4,pct:0,st:"sp",dep:"pintura definitiva"},{nome:"Decoração",seq:5,pct:0,st:"sp",dep:"móveis soltos"}],
-  "setor-fachada":[{nome:"Seladora de fachada",pct:20,st:"sa"},{nome:"Textura — corpo",pct:15,st:"sa",sub:"Após seladora",chips:[{nome:"Cinza fechado",hex:"#555555"},{nome:"Pena de prata",hex:"#C0BDB8"}]},{nome:"Textura — molduras",pct:10,st:"sa",sub:"Após seladora",chips:[{nome:"Branca",hex:"#F5F5F5"},{nome:"Berimbau",hex:"#D4C5A9"}]},{nome:"Revestimento molduras",pct:0,st:"sp",dep:"textura molduras"},{nome:"Brises verticais — banheiros",pct:0,st:"sp",sub:"Alumínio / ACM",dep:"textura concluída"},{nome:"Pedra caco — muro externo",pct:0,st:"sp",dep:"textura concluída"},{nome:"Pingadeiras",pct:0,st:"sp",dep:"textura concluída"},{nome:"Guarda-corpos",pct:0,st:"sp",dep:"textura concluída"}],
-  "setor-seguranca":[{nome:"Infraestrutura de câmeras",pct:20,st:"sp"},{nome:"Sistema de acesso / facial",pct:0,st:"sp"},{nome:"Central de segurança",pct:0,st:"sp"},{nome:"Interfone / portaria virtual",pct:0,st:"sp"}]
-};
-
-const DEFAULT_STATUS_BY_FASE=[["c","c","c","c","c","c","c","c","c","c","a","a","a","a","p","p","p","p","p","p","p","p","p","p"],["c","c","c","c","c","c","c","c","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","c","c","c","c","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","c","c","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","c","n","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","n","p","p"],["c","c","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","a","x","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["c","c","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["a","a","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"],["p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p","p"]];
-
-const DEFAULT_INSUMOS=[{id:1,tipo:"mat",nome:"Cimento CP-II",etapa:"Estrutura",fornecedor:"Votorantim",unid:"sc",entrada:500,saida:320},{id:2,tipo:"mat",nome:"Areia média",etapa:"Contrapiso",fornecedor:"Areial São Jorge",unid:"m³",entrada:80,saida:42},{id:3,tipo:"mat",nome:"Aço CA-50",etapa:"Estrutura",fornecedor:"Gerdau",unid:"kg",entrada:12000,saida:9800},{id:4,tipo:"mat",nome:"Bloco cerâmico 14x19x29",etapa:"Alvenaria",fornecedor:"Cerâmica Vale",unid:"un",entrada:8000,saida:5200},{id:5,tipo:"mao",nome:"Equipe de alvenaria",etapa:"Alvenaria",fornecedor:"Empreit. Silva",unid:"sem",entrada:8,saida:6},{id:6,tipo:"mao",nome:"Equipe de elétrica",etapa:"Elétrica",fornecedor:"Eletro Obras",unid:"sem",entrada:10,saida:4},{id:7,tipo:"eq",nome:"Andaime tubular",etapa:"Fachada",fornecedor:"Locafix",unid:"m²",entrada:600,saida:0},{id:8,tipo:"mat",nome:"Tinta base branca",etapa:"Pintura",fornecedor:"Suvinil",unid:"gl",entrada:120,saida:0}];
-const DEFAULT_PEDIDOS=[{id:1,nome:"Porcelanato 60x60 bege",etapa:"Revestimentos",fornecedor:"Portobello",qtd:"2400",unid:"m²",previsao:"2025-07-10",status:"transit"},{id:2,nome:"Gesso em pó",etapa:"Gesso",fornecedor:"Saint-Gobain",qtd:"800",unid:"sc",previsao:"2025-06-25",status:"aguard"},{id:3,nome:"Tubo PVC 100mm",etapa:"Hidráulica",fornecedor:"Amanco",qtd:"350",unid:"m",previsao:"2025-06-20",status:"receb"},{id:4,nome:"Seladora acrílica",etapa:"Fachada",fornecedor:"Quartzolit",qtd:"60",unid:"gl",previsao:"2025-06-18",status:"pend"}];
-
-// ═══ ESTADO GLOBAL ═══
-let setoresData = JSON.parse(JSON.stringify(DEFAULT_SETORES));
-let statusByFase = JSON.parse(JSON.stringify(DEFAULT_STATUS_BY_FASE));
-let portasData = Array(24).fill(null).map(()=>({cor:"",machaneta:""}));
-let insumos = JSON.parse(JSON.stringify(DEFAULT_INSUMOS));
-let pedidos = JSON.parse(JSON.stringify(DEFAULT_PEDIDOS));
-let fireState = [];
-let artState = [];
-let insNextId = 9, pedNextId = 5;
-let estFiltro="todos", pedFiltro="todos";
-let faseSel = 0;
-let saveTimer = null;
-
-// ═══ SAVE / LOAD ═══
-function saveAll() {
-  const data = {
-    setoresData, statusByFase, portasData, insumos, pedidos,
-    fireState: fireState.map(s=>({status:s.status,checks:s.checks,obs:s.obs})),
-    artState: artState.map(s=>({status:s.status,fields:s.fields,obs:s.obs})),
-    insNextId, pedNextId, savedAt: new Date().toLocaleString('pt-BR')
-  };
-  try {
-    localStorage.setItem(SAVE_KEY, JSON.stringify(data));
-    const btn = document.getElementById('save-btn');
-    const status = document.getElementById('save-status');
-    status.textContent = '✓ Salvo em ' + data.savedAt;
-    btn.className = 'save-btn saved';
-    setTimeout(()=>{ btn.className='save-btn'; }, 2000);
-  } catch(e) {
-    alert('Erro ao salvar. Tente novamente.');
-  }
-}
-
-function autoSave() {
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(saveAll, 1500);
-  document.getElementById('save-status').textContent = 'Alteração detectada — salvando...';
-}
-
-function loadAll() {
-  try {
-    const raw = localStorage.getItem(SAVE_KEY);
-    if (!raw) {
-      document.getElementById('save-status').textContent = 'Nenhum dado salvo — usando dados iniciais';
-      return false;
-    }
-    const data = JSON.parse(raw);
-    if (data.setoresData) setoresData = data.setoresData;
-    if (data.statusByFase) statusByFase = data.statusByFase;
-    if (data.portasData) portasData = data.portasData;
-    if (data.insumos) insumos = data.insumos;
-    if (data.pedidos) pedidos = data.pedidos;
-    if (data.insNextId) insNextId = data.insNextId;
-    if (data.pedNextId) pedNextId = data.pedNextId;
-    if (data.fireState) {
-      data.fireState.forEach((s,i)=>{ if(fireState[i]){ fireState[i].status=s.status; fireState[i].checks=s.checks; fireState[i].obs=s.obs; }});
-    }
-    if (data.artState) {
-      data.artState.forEach((s,i)=>{ if(artState[i]){ artState[i].status=s.status; artState[i].fields=s.fields; artState[i].obs=s.obs; }});
-    }
-    document.getElementById('save-status').textContent = data.savedAt ? '✓ Dados carregados — último salvamento: ' + data.savedAt : '✓ Dados carregados';
-    return true;
-  } catch(e) {
-    document.getElementById('save-status').textContent = 'Erro ao carregar dados salvos';
-    return false;
-  }
-}
-
-function clearAll() {
-  if (!confirm('Tem certeza? Isso apagará todos os dados salvos e voltará para os dados iniciais.')) return;
-  localStorage.removeItem(SAVE_KEY);
-  location.reload();
-}
-
-// ═══ OBRA ═══
-const stLabel={sc:"Concluído",sa:"Em andamento",sp:"Pendente",sx:"Atenção"};
-const barColor={sc:"#639922",sa:"#378ADD",sp:"#888780",sx:"#BA7517"};
-
-function chips(list){return`<div class="color-chips">${list.map(c=>`<span class="chip"><span class="chip-dot" style="background:${c.hex};"></span>${c.nome}</span>`).join("")}</div>`;}
-
-function renderSetor(id, etapas){
-  const cont=document.getElementById(id);if(!cont)return;cont.innerHTML="";
-  etapas.forEach((e,idx)=>{
-    const r=document.createElement("div");r.className="etapa-row";
-    const sub=e.sub?`<span class="enome-sub">${e.sub}</span>`:"";
-    const dep=e.dep?`<span class="dep-tag">⏳ após ${e.dep}</span>`:"";
-    const ch=e.chips?chips(e.chips):"";
-    const seq=e.seq?`<span class="seq-badge">${e.seq}º</span>`:"";
-    r.innerHTML=`<span class="enome">${e.nome}${seq}${sub}${ch}</span><div class="ebar-w"><div class="ebar" id="bar-${id}-${idx}" style="width:${e.pct}%;background:${barColor[e.st]};"></div></div><input class="obra-etapa-pct" type="number" min="0" max="100" value="${e.pct}" title="Editar %" data-setor="${id}" data-idx="${idx}"/><span class="stag ${e.st}" id="stag-${id}-${idx}" style="cursor:pointer;" title="Clique para alterar status" data-setor="${id}" data-idx="${idx}">${stLabel[e.st]}</span>${dep}`;
-    cont.appendChild(r);
-  });
-  cont.addEventListener('change', e=>{
-    if(e.target.classList.contains('obra-etapa-pct')){
-      const sid=e.target.dataset.setor, idx=parseInt(e.target.dataset.idx);
-      const v=Math.max(0,Math.min(100,parseInt(e.target.value)||0));
-      setoresData[sid][idx].pct=v;
-      e.target.value=v;
-      document.getElementById(`bar-${sid}-${idx}`).style.width=v+'%';
-      updateObraMetrics();
-      autoSave();
-    }
-  });
-  cont.addEventListener('click', e=>{
-    const stag=e.target.closest('.stag[data-setor]');
-    if(stag){
-      const sid=stag.dataset.setor, idx=parseInt(stag.dataset.idx);
-      const order=["sp","sa","sx","sc"];
-      const cur=setoresData[sid][idx].st;
-      const next=order[(order.indexOf(cur)+1)%order.length];
-      setoresData[sid][idx].st=next;
-      stag.className=`stag ${next}`;
-      stag.textContent=stLabel[next];
-      document.getElementById(`bar-${sid}-${idx}`).style.background=barColor[next];
-      updateObraMetrics();
-      autoSave();
-    }
-  });
-}
-
-function updateObraMetrics(){
-  let total=0, sum=0, atencao=0, comumSum=0, comumTotal=0;
-  Object.entries(setoresData).forEach(([id,etapas])=>{
-    etapas.forEach(e=>{
-      total++; sum+=e.pct;
-      if(e.st==='sx') atencao++;
-      if(id!=='setor-fachada'){comumTotal++; comumSum+=e.pct;}
-    });
-  });
-  const geral=total>0?Math.round(sum/total):0;
-  const comum=comumTotal>0?Math.round(comumSum/comumTotal):0;
-  document.getElementById('prog-geral').textContent=geral+'%';
-  document.getElementById('pbar-geral').style.width=geral+'%';
-  document.getElementById('prog-comum').textContent=comum+'%';
-  document.getElementById('atencao-count').textContent=atencao;
-}
-
-Object.entries(DEFAULT_SETORES).forEach(([id])=>{
-  renderSetor(id, setoresData[id]);
-});
-updateObraMetrics();
-
-// ═══ PERSONALIZAÇÃO ═══
-const fases=[{nome:"Alvenaria",special:null},{nome:"Contrapiso",special:null},{nome:"Elétrica",special:null},{nome:"Hidráulica",special:null},{nome:"Banheiras",special:"na"},{nome:"Infra A/C",special:null},{nome:"Automação",special:null},{nome:"Gesso liso + requadração",special:"na"},{nome:"Forro gesso",special:null},{nome:"Revestimentos",special:null},{nome:"Bancadas",special:null},{nome:"1ª demão",special:null},{nome:"Louças e metais",special:null},{nome:"Acab. elétrica",special:null},{nome:"Envidraçamento",special:null},{nome:"Vinílico",special:null},{nome:"Portas",special:"portas"},{nome:"Rodapé",special:null},{nome:"2ª demão",special:null}];
-const aptos=[{id:"11"},{id:"12"},{id:"21"},{id:"22"},{id:"31"},{id:"32"},{id:"41"},{id:"42"},{id:"51"},{id:"52"},{id:"61"},{id:"62"},{id:"71"},{id:"72"},{id:"81"},{id:"82"},{id:"91"},{id:"92"},{id:"101"},{id:"102"},{id:"111"},{id:"112"},{id:"121",duplex:true},{id:"122",duplex:true}];
-const dotStyle={c:"background:#C0DD97;",a:"background:#B5D4F4;",x:"background:#FAC775;",p:"background:#D3D1C7;",n:"background:#F1EFE8;border:0.5px solid #B4B2A9;"};
-const dotLabel={c:"Concluído",a:"Em andamento",x:"Atenção",p:"Pendente",n:"N/A"};
-const dotCycle={c:"a",a:"x",x:"p",p:"n",n:"c"};
-
-function swatchColor(val){const map={branco:"#FFFFFF","off-white":"#F5F0E8",bege:"#E8D9C0",cinza:"#AAAAAA",preto:"#222222",madeira:"#A0724A",dourado:"#C9A84C",cromado:"#C0C0C0",grafite:"#555555"};const k=val.toLowerCase().trim();for(const[n,h]of Object.entries(map)){if(k.includes(n))return h;}return null;}
-
-function updatePersMetrics(){
-  let conc=0,exec=0;
-  aptos.forEach((_,i)=>{
-    const allConc=statusByFase.every(f=>f[i]==='c'||f[i]==='n');
-    const anyExec=statusByFase.some(f=>f[i]==='a'||f[i]==='x');
-    if(allConc) conc++;
-    else if(anyExec) exec++;
-  });
-  document.getElementById('pers-conc').textContent=conc+' / 24';
-  document.getElementById('pers-exec').textContent=exec;
-}
-
-function renderAptoTabs(){const tc=document.getElementById("fase-tabs");tc.innerHTML="";fases.forEach((f,i)=>{const t=document.createElement("div");t.className="fase-tab"+(i===faseSel?" active":"")+(f.special?" has-special":"");t.textContent=f.nome;t.onclick=()=>{faseSel=i;renderAptoTabs();renderMain();};tc.appendChild(t);});}
-
-function renderMain(){
-  const fase=fases[faseSel];const mc=document.getElementById("main-content");mc.innerHTML="";const lr=document.getElementById("legend-row");
-  if(fase.special==="portas"){
-    lr.style.display="none";
-    const note=document.createElement("div");note.className="info-note";note.innerHTML=`<i class="ti ti-info-circle" style="font-size:14px;flex-shrink:0;"></i>Registre a cor e o modelo de maçaneta de cada apartamento.`;mc.appendChild(note);
-    const grid=document.createElement("div");grid.className="portas-grid";
-    aptos.forEach((apto,i)=>{
-      const pc=document.createElement("div");pc.className="porta-card";
-      const cv=portasData[i].cor;
-      const sw=cv?`<div class="cswatch" style="background:${swatchColor(cv)||'#eee'};" title="${cv}"></div>`:"";
-      pc.innerHTML=`<div class="porta-num"><i class="ti ti-door" style="font-size:13px;color:var(--color-text-secondary);"></i>Apto ${apto.id}${apto.duplex?' <span class="duplex-badge">Duplex</span>':""}</div><div class="porta-fields"><div class="porta-field"><label>Cor porta</label>${sw}<input type="text" placeholder="ex: off-white" value="${portasData[i].cor}" data-idx="${i}" data-field="cor"/></div><div class="porta-field"><label>Maçaneta</label><input type="text" placeholder="ex: dourada" value="${portasData[i].machaneta||''}" data-idx="${i}" data-field="machaneta"/></div></div>`;
-      grid.appendChild(pc);
-    });
-    mc.appendChild(grid);
-    grid.addEventListener("input",e=>{
-      const t=e.target;if(!t.dataset.idx)return;
-      const i=parseInt(t.dataset.idx);portasData[i][t.dataset.field]=t.value;
-      if(t.dataset.field==="cor"){const s=t.previousElementSibling;if(s&&s.classList.contains("cswatch")){s.style.background=swatchColor(t.value)||"#eee";s.title=t.value;}}
-      autoSave();
-    });
-  } else {
-    lr.style.display="flex";
-    const g=document.createElement("div");g.className="apto-grid";
-    aptos.forEach((apto,i)=>{
-      const s=statusByFase[faseSel][i];
-      const row=document.createElement("div");row.className="apto-row";
-      row.innerHTML=`<span class="apto-num">${apto.id}</span><div class="apto-dot" style="${dotStyle[s]}" title="Clique para alterar" data-fase="${faseSel}" data-apto="${i}"></div><span class="apto-label">${dotLabel[s]}</span>${apto.duplex?'<span class="duplex-badge">Duplex</span>':""}`;
-      g.appendChild(row);
-    });
-    g.addEventListener('click',e=>{
-      const dot=e.target.closest('.apto-dot[data-fase]');
-      if(dot){
-        const fi=parseInt(dot.dataset.fase),ai=parseInt(dot.dataset.apto);
-        const cur=statusByFase[fi][ai];
-        const next=dotCycle[cur]||'p';
-        statusByFase[fi][ai]=next;
-        dot.style.cssText=dotStyle[next];
-        dot.nextElementSibling.textContent=dotLabel[next];
-        updatePersMetrics();
-        autoSave();
-      }
-    });
-    mc.appendChild(g);
-  }
-}
-renderAptoTabs();renderMain();updatePersMetrics();
-
-// ═══ INSUMOS ═══
-const etapasObra=["Estrutura","Impermeabilização","Alvenaria","Contrapiso","Elétrica","Hidráulica","Gesso","Revestimentos","Pintura","Fachada","Acabamentos","Geral"];
-const tipoLabels={mat:"Material",mao:"Mão de obra",eq:"Equipamento"};
-const tipoClass={mat:"tipo-mat",mao:"tipo-mao",eq:"tipo-eq"};
-
-function renderInsMetrics(){const total=insumos.length;const baixo=insumos.filter(i=>{const s=i.entrada-i.saida;return s>0&&s/i.entrada<0.2;}).length;const zerado=insumos.filter(i=>i.entrada-i.saida<=0).length;const pp=pedidos.filter(p=>p.status==="pend"||p.status==="aguard").length;document.getElementById("ins-metrics").innerHTML=`<div class="metric"><div class="lbl">Itens em estoque</div><div class="val">${total}</div><div class="sub">mat. · mão de obra · equip.</div></div><div class="metric"><div class="lbl">Saldo baixo</div><div class="val" style="color:#BA7517;">${baixo}</div><div class="sub">abaixo de 20%</div></div><div class="metric"><div class="lbl">Zerados</div><div class="val" style="color:#B03030;">${zerado}</div><div class="sub">reposição necessária</div></div><div class="metric"><div class="lbl">Pedidos pendentes</div><div class="val" style="color:#5F5E5A;">${pp}</div><div class="sub">aguardando ou não confirmados</div></div>`;}
-function renderEstoqueFiltro(){document.getElementById("estoque-filter").innerHTML=[["todos","Todos"],["mat","Materiais"],["mao","Mão de obra"],["eq","Equipamentos"]].map(([k,l])=>`<button class="filter-btn${estFiltro===k?' active':''}" onclick="setEstFiltro('${k}')">${l}</button>`).join("");}
-function setEstFiltro(f){estFiltro=f;renderEstoqueFiltro();renderEstoque();}
-function renderEstoque(){const tbody=document.getElementById("estoque-body");tbody.innerHTML="";const filtered=estFiltro==="todos"?insumos:insumos.filter(i=>i.tipo===estFiltro);if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state">Nenhum insumo nesta categoria.</div></td></tr>`;return;}filtered.forEach(ins=>{const saldo=ins.entrada-ins.saida;const pct=ins.entrada>0?saldo/ins.entrada:0;const sc=saldo<=0?"saldo-zero":pct<0.2?"saldo-low":"saldo-ok";const tr=document.createElement("tr");tr.innerHTML=`<td><span class="tipo-badge ${tipoClass[ins.tipo]}">${tipoLabels[ins.tipo]}</span></td><td><input value="${ins.nome}" onchange="updateIns(${ins.id},'nome',this.value)"/></td><td><select onchange="updateIns(${ins.id},'etapa',this.value)">${etapasObra.map(e=>`<option${ins.etapa===e?' selected':''}>${e}</option>`).join("")}</select></td><td><input value="${ins.fornecedor}" onchange="updateIns(${ins.id},'fornecedor',this.value)"/></td><td><input value="${ins.unid}" style="width:50px;" onchange="updateIns(${ins.id},'unid',this.value)"/></td><td><input type="number" value="${ins.entrada}" style="width:70px;" onchange="updateIns(${ins.id},'entrada',+this.value)"/></td><td><input type="number" value="${ins.saida}" style="width:70px;" onchange="updateIns(${ins.id},'saida',+this.value)"/></td><td><span class="${sc}">${saldo} ${ins.unid}</span></td><td><button class="del-btn" onclick="delIns(${ins.id})">✕</button></td>`;tbody.appendChild(tr);});}
-function addInsumo(){insumos.push({id:insNextId++,tipo:"mat",nome:"Novo insumo",etapa:"Geral",fornecedor:"—",unid:"un",entrada:0,saida:0});renderInsMetrics();renderEstoque();autoSave();}
-function updateIns(id,f,v){const i=insumos.find(x=>x.id===id);if(i){i[f]=v;renderInsMetrics();renderEstoque();autoSave();}}
-function delIns(id){insumos=insumos.filter(x=>x.id!==id);renderInsMetrics();renderEstoque();autoSave();}
-function renderPedFiltro(){document.getElementById("pedidos-filter").innerHTML=[["todos","Todos"],["pend","Não confirmado"],["aguard","Aguardando"],["transit","Em trânsito"],["receb","Recebido"]].map(([k,l])=>`<button class="filter-btn${pedFiltro===k?' active':''}" onclick="setPedFiltro('${k}')">${l}</button>`).join("");}
-function setPedFiltro(f){pedFiltro=f;renderPedFiltro();renderPedidos();}
-function renderPedidos(){const cont=document.getElementById("pedidos-list");cont.innerHTML="";const filtered=pedFiltro==="todos"?pedidos:pedidos.filter(p=>p.status===pedFiltro);if(!filtered.length){cont.innerHTML=`<div class="empty-state">Nenhum pedido nesta categoria.</div>`;return;}const stCls={pend:"ped-pend",aguard:"ped-aguard",transit:"ped-transit",receb:"ped-receb"};const stLbl={pend:"Não confirmado",aguard:"Aguardando",transit:"Em trânsito",receb:"Recebido"};filtered.forEach(ped=>{const div=document.createElement("div");div.className="pedido-card";div.innerHTML=`<div class="ped-header"><span class="ped-nome">${ped.nome}</span><span class="status-pedido ${stCls[ped.status]}">${stLbl[ped.status]}</span><button class="del-btn" onclick="delPed(${ped.id})">✕</button></div><div class="ped-fields"><div class="ped-field"><label>Insumo</label><input value="${ped.nome}" onchange="updatePed(${ped.id},'nome',this.value)"/></div><div class="ped-field"><label>Etapa</label><select onchange="updatePed(${ped.id},'etapa',this.value)">${etapasObra.map(e=>`<option${ped.etapa===e?' selected':''}>${e}</option>`).join("")}</select></div><div class="ped-field"><label>Fornecedor</label><input value="${ped.fornecedor}" onchange="updatePed(${ped.id},'fornecedor',this.value)"/></div><div class="ped-field"><label>Quantidade</label><input value="${ped.qtd}" onchange="updatePed(${ped.id},'qtd',this.value)"/></div><div class="ped-field"><label>Unidade</label><input value="${ped.unid}" onchange="updatePed(${ped.id},'unid',this.value)"/></div><div class="ped-field"><label>Previsão de entrega</label><input type="date" value="${ped.previsao}" onchange="updatePed(${ped.id},'previsao',this.value)"/></div><div class="ped-field"><label>Status</label><select onchange="updatePed(${ped.id},'status',this.value)"><option value="pend"${ped.status==='pend'?' selected':''}>Não confirmado</option><option value="aguard"${ped.status==='aguard'?' selected':''}>Aguardando</option><option value="transit"${ped.status==='transit'?' selected':''}>Em trânsito</option><option value="receb"${ped.status==='receb'?' selected':''}>Recebido</option></select></div></div>`;cont.appendChild(div);});}
-function addPedido(){pedidos.push({id:pedNextId++,nome:"Novo pedido",etapa:"Geral",fornecedor:"—",qtd:"0",unid:"un",previsao:"",status:"pend"});renderInsMetrics();renderPedidos();autoSave();}
-function updatePed(id,f,v){const p=pedidos.find(x=>x.id===id);if(p){p[f]=v;renderInsMetrics();renderPedidos();autoSave();}}
-function delPed(id){pedidos=pedidos.filter(x=>x.id!==id);renderInsMetrics();renderPedidos();autoSave();}
-renderInsMetrics();renderEstoqueFiltro();renderEstoque();renderPedFiltro();renderPedidos();
-
-// ═══ BOMBEIROS ═══
-const tubulacoes=[{nome:"Água fria",cor:"Verde folha",hex:"#3A8C3F"},{nome:"Hidrantes / Combate a incêndio",cor:"Vermelho",hex:"#D63030"},{nome:"Gás inflamável",cor:"Amarelo",hex:"#D4A017"},{nome:"Esgoto",cor:"Preto",hex:"#222222"},{nome:"Água pluvial",cor:"Marrom tabaco",hex:"#7B4B2A"}];
-const fireItemsDef=[{nome:"Registro de Recalque",sub:"Pintura, limpeza e identificação",checks:["Registro pintado (cor padrão bombeiros)","Limpeza da área","Placa de identificação fixada"]},{nome:"Hidrante — Térreo",sub:"1º hidrante a no máximo 5m da entrada principal",checks:["Hidrante instalado e sinalizado","Distância da entrada ≤ 5m verificada","Mangueira acoplada e testada","Pressão de saída verificada"]},{nome:"Extintores",sub:"Distribuídos e sinalizados conforme projeto",checks:["Quantidade conforme projeto","Posicionamento conforme planta","Sinalização de piso e parede","Lacres intactos","Validade dentro do prazo"]},{nome:"Sala de Controle / Portaria",sub:"Painéis, botoeiras, central, pressurização e vigilância",checks:["Painel de identificação instalado","Painel de acionamento operacional","Botoeiras alternativas testadas","Central de alarme configurada","Painel de pressurização operacional","Vigilância permanente ativa"]},{nome:"Hidrante mais desfavorável",sub:"Mangueira, esguicho e jato de 10 a 15m",checks:["Mangueira em bom estado","Esguicho acoplado","Jato atingindo 10–15m","Pressão verificada"]},{nome:"Barrilete",sub:"By-pass, registros, válvulas, coluna d'água",checks:["By-pass operacional","Registros funcionando","Válvulas sem vazamento","Coluna d'água íntegra","Área limpa"]},{nome:"Acionamento Manual da Bomba",sub:"Botoeira liga/desliga",checks:["Botoeira testada","Bomba acionada com sucesso","Retorno ao automático verificado"]},{nome:"Centro de Medição",sub:"Bomba com ligação independente — quadro vermelho",checks:["Quadro vermelho identificado","Ligação independente","Disjuntor exclusivo","Teste realizado"]},{nome:"Acionamento Manual do Alarme",sub:"Audível em toda a edificação · sonoro e visual",checks:["Alarme sonoro audível em todos os pavimentos","Alarme visual funcionando","Pressurização acionada","Extração acionada"]},{nome:"Detector de Fumaça",sub:"Aciona alarme + pressurização e extração",checks:["Detectores instalados","Teste de fumaça realizado","Alarme ativado","Pressurização acionada","Extração acionada"]},{nome:"Acionamento Manual do Sprinkler",sub:"Dreno ou CS · alarme · pressurização e extração",checks:["Dreno / CS testado","Alarme ativado","Pressurização acionada","Extração acionada","Sem vazamentos"]},{nome:"Desligamento Automático da Pressurização",sub:"Desligamento pelo detector na sala de pressurização",checks:["Detector instalado","Desligamento automático testado","Tempo de resposta verificado"]},{nome:"Rotas de Fuga / Saída de Emergência",sub:"Corrimão, sinalização, iluminação e desobstrução",checks:["Corrimões instalados","Sinalização em todos os pavimentos","Iluminação de emergência testada","Saídas desobstruídas","Portas no sentido de fuga"]},{nome:"Compartimentação",sub:"Portas corta-fogo, shafts e antecâmaras",checks:["Portas corta-fogo fechando automaticamente","Shafts selados","Antecâmaras sem obstrução","Vedações verificadas"]},{nome:"Geral",sub:"Organização, limpeza, segurança e autodisciplina",checks:["Barrilete limpo e organizado","Materiais de descarte removidos","EPI disponível","Sinalização de segurança visível"]},{nome:"Cores das Tubulações",sub:"Identificação por cor — Vista Park",checks:[],tubulacoes:true}];
-fireState = fireItemsDef.map(item=>({status:"",checks:item.checks.map(()=>false),obs:"",open:false}));
-
-const artItemsDef=[{icon:"🏅",nome:"Atestado de Brigada de Incêndio",sub:"Emitido por profissional habilitado após treinamento da brigada",fields:["Responsável técnico","CREA / CFT","Nº do atestado","Data de emissão","Validade"]},{icon:"📋",nome:"ART — Instalação / Manutenção CMAR",sub:"Conf. IT-10 · exceto Classe I",fields:["Responsável técnico","CREA","Nº da ART","Data de emissão","Data de registro CREA"]},{icon:"📋",nome:"ART — Compartimentação de Shaft e Fachada",sub:"Instalação / manutenção",fields:["Responsável técnico","CREA","Nº da ART","Data de emissão","Data de registro CREA"]},{icon:"📋",nome:"ART — Medida de Segurança contra Incêndio",sub:"Instalação / manutenção",fields:["Responsável técnico","CREA","Nº da ART","Data de emissão","Data de registro CREA"]},{icon:"📋",nome:"ART — Sistema de Utilização de Gás Inflamável",sub:"Instalação / manutenção",fields:["Responsável técnico","CREA","Nº da ART","Data de emissão","Data de registro CREA"]},{icon:"⚡",nome:"ART — Instalações Elétricas",sub:"Instalação do sistema elétrico da edificação",fields:["Responsável técnico","CREA","Nº da ART","Data de emissão","Data de registro CREA"]}];
-artState = artItemsDef.map(()=>({status:"",fields:{},obs:""}));
-
-// Carrega dados salvos ANTES de renderizar
-loadAll();
-
-// Re-renderiza setores com dados carregados
-Object.entries(DEFAULT_SETORES).forEach(([id])=>{ renderSetor(id, setoresData[id]); });
-updateObraMetrics();
-renderAptoTabs(); renderMain(); updatePersMetrics();
-renderInsMetrics(); renderEstoqueFiltro(); renderEstoque(); renderPedFiltro(); renderPedidos();
-
-function renderFireSummary(){const total=fireItemsDef.length;const ok=fireState.filter(s=>s.status==="ok").length;const nok=fireState.filter(s=>s.status==="nok").length;const pend=fireState.filter(s=>s.status==="").length;document.getElementById("fire-summary").innerHTML=`<div class="fscard"><div class="fl">Verificados</div><div class="fv">${ok}<span style="font-size:13px;color:var(--color-text-secondary)"> / ${total}</span></div></div><div class="fscard"><div class="fl">Conformes</div><div class="fv" style="color:#3B6D11;">${ok}</div></div><div class="fscard"><div class="fl">Não conformes</div><div class="fv" style="color:#BA7517;">${nok}</div></div><div class="fscard"><div class="fl">Pendentes</div><div class="fv" style="color:#5F5E5A;">${pend}</div></div>`;}
-function renderTubulacoes(){return`<div class="tub-grid">${tubulacoes.map(t=>`<div class="tub-row"><div class="tub-swatch" style="background:${t.hex};"></div><span class="tub-nome">${t.nome}</span><span class="tub-cor">${t.cor}</span></div>`).join("")}</div>`;}
-function renderFChecklist(idx,item){if(!item.checks.length)return"";return`<div class="fire-checklist">${item.checks.map((c,ci)=>`<div class="fcheck-row"><div class="fcheck-box${fireState[idx].checks[ci]?' checked':''}" onclick="toggleCheck(${idx},${ci})">${fireState[idx].checks[ci]?'✓':''}</div><span class="fcheck-label${fireState[idx].checks[ci]?' checked':''}">${c}</span></div>`).join("")}</div>`;}
-function renderFireList(){const cont=document.getElementById("fire-list");cont.innerHTML="";fireItemsDef.forEach((item,idx)=>{const state=fireState[idx];const div=document.createElement("div");div.className="fire-item";const sd=state.status==="ok"?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EAF3DE;color:#3B6D11;font-weight:500;">✓ Conforme</span>`:state.status==="nok"?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#FAEEDA;color:#854F0B;font-weight:500;">✗ Não conforme</span>`:state.status==="na"?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#F1EFE8;color:#5F5E5A;font-weight:500;">N/A</span>`:`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#f0f0ee;color:#6b6b6b;">Pendente</span>`;div.innerHTML=`<div class="fire-item-header" onclick="toggleFire(${idx})"><span class="fire-num">${idx+1}</span><span class="fire-nome">${item.nome}<span class="fire-nome-sub">${item.sub}</span></span>${sd}<div class="fire-status-btn" onclick="event.stopPropagation()"><button class="fsbtn ok${state.status==='ok'?' active':''}" onclick="setFireStatus(${idx},'ok')">OK</button><button class="fsbtn nok${state.status==='nok'?' active':''}" onclick="setFireStatus(${idx},'nok')">NOK</button><button class="fsbtn na${state.status==='na'?' active':''}" onclick="setFireStatus(${idx},'na')">N/A</button></div><i class="ti ti-chevron-down fire-chevron${state.open?' open':''}" id="chev-${idx}"></i></div><div class="fire-detail${state.open?' open':''}" id="detail-${idx}">${item.tubulacoes?renderTubulacoes():renderFChecklist(idx,item)}<div class="obs-label" style="margin-top:8px;">Observações</div><textarea class="fire-obs" placeholder="Registre aqui pendências, datas, responsáveis..." onchange="saveObs(${idx},this.value)">${state.obs}</textarea></div>`;cont.appendChild(div);});}
-function toggleFire(idx){fireState[idx].open=!fireState[idx].open;renderFireList();}
-function setFireStatus(idx,st){fireState[idx].status=fireState[idx].status===st?"":st;renderFireSummary();renderFireList();autoSave();}
-function toggleCheck(idx,ci){fireState[idx].checks[ci]=!fireState[idx].checks[ci];renderFireList();autoSave();}
-function saveObs(idx,val){fireState[idx].obs=val;autoSave();}
-
-function renderArtSummary(){const total=artItemsDef.length;const ok=artState.filter(s=>s.status==="ok").length;const pend=artState.filter(s=>s.status==="").length;document.getElementById("art-summary").innerHTML=`<div class="fscard"><div class="fl">Total de documentos</div><div class="fv">${total}</div></div><div class="fscard"><div class="fl">Recebidos / OK</div><div class="fv" style="color:#3B6D11;">${ok}</div></div><div class="fscard"><div class="fl">Pendentes</div><div class="fv" style="color:#BA7517;">${pend}</div></div>`;}
-function renderArtList(){const cont=document.getElementById("art-list");cont.innerHTML="";artItemsDef.forEach((item,idx)=>{const state=artState[idx];const div=document.createElement("div");div.className="art-item";const sd=state.status==="ok"?`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#EAF3DE;color:#3B6D11;font-weight:500;">✓ Recebida</span>`:`<span style="font-size:10px;padding:2px 7px;border-radius:99px;background:#FAEEDA;color:#854F0B;font-weight:500;">⏳ Pendente</span>`;const fh=item.fields.map((f,fi)=>`<div class="art-field"><label>${f}</label><input type="text" placeholder="—" value="${state.fields[fi]||""}" data-aidx="${idx}" data-fidx="${fi}"/></div>`).join("");div.innerHTML=`<div class="art-header"><span class="art-icon">${item.icon}</span><div class="art-body"><div class="art-nome">${item.nome}</div><div class="art-sub">${item.sub}</div></div>${sd}<div class="art-status"><button class="art-stbtn ok${state.status==='ok'?' active':''}" onclick="setArtStatus(${idx},'ok')">OK</button><button class="art-stbtn pend${state.status===''?' active':''}" onclick="setArtStatus(${idx},'')">Pendente</button></div></div><div class="art-fields">${fh}<div class="art-field" style="grid-column:1/-1;"><label>Observações</label><input type="text" placeholder="Anotações livres..." value="${state.obs||""}" data-aidx="${idx}" data-fidx="obs"/></div></div>`;cont.appendChild(div);});document.getElementById("art-list").addEventListener("input",e=>{const t=e.target;if(!t.dataset.aidx)return;const idx=parseInt(t.dataset.aidx);if(t.dataset.fidx==="obs"){artState[idx].obs=t.value;}else{artState[idx].fields[parseInt(t.dataset.fidx)]=t.value;}autoSave();});}
-function setArtStatus(idx,st){artState[idx].status=st;renderArtSummary();renderArtList();autoSave();}
-
-renderFireSummary();renderFireList();renderArtSummary();renderArtList();
+tick(); setInterval(tick,1000);
 </script>
 </body>
 </html>
