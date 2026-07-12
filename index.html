@@ -3,218 +3,2923 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Vista Park — Térreo · Levantamento</title>
+<title>Vista Park</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F2EE;color:#1C1C1C;min-height:100vh}
-.container{max-width:900px;margin:0 auto;padding:24px 20px}
+  :root{
+    --bg: #f2ead9;
+    --surface: #fdfaf3;
+    --surface-2: #ece0c4;
+    --border: #d9c9a3;
+    --text: #17284a;
+    --text-dim: #5b6b85;
+    --accent: #1c3a5e;
+    --accent-dim: #35597f;
+    --ok: #3f7a53;
+    --warn: #a8781a;
+    --danger: #b23b3b;
+    --on-accent: #f6f0dd;
+    --radius: 8px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+  .layout{
+    display:flex;
+    min-height:100vh;
+  }
 
-/* Header */
-.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1E2D4E}
-.header-left .proj{font-size:11px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
-.header-left .titulo{font-size:20px;font-weight:600;color:#1E2D4E}
-.header-right{text-align:right}
-.dead{font-size:11px;color:#C0392B;font-weight:600;margin-bottom:2px}
-.clk{font-size:13px;color:#888;font-variant-numeric:tabular-nums}
-.logo{height:36px;object-fit:contain}
+  /* Sidebar: unit list */
+  .sidebar{
+    width: 220px;
+    flex-shrink:0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 12px;
+    display:flex;
+    flex-direction:column;
+  }
+  .sidebar h1{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    padding: 0 8px 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 12px;
+  }
+  .sidebar h1 span{
+    display:block;
+    font-size: 17px;
+    text-transform: none;
+    letter-spacing: normal;
+    color: var(--text);
+    margin-bottom: 2px;
+    font-weight: 600;
+  }
+  .section-title{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+    padding: 0 8px;
+    margin-bottom: 10px;
+  }
+  .tab-switch{
+    display:flex;
+    flex-wrap: wrap;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+    margin-bottom: 18px;
+    gap: 2px;
+  }
+  .tab-btn{
+    flex:1;
+    min-width: 45%;
+    background: transparent;
+    border:none;
+    color: var(--text-dim);
+    padding: 7px 6px;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor:pointer;
+    font-family: inherit;
+    transition: background 0.12s, color 0.12s;
+  }
+  .tab-btn:hover{ color: var(--text); }
+  .tab-btn.active{ background: var(--accent-dim); color: var(--on-accent); }
+  .unit-list{
+    list-style:none;
+    overflow-y:auto;
+    flex:1;
+  }
+  .unit-item{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 8px;
+    padding: 9px 10px;
+    border-radius: var(--radius);
+    cursor:pointer;
+    color: var(--text-dim);
+    margin-bottom: 2px;
+    transition: background 0.12s, color 0.12s;
+  }
+  .unit-item:hover{ background: var(--surface-2); color: var(--text); }
+  .unit-item.active{ background: var(--accent-dim); color: var(--on-accent); }
+  .unit-item .apt-info{ min-width:0; }
+  .unit-item .apt-num{ font-weight:600; font-size:13.5px; display:block; }
+  .unit-item .apt-client{
+    font-size: 11px; color: inherit; opacity: 0.75;
+    white-space: nowrap; overflow:hidden; text-overflow: ellipsis;
+    display:block;
+  }
+  .unit-item.special .apt-client{ font-style: italic; }
+  .unit-dot{
+    width:7px; height:7px; border-radius:50%; flex-shrink:0;
+  }
+  .dot-empty{ background: #b3a480; }
+  .dot-partial{ background: var(--warn); }
+  .dot-complete{ background: var(--ok); }
 
-/* Progress */
-.prog-wrap{margin-bottom:20px}
-.prog-bar{height:4px;background:#E8E4DE;border-radius:99px;overflow:hidden;margin-bottom:6px}
-.prog-fill{height:100%;border-radius:99px;background:#5C8C5A;transition:width .4s}
-.prog-label{font-size:11px;color:#888}
+  /* Main content */
+  .main{ flex:1; padding: 28px 36px; overflow-y:auto; }
+  .main-header{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom: 22px; flex-wrap:wrap; gap:12px;
+  }
+  .main-header h2{ font-size: 22px; font-weight:600; }
+  .main-header .subtitle{ color: var(--text-dim); font-size: 13px; margin-top: 3px; }
+  .summary-pill{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .summary-pill b{ color: var(--text); }
 
-/* Tabs */
-.tabs{display:flex;gap:0;border-bottom:1px solid #E8E4DE;margin-bottom:20px;overflow-x:auto}
-.tab{font-size:12px;padding:10px 16px;border:none;background:transparent;color:#888;cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;transition:all .15s}
-.tab:hover{color:#1E2D4E}
-.tab.active{color:#1E2D4E;border-bottom-color:#1E2D4E;font-weight:600}
+  table{ width:100%; border-collapse: collapse; background: var(--surface); border-radius: var(--radius); overflow:hidden; border: 1px solid var(--border); }
+  thead th{
+    text-align:left;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+  }
+  tbody td{
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background: rgba(255,255,255,0.015); }
 
-/* Panes */
-.pane{display:none}.pane.active{display:block}
+  input[type=text], input[type=number], select{
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 13.5px;
+    width: 100%;
+    font-family: inherit;
+  }
+  input:focus, select:focus{ outline:none; border-color: var(--accent-dim); }
+  input[type=number]{ text-align:right; }
 
-/* Section header */
-.ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
-.pt{font-size:14px;font-weight:600;color:#1E2D4E}
-.sec-label{font-size:10px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.05em;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid #E8E4DE}
+  .col-ambiente{ width: 14%; }
+  .col-aplicacao{ width: 9%; }
+  .col-material{ width: 18%; }
+  .col-metragem{ width: 9%; }
+  .col-perda{ width: 10%; }
+  .col-m2caixa{ width: 9%; }
+  .col-caixas{ width: 8%; }
+  .col-valor{ width: 12%; }
+  .col-actions{ width: 5%; text-align:center; }
 
-/* Badges */
-.badge{display:inline-block;font-size:10px;padding:3px 9px;border-radius:99px;font-weight:500}
-.ok{background:#D5F0D9;color:#27AE60}
-.sug{background:#D6E8F7;color:#2471A3}
-.pend{background:#EEEBE6;color:#888}
-.warn{background:#FCE8D5;color:#E67E22}
+  .calc-value{
+    display:block;
+    text-align:right;
+    padding: 7px 9px;
+    color: var(--text-dim);
+    font-size: 13.5px;
+  }
+  .calc-caixas{
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .vin-apt{ font-size: 14px; }
+  .vin-cliente{ color: var(--text-dim); }
 
-/* Tables */
-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px}
-thead th{font-size:11px;font-weight:600;color:#888;text-align:left;padding:7px 10px;border-bottom:1px solid #E8E4DE;background:#FAF8F5}
-tbody td{padding:8px 10px;border-bottom:1px solid #F0EDE8;color:#1C1C1C;vertical-align:middle}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:#FAF8F5}
-.tr-total td{background:#EEF2F8;font-weight:600;font-size:11px;color:#1E2D4E}
-.m{font-weight:600;font-size:12px}
-.s{font-size:11px;color:#888;margin-top:2px;line-height:1.4}
-a.lnk{font-size:11px;color:#2471A3;text-decoration:none;font-weight:500}
-a.lnk:hover{text-decoration:underline}
+  select.sel-padrao{ color: var(--ok); border-color: var(--ok); }
+  select.sel-personalizado{ color: var(--accent); border-color: var(--accent); }
 
-/* Tags */
-.tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:99px;margin-right:3px;font-weight:500}
-.tag-k7{background:#D6E8F7;color:#2471A3}
-.tag-sp{background:#FEF3CD;color:#E67E22}
+  .loucas-codigo{
+    margin-top: 5px;
+    font-size: 12px;
+    padding: 5px 7px;
+  }
 
-/* PDF card */
-.pdf-card{background:#fff;border:1px solid #E8E4DE;border-radius:12px;padding:40px 24px;text-align:center;margin-top:4px}
-.pdf-icon{font-size:48px;margin-bottom:14px}
-.pdf-name{font-size:15px;font-weight:600;color:#1E2D4E;margin-bottom:6px}
-.pdf-desc{font-size:12px;color:#888;margin-bottom:24px;line-height:1.6;max-width:480px;margin-left:auto;margin-right:auto}
-.pdf-btn{display:inline-flex;align-items:center;gap:8px;padding:11px 24px;background:#1E2D4E;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;text-decoration:none;transition:opacity .15s}
-.pdf-btn:hover{opacity:0.85}
-.pdf-meta{display:flex;justify-content:center;gap:24px;margin-top:18px;font-size:11px;color:#aaa}
+  .relatorio-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 18px;
+  }
+  .relatorio-grupo h4{
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .relatorio-grupo .descritivo-list li{
+    padding: 4px 0;
+    border-bottom: none;
+    font-size: 12.5px;
+  }
 
-/* Ralos summary */
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
-.metric{background:#fff;border:1px solid #E8E4DE;border-radius:10px;padding:12px 14px;text-align:center}
-.metric-val{font-size:18px;font-weight:600;color:#1E2D4E}
-.metric-label{font-size:11px;color:#888;margin-top:2px}
+  .mini-toggle{
+    display:inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 3px;
+    margin-bottom: 18px;
+    gap: 2px;
+  }
+  .mini-toggle-btn{
+    background: transparent;
+    border:none;
+    color: var(--text-dim);
+    padding: 8px 14px;
+    font-size: 12.5px;
+    border-radius: 6px;
+    cursor:pointer;
+    font-family: inherit;
+    transition: background 0.12s, color 0.12s;
+  }
+  .mini-toggle-btn:hover{ color: var(--text); }
+  .mini-toggle-btn.active{ background: var(--accent-dim); color: var(--on-accent); }
+
+  .categoria-manager{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap: 8px;
+    margin-bottom: 18px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .categoria-manager-label{
+    font-size: 12px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 4px;
+  }
+  .categoria-chip{
+    display:inline-flex;
+    align-items:center;
+    gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px 6px 4px 12px;
+    font-size: 12.5px;
+    color: var(--text);
+  }
+  .categoria-chip button{
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 12px;
+    width: 18px; height:18px;
+    border-radius: 50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .categoria-chip button:hover{ background: var(--danger); color: #fff; }
+
+  .proj-grid{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px){ .proj-grid{ grid-template-columns: 1fr; } }
+  .proj-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+  }
+  .proj-card h3{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+  .proj-empty{
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  .proj-upload{ cursor:pointer; display:inline-block; }
+  .proj-file{ display:flex; flex-direction:column; gap: 12px; }
+  .proj-filename{
+    font-size: 14px;
+    word-break: break-word;
+  }
+  .proj-actions{ display:flex; gap: 8px; }
+  .proj-actions a{ text-decoration:none; }
+
+  .vaga-item{
+    display:flex;
+    gap: 8px;
+    align-items:center;
+    margin-bottom: 8px;
+  }
+  .vaga-item input{ flex:1; }
+
+  .valor-box{
+    margin-top: 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+  }
+  .valor-box.unlocked{ border-color: var(--accent-dim); }
+  .valor-label{
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+  }
+  .valor-total{
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .btn{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 7px 13px;
+    font-size: 13px;
+    cursor:pointer;
+    font-family: inherit;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .btn:hover{ background: #e6d9b4; border-color: var(--border); }
+  .btn-accent{ background: var(--accent-dim); border-color: var(--accent-dim); color: var(--on-accent); }
+  .btn-accent:hover{ background: var(--accent); }
+  .btn-ghost{ background:transparent; border:none; color: var(--text-dim); padding:4px 8px; }
+  .btn-ghost:hover{ color: var(--danger); background: transparent; }
+
+  .toolbar{ display:flex; gap:10px; margin-top: 18px; align-items:center; }
+
+  .total-row{
+    display:flex; gap: 22px; margin-top: 16px; padding: 14px 16px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    font-size: 13px; flex-wrap: wrap;
+  }
+  .total-row .item{ color: var(--text-dim); }
+  .total-row .item b{ color: var(--text); font-size: 14px; }
+
+  .descritivo-box{
+    margin-top: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .descritivo-box h3{
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .descritivo-list{
+    list-style: none;
+  }
+  .descritivo-list li{
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    color: var(--text);
+  }
+  .descritivo-list li:last-child{ border-bottom: none; }
+  .descritivo-m2{ color: var(--text-dim); font-size: 12.5px; }
+  .descritivo-total{
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 14.5px;
+    color: var(--text-dim);
+  }
+  .descritivo-total b{ color: var(--accent); font-size: 16px; }
+
+  .save-indicator{
+    position: fixed; bottom: 20px; right: 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 8px 14px; border-radius: 20px; font-size: 12.5px;
+    color: var(--text-dim); opacity: 0; transition: opacity 0.3s;
+    display:flex; align-items:center; gap:7px;
+  }
+  .save-indicator.show{ opacity: 1; }
+  .save-indicator .dot{ width:6px; height:6px; border-radius:50%; background: var(--ok); }
+
+  .empty-state{
+    text-align:center; padding: 50px 20px; color: var(--text-dim);
+  }
+
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background: #cbbc93; border-radius:4px; }
+
+  /* ---------- Capa ---------- */
+  .cover{
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    position:relative;
+    overflow:hidden;
+    background: var(--bg);
+    padding: 40px 24px;
+  }
+  .cover::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background-image:
+      linear-gradient(rgba(28,58,94,0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(28,58,94,0.055) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 40%, transparent 78%);
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 40%, transparent 78%);
+  }
+  .cover::after{
+    content:"";
+    position:absolute;
+    top:-20%; left:50%;
+    width:900px; height:900px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(28,58,94,0.14) 0%, transparent 65%);
+    pointer-events:none;
+  }
+  .cover-content{ position:relative; z-index:1; max-width: 560px; }
+  .cover-eyebrow{
+    font-size: 12px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 22px;
+    font-weight: 600;
+  }
+  .cover-title{
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: clamp(46px, 9vw, 76px);
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--text);
+    line-height: 1.05;
+    margin-bottom: 18px;
+  }
+  .cover-title em{
+    font-style: normal;
+    color: var(--accent);
+  }
+  .cover-rule{
+    width: 60px; height: 2px;
+    background: var(--accent-dim);
+    margin: 0 auto 22px;
+  }
+  .cover-tagline{
+    color: var(--text-dim);
+    font-size: 15.5px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+  .cover-btn{
+    background: var(--accent);
+    color: var(--on-accent);
+    border: none;
+    padding: 15px 46px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .cover-btn:hover{
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(28,58,94,0.32);
+  }
+  .cover-footer{
+    position:relative; z-index:1;
+    margin-top: 56px;
+    font-size: 11.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  /* ---------- Modal de senha / aviso ---------- */
+  .modal-overlay{
+    position: fixed; inset: 0;
+    background: rgba(10,11,13,0.7);
+    display:flex; align-items:center; justify-content:center;
+    z-index: 1000;
+    padding: 20px;
+  }
+  .modal-box{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 26px;
+    width: 100%;
+    max-width: 340px;
+  }
+  .modal-title{
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .modal-input{
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .modal-input:focus{ outline:none; border-color: var(--accent-dim); }
+  .modal-error{
+    color: var(--danger);
+    font-size: 12.5px;
+    margin-top: 10px;
+  }
+  .modal-msg{
+    color: var(--text-dim);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .modal-actions{
+    display:flex;
+    justify-content:flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+
+  /* ---------- Mobile / responsivo ---------- */
+  .mobile-topbar{
+    display:none;
+    position: fixed;
+    top:0; left:0; right:0;
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    align-items:center;
+    gap: 14px;
+    padding: 0 16px;
+    z-index: 400;
+  }
+  .mobile-topbar-title{ font-weight:600; font-size:15px; color: var(--text); }
+  .hamburger-btn{
+    background:none; border:none; padding:6px; cursor:pointer;
+    display:flex; flex-direction:column; gap:4px; justify-content:center;
+  }
+  .hamburger-btn span{
+    display:block; width:22px; height:2px; background: var(--text); border-radius:2px;
+  }
+  .sidebar-overlay{
+    display:none;
+    position: fixed; inset:0;
+    background: rgba(20,25,35,0.45);
+    z-index: 450;
+  }
+  .sidebar-overlay.show{ display:block; }
+
+  @media (max-width: 860px){
+    .mobile-topbar{ display:flex; }
+    .layout{ flex-direction: column; }
+    .sidebar{
+      position: fixed;
+      top:0; left:0;
+      height: 100vh;
+      width: 84%;
+      max-width: 320px;
+      z-index: 500;
+      transform: translateX(-100%);
+      transition: transform 0.25s ease;
+      box-shadow: 10px 0 30px rgba(20,25,35,0.25);
+      overflow-y: auto;
+    }
+    .sidebar.open{ transform: translateX(0); }
+    .main{
+      width: 100%;
+      padding: 72px 16px 32px;
+    }
+    .proj-grid{ grid-template-columns: 1fr; }
+    .main-header{ align-items:flex-start; }
+    .main-header h2{ font-size: 19px; }
+    thead th, tbody td{ padding: 8px 10px; font-size: 12.5px; }
+    .modal-box{ max-width: 92%; }
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.2/firebase-database-compat.min.js"></script>
 </head>
 <body>
-<div class="container">
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-left">
-      <div class="proj">Vista Park Residencial</div>
-      <div class="titulo">Térreo — Levantamento para Aprovação</div>
+<div class="cover" id="coverScreen">
+  <div class="cover-content">
+    <div class="cover-eyebrow">Residencial 166 · Jardim do Mar · São Bernardo do Campo</div>
+    <h1 class="cover-title">VISTA <em>PARK</em></h1>
+    <div class="cover-rule"></div>
+    <p class="cover-tagline">Gestão de personalização de acabamentos e acompanhamento de obra.</p>
+    <button class="cover-btn" onclick="attemptAccess()">Acessar</button>
+  </div>
+  <div class="cover-footer">Absoluta Construtora e Incorporadora</div>
+</div>
+
+<div id="appScreen" style="display:none;">
+<div class="mobile-topbar" id="mobileTopbar">
+  <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Abrir menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="mobile-topbar-title">Vista Park</span>
+</div>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="layout">
+  <div class="sidebar" id="sidebarWrap">
+    <div class="section-title" style="margin-bottom:4px;">Vista Park</div>
+    <div class="tab-switch" id="topSwitch" style="margin-bottom:20px;">
+      <button class="tab-btn active" id="tabPersonalize" onclick="switchTopSection('personalize')">Personalize</button>
+      <button class="tab-btn" id="tabCronograma" onclick="switchTopSection('cronograma')">Cronograma</button>
     </div>
-    <div class="header-right">
-      <div class="dead">⏰ Deadline: 12h00</div>
-      <div class="clk" id="remain">--:--:--</div>
+    <div class="section-title" id="unitsCountLabel">24 unidades</div>
+    <div class="tab-switch" id="mainSwitch">
+      <button class="tab-btn active" id="tabProjetos" onclick="switchMainSection('projetos')">Civil</button>
+      <button class="tab-btn" id="tabAcabamentos" onclick="switchMainSection('acabamentos')">Acabamentos</button>
+      <button class="tab-btn" id="tabVagas" onclick="switchMainSection('vagas')">Vagas/Depósitos</button>
     </div>
-  </div>
-
-  <!-- Tabs -->
-  <div class="tabs">
-    <button class="tab active" onclick="show('ac',this)">❄️ Ar-condicionado</button>
-    <button class="tab" onclick="show('elet',this)">🔌 Eletrodomésticos</button>
-    <button class="tab" onclick="show('ralos',this)">📐 Pedras dos Ralos</button>
-    <button class="tab" onclick="show('moveis',this)">🛋️ Móveis e Adornos</button>
-  </div>
-
-  <!-- AR CONDICIONADO -->
-  <div class="pane active" id="pane-ac">
-    <div class="ph"><div class="pt">Ar-condicionado — Térreo</div><span class="badge ok">✓ Levantado</span></div>
-    <table>
-      <thead><tr><th>Ambiente</th><th>Equipamento</th><th style="text-align:right">Total BTUs</th></tr></thead>
-      <tbody>
-        <tr><td>Academia</td><td><span class="tag tag-k7">K7 28k BTUs ×2</span><span class="tag tag-sp">Split 12k ×1</span></td><td style="text-align:right">68.000</td></tr>
-        <tr><td>Salão de festas</td><td><span class="tag tag-k7">K7 24k BTUs ×2</span><span class="tag tag-sp">Split 24k ×1</span></td><td style="text-align:right">72.000</td></tr>
-        <tr><td>Sala de massagem</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
-        <tr><td>Salão de beleza</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
-        <tr><td>Brinquedoteca</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
-        <tr><td>Guarita</td><td><span class="tag tag-sp">Split 12k BTUs ×1</span></td><td style="text-align:right">12.000</td></tr>
-        <tr class="tr-total"><td colspan="2">Total — 4 máquinas K7 · 6 splits · 10 equipamentos</td><td style="text-align:right">188.000 BTUs</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- ELETROS -->
-  <div class="pane" id="pane-elet">
-    <div class="ph"><div class="pt">Eletrodomésticos · Electrolux</div><span class="badge sug">Sugestão para aprovação</span></div>
-
-    <div class="sec-label">Salão de Festas</div>
-    <table>
-      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
-      <tbody>
-        <tr><td>🧊 Geladeira</td><td><div class="m">TF55S Multidoor</div></td><td><div class="s">590L · Frost Free · 3 portas inox · IceTwister</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-electrolux-frost-free-596l-efficient-com-autosense-3-portas-cor-inox-look--im8s-/p" target="_blank">↗ Ver</a></td></tr>
-        <tr><td>🔥 Forno embutir</td><td><div class="m">OE8MX</div></td><td><div class="s">80L · PerfectCook360 · grill · inox</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/forno-eletrico-de-embutir-80l-inox-oe8mx-electrolux/p" target="_blank">↗ Ver</a></td></tr>
-        <tr><td>📡 Micro-ondas embutir</td><td><div class="m">ME3HP</div></td><td><div class="s">34L · inox · grill · Tira Odor · Home Pro</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/micro-ondas-electrolux-34l-inox-home-pro-com-grill-e-funcao-tira-odor--me3hp-/p" target="_blank">↗ Ver</a></td></tr>
-        <tr><td>🍳 Cooktop gás</td><td><div class="m">KE4GP</div></td><td><div class="s">4 bocas · vidro preto · acend. automático</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/cooktop-a-gas-4-bocas--ke4gp-electrolux/p" target="_blank">↗ Ver</a></td></tr>
-        <tr><td>💨 Coifa ilha</td><td><div class="m">90CIT Blue Touch</div></td><td><div class="s">90cm · inox · timer · depurador + exaustor · sem duto ✓</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/coifa-blue-touch-90cm-de-ilha-inox-90cit-electrolux/p" target="_blank">↗ Ver</a></td></tr>
-      </tbody>
-    </table>
-
-    <div class="sec-label">Copa de Funcionários</div>
-    <table>
-      <thead><tr><th>Item</th><th>Modelo</th><th>Especificação</th><th>Link</th></tr></thead>
-      <tbody>
-        <tr><td>🧊 Geladeira</td><td><div class="m">TF39S</div></td><td><div class="s">310L · inox · Frost Free · painel externo</div></td><td><a class="lnk" href="https://loja.electrolux.com.br/geladeira-refrigerador-frost-free-310-litros-platinum-tf39s-electrolux/p" target="_blank">↗ Ver</a></td></tr>
-      </tbody>
-    </table>
-
-    <div class="sec-label">TVs</div>
-    <table>
-      <thead><tr><th>Ambiente</th><th>Tamanho</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>Academia</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
-        <tr><td>Brinquedoteca</td><td><div class="m">65"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
-        <tr><td>Salão de jogos</td><td><div class="m">75"</div></td><td><span class="badge pend">Fornecedor a definir</span></td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- RALOS -->
-  <div class="pane" id="pane-ralos">
-    <div class="ph"><div class="pt">Pedras dos Ralos — Seixo Rolado</div><span class="badge ok">✓ Levantado</span></div>
-    <table>
-      <thead><tr><th>Dado</th><th>Valor</th><th>Observação</th></tr></thead>
-      <tbody>
-        <tr><td>Comprimento total</td><td>114 m</td><td><div class="s">Ralo linear corrido</div></td></tr>
-        <tr><td>Largura</td><td>12 cm</td><td></td></tr>
-        <tr><td>Profundidade</td><td>4 cm</td><td><div class="s">Preenchimento total</div></td></tr>
-        <tr><td>Área de cobertura</td><td>13,68 m²</td><td><div class="s">114 × 0,12m</div></td></tr>
-        <tr><td>Volume total</td><td>0,5472 m³</td><td><div class="s">114 × 0,12 × 0,04</div></td></tr>
-        <tr><td>Densidade seixo</td><td>1.500 kg/m³</td><td><div class="s">Média para seixo solto/ensacado</div></td></tr>
-        <tr class="tr-total"><td>Quantidade para compra</td><td>≈ 900 kg</td><td>45 sacos de 20kg · inclui 10% folga</td></tr>
-      </tbody>
-    </table>
-    <div class="metrics">
-      <div class="metric"><div class="metric-val">13,68 m²</div><div class="metric-label">Área total</div></div>
-      <div class="metric"><div class="metric-val">≈ 900 kg</div><div class="metric-label">Peso estimado</div></div>
-      <div class="metric"><div class="metric-val">45 sacos</div><div class="metric-label">Sacos de 20kg</div></div>
+    <div class="tab-switch" id="subSwitch" style="display:none;">
+      <button class="tab-btn active" id="tabRevestimentos" onclick="switchSubSection('revestimentos')">Revestimentos</button>
+      <button class="tab-btn" id="tabVinilico" onclick="switchSubSection('vinilico')">Vinílico</button>
+      <button class="tab-btn" id="tabMarmoraria" onclick="switchSubSection('marmoraria')">Marmoraria</button>
+      <button class="tab-btn" id="tabLoucas" onclick="switchSubSection('loucas')">Louças/Metais</button>
+      <button class="tab-btn" id="tabEnvidracamento" onclick="switchSubSection('envidracamento')">Envidraçamento</button>
+    </div>
+    <div class="tab-switch" id="loucasSubSwitch" style="display:none;">
+      <button class="tab-btn active" id="tabLoucasMacro" onclick="switchLoucasSubTab('macro')">Controle Macro</button>
+      <button class="tab-btn" id="tabLoucasDeca" onclick="switchLoucasSubTab('deca')">Deca</button>
+    </div>
+    <div class="tab-switch" id="vagasSubSwitch" style="display:none;">
+      <button class="tab-btn active" id="tabVagasBase" onclick="switchVagasSubTab('base')">Base</button>
+      <button class="tab-btn" id="tabVagasDestinacao" onclick="switchVagasSubTab('destinacao')">Destinação</button>
+    </div>
+    <div id="revestimentosNav">
+      <h1 id="sidebarLabel"><span>Projetos</span>Alvenarias, Elétrica, Hidráulica e AC</h1>
+      <ul class="unit-list" id="unitList"></ul>
     </div>
   </div>
 
-  <!-- MÓVEIS E ADORNOS -->
-  <div class="pane" id="pane-moveis">
-    <div class="ph"><div class="pt">Móveis e Adornos</div><span class="badge sug">Sugestão para aprovação</span></div>
-    <div class="pdf-card">
-      <div class="pdf-icon">📋</div>
-      <div class="pdf-name">VISTA PARK — Ambientação Térreo</div>
-      <div class="pdf-desc">
-        Documento completo com todas as referências de móveis e adornos organizadas por fornecedor e ambiente.<br/>
-        Aluminas · Matrezan · Delinear · Opera House · Web Cadeiras · Ragonezi · Brinquedoteca · Entrecasa Decor
+  <div class="main">
+    <div class="main-header">
+      <div>
+        <h2 id="unitTitle">—</h2>
+        <div class="subtitle" id="unitSubtitle">Selecione uma unidade</div>
       </div>
-      <a class="pdf-btn" href="VISTA_PARK_Ambientacao_Terreo_FINAL.pdf" target="_blank">
-        ↗ Abrir PDF de Móveis e Adornos
-      </a>
-      <div class="pdf-meta">
-        <span>📄 19 páginas</span>
-        <span>🏢 8 fornecedores</span>
-        <span>🛋️ Móveis · Adornos · Referências</span>
-      </div>
+      <div class="summary-pill" id="summaryPill"></div>
+    </div>
+
+    <div id="content"></div>
+  </div>
+</div>
+
+<div class="save-indicator" id="saveIndicator"><span class="dot"></span>Salvo</div>
+
+<div class="modal-overlay" id="passwordModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="pwModalTitle">Senha</div>
+    <input type="password" id="pwModalInput" class="modal-input" placeholder="Digite a senha" onkeydown="if(event.key==='Enter') pwModalSubmit()">
+    <div class="modal-error" id="pwModalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="pwModalCancel()">Cancelar</button>
+      <button class="btn btn-accent" onclick="pwModalSubmit()">Confirmar</button>
     </div>
   </div>
+</div>
 
+<div class="modal-overlay" id="alertModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="alertModalTitle">Aviso</div>
+    <div class="modal-msg" id="alertModalMsg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-accent" onclick="closeAlertModal()">Entendi</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="textModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="textModalTitle">Novo item</div>
+    <input type="text" id="textModalInput" class="modal-input" placeholder="Digite aqui" onkeydown="if(event.key==='Enter') textModalSubmit()">
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="textModalCancel()">Cancelar</button>
+      <button class="btn btn-accent" onclick="textModalSubmit()">Adicionar</button>
+    </div>
+  </div>
+</div>
 </div>
 
 <script>
-function show(id, btn){
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('pane-'+id).classList.add('active');
-  btn.classList.add('active');
+// ---------- Firebase (banco de dados real, funciona fora do Claude) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyANkTPrGUzU-Fx0jQLV6B4bW6Q5tWogJXw",
+  authDomain: "vista-park-a24da.firebaseapp.com",
+  databaseURL: "https://vista-park-a24da-default-rtdb.firebaseio.com",
+  projectId: "vista-park-a24da",
+  storageBucket: "vista-park-a24da.firebasestorage.app",
+  messagingSenderId: "30074527049",
+  appId: "1:30074527049:web:8349ace4508f09a06d4e98"
+};
+firebase.initializeApp(firebaseConfig);
+const firebaseDb = firebase.database();
+
+// Substitui o armazenamento de teste do Claude (window.storage) por Firebase Realtime Database.
+// Mesma "forma" de chamada usada no resto do código (get/set com a mesma assinatura),
+// então nenhuma outra parte do dashboard precisa mudar.
+function chaveFirebase(key){
+  // Firebase não aceita ".", "#", "$", "[", "]" em chaves — troca por "_" por segurança.
+  return String(key).replace(/[.#$\[\]]/g, "_");
 }
-function tick(){
-  const now=new Date(), dl=new Date(now);
-  dl.setHours(12,0,0,0);
-  if(dl<=now) dl.setDate(dl.getDate()+1);
-  const diff=Math.max(0,Math.floor((dl-now)/1000));
-  const h=Math.floor(diff/3600), m=Math.floor((diff%3600)/60), s=diff%60;
-  document.getElementById('remain').textContent=
-    String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0')+' restante';
+
+window.storage = {
+  async get(key){
+    const snap = await firebaseDb.ref("vistapark/" + chaveFirebase(key)).once("value");
+    const val = snap.val();
+    if(val === null || val === undefined) return null;
+    return { key, value: val, shared: true };
+  },
+  async set(key, value){
+    await firebaseDb.ref("vistapark/" + chaveFirebase(key)).set(value);
+    return { key, value, shared: true };
+  },
+  async delete(key){
+    await firebaseDb.ref("vistapark/" + chaveFirebase(key)).remove();
+    return { key, deleted: true, shared: true };
+  },
+  async list(prefix){
+    const snap = await firebaseDb.ref("vistapark").once("value");
+    const all = snap.val() || {};
+    const keys = Object.keys(all).filter(k => !prefix || k.startsWith(chaveFirebase(prefix)));
+    return { keys, shared: true };
+  }
+};
+
+const APTS = [11,12,21,22,31,32,41,42,51,52,61,62,71,72,81,82,91,92,101,102,111,112,121,122];
+const CLIENTES = {
+  11: "Márcia",
+  12: "Não vendido | Não personalizado",
+  21: "Não vendido | Personalizado",
+  22: "Paula e Rafael",
+  31: "Sabina e Evandro",
+  32: "Larissa e Pedro",
+  41: "Kelly e Maurício",
+  42: "Marco e Maristela",
+  51: "Regina e Ricardo",
+  52: "Carlos e Sônia",
+  61: "Adriana e Rafael",
+  62: "Priscila e Giuliano",
+  71: "Antônio e Renata",
+  72: "Maria Cláudia e Ruy",
+  81: "Ricardo e Roseli",
+  82: "Nathalia Frederice",
+  91: "Permutante | Personalizado",
+  92: "Wellington e Keylane",
+  101: "Luiz e Évora",
+  102: "Permutante | Personalizado",
+  111: "Permutante | Personalizado",
+  112: "Miriam e Derisson",
+  121: "Tio Léo",
+  122: "Cláudio e Ana"
+};
+let mainSection = 'projetos';
+let subSection = 'revestimentos';
+let loucasSubTab = 'macro';
+let loucasMacroView = 'matriz';
+const AMBIENTES_PADRAO = [
+  "Área de Serviço","Banho de Serviço","Despensa","Living","Corredor","Hall Social",
+  "Lavabo","Demi Suíte 01","Demi Suíte 02","Banho Demi","Hall Banho Demi",
+  "Suíte 03","Banho Suíte 03","Suíte Master","Closet","Banho Suíte Master"
+];
+const APLICACOES = ["Piso","Parede","Rodapé"];
+
+// ---------- Modal de senha / aviso (substitui prompt()/alert() do navegador) ----------
+let _pwResolve = null;
+
+function askPassword(title, erro){
+  return new Promise(resolve => {
+    _pwResolve = resolve;
+    document.getElementById("pwModalTitle").textContent = title;
+    const input = document.getElementById("pwModalInput");
+    input.value = "";
+    const errEl = document.getElementById("pwModalError");
+    if(erro){ errEl.textContent = erro; errEl.style.display = ''; }
+    else { errEl.style.display = 'none'; }
+    document.getElementById("passwordModal").style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+  });
 }
-tick(); setInterval(tick,1000);
+
+function pwModalSubmit(){
+  const val = document.getElementById("pwModalInput").value;
+  document.getElementById("passwordModal").style.display = 'none';
+  if(_pwResolve){ _pwResolve(val); _pwResolve = null; }
+}
+
+function pwModalCancel(){
+  document.getElementById("passwordModal").style.display = 'none';
+  if(_pwResolve){ _pwResolve(null); _pwResolve = null; }
+}
+
+function showAlert(msg, title){
+  document.getElementById("alertModalTitle").textContent = title || "Aviso";
+  document.getElementById("alertModalMsg").textContent = msg;
+  document.getElementById("alertModal").style.display = 'flex';
+}
+
+function closeAlertModal(){
+  document.getElementById("alertModal").style.display = 'none';
+}
+
+let _textResolve = null;
+
+function askText(title){
+  return new Promise(resolve => {
+    _textResolve = resolve;
+    document.getElementById("textModalTitle").textContent = title;
+    const input = document.getElementById("textModalInput");
+    input.value = "";
+    document.getElementById("textModal").style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+function textModalSubmit(){
+  const val = document.getElementById("textModalInput").value.trim();
+  document.getElementById("textModal").style.display = 'none';
+  if(_textResolve){ _textResolve(val || null); _textResolve = null; }
+}
+
+function textModalCancel(){
+  document.getElementById("textModal").style.display = 'none';
+  if(_textResolve){ _textResolve(null); _textResolve = null; }
+}
+
+// ---------- Acesso ao dashboard (capa) ----------
+// A capa em si não pede senha — cada subcamada (Personalize / Cronograma) tem sua própria.
+// Senhas provisórias do protótipo — trocar antes de usar em produção.
+// Na versão final (Firebase + login da equipe), isso vira login de verdade por usuário.
+const SENHAS_SUBCAMADA = {
+  personalize: "26354",
+  cronograma: "72635"
+};
+let subcamadaLiberada = { personalize: false, cronograma: false };
+
+function attemptAccess(){
+  document.getElementById("coverScreen").style.display = "none";
+  document.getElementById("appScreen").style.display = "";
+  initApp();
+}
+
+async function pedirSenhaSubcamada(section){
+  if(subcamadaLiberada[section]) return true;
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : 'Cronograma';
+  let erro = '';
+  while(true){
+    const senha = await askPassword("Senha para acessar " + nomeAmigavel, erro);
+    if(senha === null) return false;
+    if(senha === SENHAS_SUBCAMADA[section]){
+      subcamadaLiberada[section] = true;
+      return true;
+    }
+    erro = 'Senha incorreta. Tente novamente.';
+  }
+}
+
+function renderSubcamadaBloqueada(section){
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : 'Cronograma';
+  document.getElementById("unitTitle").textContent = nomeAmigavel;
+  document.getElementById("unitSubtitle").textContent = "Acesso restrito";
+  document.getElementById("summaryPill").textContent = "";
+  document.getElementById("content").innerHTML = `
+    <div class="empty-state">
+      🔒 Essa área é protegida por senha.
+      <div class="toolbar" style="justify-content:center; margin-top:16px;">
+        <button class="btn btn-accent" onclick="switchTopSection('${section}')">Tentar novamente</button>
+      </div>
+    </div>`;
+}
+
+let topSection = 'personalize';
+
+async function switchTopSection(section){
+  document.getElementById("tabPersonalize").classList.toggle("active", section === 'personalize');
+  document.getElementById("tabCronograma").classList.toggle("active", section === 'cronograma');
+
+  const mainSwitch = document.getElementById("mainSwitch");
+  const subSwitch = document.getElementById("subSwitch");
+  const loucasSwitch = document.getElementById("loucasSubSwitch");
+  const nav = document.getElementById("revestimentosNav");
+  const unitsLabel = document.getElementById("unitsCountLabel");
+
+  const granted = await pedirSenhaSubcamada(section);
+  if(!granted){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    nav.style.display = 'none';
+    unitsLabel.style.display = 'none';
+    document.getElementById("tabPersonalize").classList.toggle("active", topSection === 'personalize');
+    document.getElementById("tabCronograma").classList.toggle("active", topSection === 'cronograma');
+    renderSubcamadaBloqueada(section);
+    return;
+  }
+
+  topSection = section;
+
+  if(section === 'cronograma'){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    nav.style.display = 'none';
+    unitsLabel.style.display = 'none';
+    renderCronograma();
+  } else {
+    mainSwitch.style.display = '';
+    unitsLabel.style.display = '';
+    switchMainSection(mainSection);
+  }
+}
+
+// ---------- Valores protegidos por senha ----------
+// Senha provisória do protótipo — trocar antes de usar em produção.
+// Na versão final (Firebase + login da equipe), isso vira controle de permissão de usuário, não senha fixa.
+const VALOR_SENHA = "vistapark2026";
+let unlockedValues = {};
+
+function rerenderCurrentView(){
+  if(topSection === 'cronograma'){ renderCronograma(); return; }
+  if(mainSection === 'projetos'){ renderProjetos(currentApt); }
+  else if(subSection === 'revestimentos'){ renderTable(); }
+  else if(subSection === 'marmoraria'){ renderMarmoraria(); }
+  else if(subSection === 'vinilico'){ renderVinilicoTable(); }
+}
+
+async function unlockValue(key){
+  let erro = '';
+  while(true){
+    const senha = await askPassword("Senha para ver o valor", erro);
+    if(senha === null) return;
+    if(senha === VALOR_SENHA){ unlockedValues[key] = true; rerenderCurrentView(); return; }
+    erro = 'Senha incorreta. Tente novamente.';
+  }
+}
+
+function lockValue(key){
+  unlockedValues[key] = false;
+  rerenderCurrentView();
+}
+
+function valorGateHtml(key, total, label){
+  if(unlockedValues[key]){
+    return `
+    <div class="valor-box unlocked">
+      <div>
+        <div class="valor-label">${label}</div>
+        <div class="valor-total">R$ ${total.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      </div>
+      <button class="btn btn-ghost" onclick="lockValue('${key}')">🔒 Ocultar</button>
+    </div>`;
+  }
+  return `
+    <div class="valor-box locked">
+      <div class="valor-label">${label}</div>
+      <button class="btn btn-accent" onclick="unlockValue('${key}')">🔒 Ver valor</button>
+    </div>`;
+}
+
+let state = {};
+let currentApt = null;
+
+function emptyRow(){
+  return { ambiente: AMBIENTES_PADRAO[0], aplicacao: "Piso", material: "", metragem: "", m2caixa: "", valor: "" };
+}
+
+function calcPerda(metragem){
+  const v = parseFloat(metragem);
+  if(isNaN(v) || v <= 0) return 0;
+  return v * 1.2;
+}
+
+function calcCaixas(metragem, m2caixa){
+  const area = calcPerda(metragem);
+  const cob = parseFloat(m2caixa);
+  if(area <= 0 || isNaN(cob) || cob <= 0) return 0;
+  return Math.ceil(area / cob);
+}
+
+function keyFor(apt){ return "revestimentos:apt_" + apt; }
+
+async function loadUnit(apt){
+  try{
+    const res = await window.storage.get(keyFor(apt), true);
+    state[apt] = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    state[apt] = [];
+  }
+}
+
+async function saveUnit(apt){
+  try{
+    await window.storage.set(keyFor(apt), JSON.stringify(state[apt]), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar", e);
+  }
+}
+
+function flashSaved(){
+  const el = document.getElementById("saveIndicator");
+  el.classList.add("show");
+  clearTimeout(window.__saveTimer);
+  window.__saveTimer = setTimeout(()=> el.classList.remove("show"), 1200);
+}
+
+// ---------- Marmoraria ----------
+const AMBIENTES_MARMORARIA = [
+  "Área de Serviço","Banho de Serviço","Living","Lavabo","Banho Demi","Banho 03","Banho Master","Extra"
+];
+let marmState = {};
+
+function emptyMarmRow(){
+  return { ambiente: AMBIENTES_MARMORARIA[0], extraDescricao: "", material: "", metragem: "", areaChapa: "", valorChapa: "" };
+}
+
+function marmKeyFor(apt){ return "marmoraria:apt_" + apt; }
+
+async function loadMarmUnit(apt){
+  try{
+    const res = await window.storage.get(marmKeyFor(apt), true);
+    marmState[apt] = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    marmState[apt] = [];
+  }
+}
+
+async function saveMarmUnit(apt){
+  try{
+    await window.storage.set(marmKeyFor(apt), JSON.stringify(marmState[apt]), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar marmoraria", e);
+  }
+}
+
+function calcChapasNecessarias(areaUsada, areaChapa){
+  const a = parseFloat(areaUsada);
+  const c = parseFloat(areaChapa);
+  if(isNaN(a) || a <= 0 || isNaN(c) || c <= 0) return 0;
+  return Math.ceil(a / c);
+}
+
+function statusFor(rows){
+  if(!rows || rows.length === 0) return "empty";
+  const filled = rows.filter(r => r.material && r.metragem).length;
+  if(filled === 0) return "empty";
+  if(filled < rows.length) return "partial";
+  return "complete";
+}
+
+async function renderSidebar(){
+  const ul = document.getElementById("unitList");
+  ul.innerHTML = "";
+  for(const apt of APTS){
+    let st;
+    if(mainSection === 'projetos'){
+      if(!(apt in projetosData)) await loadProjetosUnit(apt);
+      const d = projetosData[apt] || {};
+      const count = ['civil_eletrica','hidraulica_ar'].filter(k => d[k]).length;
+      st = count === 0 ? 'empty' : (count < 2 ? 'partial' : 'complete');
+    } else if(mainSection === 'vagas'){
+      if(!(apt in vagasState)) await loadVagasUnit(apt);
+      const d = vagasState[apt] || { vagas: [], depositos: [] };
+      const total = d.vagas.length + d.depositos.length;
+      st = total === 0 ? 'empty' : (d.vagas.length === 0 || d.depositos.length === 0 ? 'partial' : 'complete');
+    } else if(subSection === 'marmoraria'){
+      if(!(apt in marmState)) await loadMarmUnit(apt);
+      st = statusFor(marmState[apt]);
+    } else if(subSection === 'loucas' && loucasSubTab === 'deca'){
+      if(!(apt in decaState)) await loadDecaUnit(apt);
+      const items = decaState[apt] || [];
+      if(items.length === 0) st = 'empty';
+      else { const arrived = items.filter(it => it.chegou).length; st = arrived === 0 ? 'partial' : (arrived < items.length ? 'partial' : 'complete'); }
+    } else {
+      if(!(apt in state)) await loadUnit(apt);
+      st = statusFor(state[apt]);
+    }
+    const li = document.createElement("li");
+    const cliente = CLIENTES[apt] || "";
+    const isSpecial = /não vendido|permutante/i.test(cliente);
+    li.className = "unit-item" + (apt === currentApt ? " active" : "") + (isSpecial ? " special" : "");
+    li.innerHTML = `
+      <span class="apt-info">
+        <span class="apt-num">Apto ${apt}</span>
+        <span class="apt-client">${escapeHtml(cliente)}</span>
+      </span>
+      <span class="unit-dot dot-${st}" style="flex-shrink:0;"></span>`;
+    li.onclick = () => selectUnit(apt);
+    ul.appendChild(li);
+  }
+}
+
+// ---------- Projetos (Civil+Elétrica / Hidráulica+AC) ----------
+let projetosData = {};
+
+async function loadProjetosUnit(apt){
+  try{
+    const res = await window.storage.get("projetos:apt_" + apt, true);
+    projetosData[apt] = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    projetosData[apt] = {};
+  }
+}
+
+async function saveProjetosUnit(apt){
+  try{
+    await window.storage.set("projetos:apt_" + apt, JSON.stringify(projetosData[apt]), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar projeto", e);
+  }
+}
+
+async function renderProjetos(apt){
+  if(!(apt in projetosData)) await loadProjetosUnit(apt);
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Documentos técnicos (PDF)";
+  document.getElementById("summaryPill").textContent = "";
+
+  const categorias = [
+    { key: 'civil_eletrica', label: 'Civil + Elétrica' },
+    { key: 'hidraulica_ar', label: 'Hidráulica + Ar Condicionado' }
+  ];
+
+  const cardsHtml = categorias.map(c => {
+    const d = (projetosData[apt] || {})[c.key];
+    return `
+    <div class="proj-card">
+      <h3>${c.label}</h3>
+      ${d ? `
+        <div class="proj-file">
+          <span class="proj-filename">📄 ${escapeHtml(d.filename)}</span>
+          <div class="proj-actions">
+            <a class="btn btn-accent" href="${d.data}" target="_blank" rel="noopener">Abrir PDF</a>
+            <button class="btn btn-ghost" onclick="removeProjeto(${apt}, '${c.key}')">Remover</button>
+          </div>
+        </div>
+      ` : `
+        <div class="proj-empty">Nenhum PDF anexado ainda.</div>
+        <label class="proj-upload">
+          <input type="file" accept="application/pdf" onchange="handleProjetoUpload(${apt}, '${c.key}', this)" style="display:none;">
+          <span class="btn btn-accent">+ Anexar PDF</span>
+        </label>
+      `}
+    </div>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    <div class="proj-grid">${cardsHtml}</div>
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarProjetosPDF(${apt})">📄 Exportar ficha PDF</button>
+    </div>
+  `;
+}
+
+function exportarProjetosPDF(apt){
+  const cliente = CLIENTES[apt] || "";
+  const d = projetosData[apt] || {};
+  const linhas = [
+    "Civil + Elétrica: " + (d.civil_eletrica ? "Anexado (" + d.civil_eletrica.filename + ")" : "Não anexado"),
+    "Hidráulica + Ar Condicionado: " + (d.hidraulica_ar ? "Anexado (" + d.hidraulica_ar.filename + ")" : "Não anexado")
+  ];
+  exportarListaPDF(
+    "Projetos Técnicos — Apartamento " + apt,
+    cliente,
+    [{ titulo: "Status dos documentos", linhas }],
+    "projetos_apto_" + apt + ".pdf"
+  );
+}
+
+function handleProjetoUpload(apt, categoria, input){
+  const file = input.files[0];
+  if(!file) return;
+  if(file.type !== 'application/pdf'){
+    showAlert("Só é possível anexar arquivos em PDF.");
+    return;
+  }
+  if(file.size > 4 * 1024 * 1024){
+    showAlert("Esse PDF passa de 4MB — limite deste protótipo. Na versão final, com Firebase Storage, esse limite não existe.");
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = async () => {
+    if(!projetosData[apt]) projetosData[apt] = {};
+    projetosData[apt][categoria] = { filename: file.name, data: reader.result, uploadedAt: new Date().toISOString() };
+    await saveProjetosUnit(apt);
+    await renderProjetos(apt);
+    renderSidebar();
+  };
+  reader.readAsDataURL(file);
+}
+
+async function removeProjeto(apt, categoria){
+  if(projetosData[apt]) delete projetosData[apt][categoria];
+  await saveProjetosUnit(apt);
+  await renderProjetos(apt);
+  renderSidebar();
+}
+
+// ---------- Vinílico macro spreadsheet ----------
+let vinilicoData = {};
+
+async function loadVinilico(){
+  try{
+    const res = await window.storage.get("vinilico:macro", true);
+    vinilicoData = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    vinilicoData = {};
+  }
+}
+
+async function saveVinilico(){
+  try{
+    await window.storage.set("vinilico:macro", JSON.stringify(vinilicoData), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar vinílico", e);
+  }
+}
+
+async function updateVinilico(apt, field, value){
+  if(!vinilicoData[apt]) vinilicoData[apt] = {};
+  vinilicoData[apt][field] = value;
+  await saveVinilico();
+  renderVinilicoTable();
+}
+
+async function renderVinilicoMacro(){
+  await loadVinilico();
+  renderVinilicoTable();
+}
+
+function renderVinilicoTable(){
+  document.getElementById("unitTitle").textContent = "Vinílico";
+  document.getElementById("unitSubtitle").textContent = "Planilha macro · cor/código escolhido por apartamento";
+  document.getElementById("summaryPill").textContent = APTS.length + " unidades";
+
+  const rows = APTS.map(apt => {
+    const cliente = CLIENTES[apt] || "";
+    const d = vinilicoData[apt] || {};
+    return `
+    <tr>
+      <td class="vin-apt"><b>${apt}</b></td>
+      <td class="vin-cliente">${escapeHtml(cliente)}</td>
+      <td>
+        <input type="text" placeholder="ex: Carvalho Areia" value="${escapeHtml(d.codigo||'')}" onchange="updateVinilico(${apt}, 'codigo', this.value)">
+      </td>
+      <td>
+        <input type="number" step="0.01" placeholder="0.00" value="${d.metragem||''}" onchange="updateVinilico(${apt}, 'metragem', this.value)">
+      </td>
+      <td>
+        <input type="number" step="0.01" placeholder="R$ 0,00" value="${d.valor||''}" onchange="updateVinilico(${apt}, 'valor', this.value)">
+      </td>
+    </tr>`;
+  }).join('');
+
+  let totalValorGeral = 0;
+  APTS.forEach(apt => { const v = parseFloat((vinilicoData[apt]||{}).valor); if(!isNaN(v)) totalValorGeral += v; });
+
+  const totaisPorModelo = {};
+  APTS.forEach(apt => {
+    const d = vinilicoData[apt] || {};
+    if(d.codigo){
+      const v = parseFloat(d.metragem) || 0;
+      totaisPorModelo[d.codigo] = (totaisPorModelo[d.codigo] || 0) + v;
+    }
+  });
+  const totalGeral = Object.values(totaisPorModelo).reduce((a,b) => a+b, 0);
+
+  const vinilicoTotais = Object.keys(totaisPorModelo).length ? `
+    <div class="descritivo-box">
+      <h3>Quantitativo total por modelo</h3>
+      <ul class="descritivo-list">
+        ${Object.entries(totaisPorModelo).map(([mod, m2]) =>
+          `<li><b>${escapeHtml(mod)}</b> <span class="descritivo-m2">${m2.toFixed(2)} m²</span></li>`).join('')}
+      </ul>
+      <div class="descritivo-total">Total geral vinílico: <b>${totalGeral.toFixed(2)} m²</b></div>
+    </div>` : '';
+
+  document.getElementById("content").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:7%">Apto</th>
+          <th style="width:27%">Cliente</th>
+          <th style="width:32%">Cor / Código do Vinílico</th>
+          <th style="width:16%">Área (m²)</th>
+          <th style="width:18%">Valor (R$)</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${vinilicoTotais}
+    ${valorGateHtml('vinilico_geral', totalValorGeral, 'Valor total geral — Vinílico')}
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarVinilicoPDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarVinilicoPDF(){
+  const head = ["Apto", "Cliente", "Cor/Código", "Área (m²)"];
+  const body = APTS.map(apt => {
+    const d = vinilicoData[apt] || {};
+    return [apt, CLIENTES[apt] || "", d.codigo || "—", d.metragem || "—"];
+  });
+  exportarTabelaPDF(
+    "Vinílico — Planilha Macro",
+    "Todas as unidades",
+    head, body,
+    { filename: "vinilico_macro.pdf" }
+  );
+}
+
+// ---------- Louças e Metais Construtora macro spreadsheet ----------
+const ITENS_LOUCAS = [
+  { ambiente: "Área de Serviço", item: "Tanque" },
+  { ambiente: "Área de Serviço", item: "Torneira" },
+  { ambiente: "Banho de Serviço", item: "Cuba" },
+  { ambiente: "Banho de Serviço", item: "Torneira" },
+  { ambiente: "Banho de Serviço", item: "Bacia Sanitária" },
+  { ambiente: "Cozinha", item: "Cuba" },
+  { ambiente: "Cozinha", item: "Torneira" },
+  { ambiente: "Área Gourmet", item: "Cuba" },
+  { ambiente: "Área Gourmet", item: "Torneira" },
+  { ambiente: "Lavabo", item: "Torneira" },
+  { ambiente: "Banho Demi", item: "Cuba" },
+  { ambiente: "Banho Demi", item: "Torneira" },
+  { ambiente: "Banho 03", item: "Cuba 01" },
+  { ambiente: "Banho 03", item: "Cuba 02" },
+  { ambiente: "Banho 03", item: "Torneira 01" },
+  { ambiente: "Banho 03", item: "Torneira 02" },
+  { ambiente: "Banho Master", item: "Cuba 01" },
+  { ambiente: "Banho Master", item: "Cuba 02" },
+  { ambiente: "Banho Master", item: "Torneira 01" },
+  { ambiente: "Banho Master", item: "Torneira 02" }
+];
+function colKeyFor(it){ return it.ambiente + '|' + it.item; }
+let loucasData = {};
+
+async function loadLoucas(){
+  try{
+    const res = await window.storage.get("loucasmetais:construtora", true);
+    loucasData = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    loucasData = {};
+  }
+}
+
+async function saveLoucas(){
+  try{
+    await window.storage.set("loucasmetais:construtora", JSON.stringify(loucasData), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar louças e metais", e);
+  }
+}
+
+async function updateLoucasCell(apt, colKey, field, value){
+  if(!loucasData[apt]) loucasData[apt] = {};
+  if(!loucasData[apt][colKey]) loucasData[apt][colKey] = { status: '', codigo: '' };
+  loucasData[apt][colKey][field] = value;
+  await saveLoucas();
+  renderLoucasTable();
+}
+
+async function renderLoucasMacro(){
+  await loadLoucas();
+  await loadInstalacao();
+  renderLoucasContent();
+}
+
+function switchLoucasMacroView(view){
+  loucasMacroView = view;
+  renderLoucasContent();
+}
+
+function renderLoucasContent(){
+  const toggleHtml = `
+    <div class="mini-toggle">
+      <button class="mini-toggle-btn ${loucasMacroView==='matriz'?'active':''}" onclick="switchLoucasMacroView('matriz')">Matriz Padrão/Personalizado</button>
+      <button class="mini-toggle-btn ${loucasMacroView==='instalacao'?'active':''}" onclick="switchLoucasMacroView('instalacao')">Controle de Instalação</button>
+    </div>`;
+
+  if(loucasMacroView === 'instalacao'){
+    renderInstalacaoTable(toggleHtml);
+  } else {
+    renderLoucasTable(toggleHtml);
+  }
+}
+
+function agruparItens(){
+  const grupos = [];
+  ITENS_LOUCAS.forEach(it => {
+    const ultimo = grupos[grupos.length - 1];
+    if(ultimo && ultimo.ambiente === it.ambiente) ultimo.itens.push(it);
+    else grupos.push({ ambiente: it.ambiente, itens: [it] });
+  });
+  return grupos;
+}
+
+function renderLoucasTable(toggleHtml){
+  document.getElementById("unitTitle").textContent = "Louças e Metais Construtora";
+  document.getElementById("unitSubtitle").textContent = "Planilha macro · padrão ou personalizado por item de cada ambiente";
+  document.getElementById("summaryPill").textContent = APTS.length + " unidades";
+
+  const grupos = agruparItens();
+  const groupHeaderRow = grupos.map(g => `<th colspan="${g.itens.length}">${g.ambiente}</th>`).join('');
+  const itemHeaderRow = ITENS_LOUCAS.map(it => `<th>${it.item}</th>`).join('');
+
+  const rows = APTS.map(apt => {
+    const cliente = CLIENTES[apt] || "";
+    const d = loucasData[apt] || {};
+    const cells = ITENS_LOUCAS.map(it => {
+      const colKey = colKeyFor(it);
+      const cell = d[colKey] || { status: '', codigo: '' };
+      const cls = cell.status === 'Padrão' ? 'sel-padrao' : cell.status === 'Personalizado' ? 'sel-personalizado' : '';
+      return `<td>
+        <select class="${cls}" onchange="updateLoucasCell(${apt}, '${colKey}', 'status', this.value)">
+          <option value="" ${cell.status===''?'selected':''}>—</option>
+          <option value="Padrão" ${cell.status==='Padrão'?'selected':''}>Padrão</option>
+          <option value="Personalizado" ${cell.status==='Personalizado'?'selected':''}>Personalizado</option>
+        </select>
+        ${cell.status === 'Padrão' ? `<input type="text" class="loucas-codigo" placeholder="código utilizado" value="${escapeHtml(cell.codigo)}" onchange="updateLoucasCell(${apt}, '${colKey}', 'codigo', this.value)">` : ''}
+      </td>`;
+    }).join('');
+    return `<tr><td class="vin-apt"><b>${apt}</b></td><td class="vin-cliente">${escapeHtml(cliente)}</td>${cells}</tr>`;
+  }).join('');
+
+  // relatório: quantas unidades ficaram com padrão / personalizado em cada item
+  const relatorioPorGrupo = grupos.map(g => {
+    const linhas = g.itens.map(it => {
+      const colKey = colKeyFor(it);
+      let padrao = 0, personalizado = 0;
+      APTS.forEach(apt => {
+        const cell = (loucasData[apt] || {})[colKey];
+        if(cell && cell.status === 'Padrão') padrao++;
+        else if(cell && cell.status === 'Personalizado') personalizado++;
+      });
+      return `<li><b>${it.item}</b>: <span class="descritivo-m2">${padrao} padrão · ${personalizado} personalizado</span></li>`;
+    }).join('');
+    return `<div class="relatorio-grupo"><h4>${g.ambiente}</h4><ul class="descritivo-list">${linhas}</ul></div>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    ${toggleHtml}
+    <div style="overflow-x:auto;">
+    <table style="min-width:1900px;">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:70px;">Apto</th>
+          <th rowspan="2" style="width:170px;">Cliente</th>
+          ${groupHeaderRow}
+        </tr>
+        <tr>${itemHeaderRow}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>
+    <div class="descritivo-box" style="margin-top:22px;">
+      <h3>Relatório — quantidade de padrão construtora por item</h3>
+      <div class="relatorio-grid">${relatorioPorGrupo}</div>
+    </div>
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarLoucasMatrizPDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarLoucasMatrizPDF(){
+  const head = ["Apto", "Cliente", ...ITENS_LOUCAS.map(it => it.ambiente + " · " + it.item)];
+  const body = APTS.map(apt => {
+    const d = loucasData[apt] || {};
+    const cells = ITENS_LOUCAS.map(it => {
+      const cell = d[colKeyFor(it)];
+      if(!cell || !cell.status) return "—";
+      return cell.status + (cell.codigo ? " (" + cell.codigo + ")" : "");
+    });
+    return [apt, CLIENTES[apt] || "", ...cells];
+  });
+  exportarTabelaPDF(
+    "Louças e Metais — Matriz Padrão/Personalizado",
+    "Todas as unidades",
+    head, body,
+    { filename: "loucas_metais_matriz.pdf", landscape: true, fontSize: 6 }
+  );
+}
+
+// ---------- Controle de Instalação (mesma matriz, status instalado/não instalado) ----------
+let instalacaoData = {};
+
+async function loadInstalacao(){
+  try{
+    const res = await window.storage.get("loucasmetais:instalacao", true);
+    instalacaoData = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    instalacaoData = {};
+  }
+}
+
+async function saveInstalacao(){
+  try{
+    await window.storage.set("loucasmetais:instalacao", JSON.stringify(instalacaoData), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar controle de instalação", e);
+  }
+}
+
+async function updateInstalacaoCell(apt, colKey, value){
+  if(!instalacaoData[apt]) instalacaoData[apt] = {};
+  instalacaoData[apt][colKey] = value;
+  await saveInstalacao();
+  renderLoucasContent();
+}
+
+function renderInstalacaoTable(toggleHtml){
+  document.getElementById("unitTitle").textContent = "Louças e Metais Construtora";
+  document.getElementById("unitSubtitle").textContent = "Controle de instalação · item a item";
+  document.getElementById("summaryPill").textContent = APTS.length + " unidades";
+
+  const grupos = agruparItens();
+  const groupHeaderRow = grupos.map(g => `<th colspan="${g.itens.length}">${g.ambiente}</th>`).join('');
+  const itemHeaderRow = ITENS_LOUCAS.map(it => `<th>${it.item}</th>`).join('');
+
+  const rows = APTS.map(apt => {
+    const cliente = CLIENTES[apt] || "";
+    const d = instalacaoData[apt] || {};
+    const cells = ITENS_LOUCAS.map(it => {
+      const colKey = colKeyFor(it);
+      const val = d[colKey] || '';
+      const cls = val === 'Instalado' ? 'sel-padrao' : val === 'Não instalado' ? 'sel-personalizado' : '';
+      return `<td>
+        <select class="${cls}" onchange="updateInstalacaoCell(${apt}, '${colKey}', this.value)">
+          <option value="" ${val===''?'selected':''}>—</option>
+          <option value="Instalado" ${val==='Instalado'?'selected':''}>Instalado</option>
+          <option value="Não instalado" ${val==='Não instalado'?'selected':''}>Não instalado</option>
+        </select>
+      </td>`;
+    }).join('');
+    return `<tr><td class="vin-apt"><b>${apt}</b></td><td class="vin-cliente">${escapeHtml(cliente)}</td>${cells}</tr>`;
+  }).join('');
+
+  const relatorioPorGrupo = grupos.map(g => {
+    const linhas = g.itens.map(it => {
+      const colKey = colKeyFor(it);
+      let instalado = 0, naoInstalado = 0;
+      APTS.forEach(apt => {
+        const val = (instalacaoData[apt] || {})[colKey];
+        if(val === 'Instalado') instalado++;
+        else if(val === 'Não instalado') naoInstalado++;
+      });
+      return `<li><b>${it.item}</b>: <span class="descritivo-m2">${instalado} instalado · ${naoInstalado} pendente</span></li>`;
+    }).join('');
+    return `<div class="relatorio-grupo"><h4>${g.ambiente}</h4><ul class="descritivo-list">${linhas}</ul></div>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    ${toggleHtml}
+    <div style="overflow-x:auto;">
+    <table style="min-width:1900px;">
+      <thead>
+        <tr>
+          <th rowspan="2" style="width:70px;">Apto</th>
+          <th rowspan="2" style="width:170px;">Cliente</th>
+          ${groupHeaderRow}
+        </tr>
+        <tr>${itemHeaderRow}</tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>
+    <div class="descritivo-box" style="margin-top:22px;">
+      <h3>Relatório — instalação por item</h3>
+      <div class="relatorio-grid">${relatorioPorGrupo}</div>
+    </div>
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarInstalacaoPDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarInstalacaoPDF(){
+  const head = ["Apto", "Cliente", ...ITENS_LOUCAS.map(it => it.ambiente + " · " + it.item)];
+  const body = APTS.map(apt => {
+    const d = instalacaoData[apt] || {};
+    const cells = ITENS_LOUCAS.map(it => d[colKeyFor(it)] || "—");
+    return [apt, CLIENTES[apt] || "", ...cells];
+  });
+  exportarTabelaPDF(
+    "Louças e Metais — Controle de Instalação",
+    "Todas as unidades",
+    head, body,
+    { filename: "loucas_metais_instalacao.pdf", landscape: true, fontSize: 6 }
+  );
+}
+
+// ---------- Louças e Metais · Deca (por apartamento) ----------
+let decaState = {};
+
+function emptyDecaItem(){
+  return { codigo: "", nome: "", quantidade: "", chegou: false };
+}
+
+function decaKeyFor(apt){ return "deca:apt_" + apt; }
+
+async function loadDecaUnit(apt){
+  try{
+    const res = await window.storage.get(decaKeyFor(apt), true);
+    decaState[apt] = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    decaState[apt] = [];
+  }
+}
+
+async function saveDecaUnit(apt){
+  try{
+    await window.storage.set(decaKeyFor(apt), JSON.stringify(decaState[apt]), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar Deca", e);
+  }
+}
+
+async function renderDeca(apt){
+  if(!(apt in decaState)) await loadDecaUnit(apt);
+  const items = decaState[apt] || [];
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Compras na Deca";
+  const content = document.getElementById("content");
+
+  if(items.length === 0){
+    content.innerHTML = `
+      <div class="empty-state">Nenhuma compra Deca cadastrada pra esse apê.</div>
+      <div class="toolbar" style="justify-content:center;">
+        <button class="btn btn-accent" onclick="addDecaItem()">+ Adicionar item</button>
+      </div>`;
+    document.getElementById("summaryPill").textContent = "";
+    return;
+  }
+
+  const chegaram = items.filter(it => it.chegou).length;
+  document.getElementById("summaryPill").innerHTML = `<b>${items.length}</b> itens · <b>${chegaram}/${items.length}</b> chegaram na obra`;
+
+  const bodyRows = items.map((it, i) => `
+    <tr>
+      <td>
+        <input type="text" placeholder="Código" value="${escapeHtml(it.codigo)}" oninput="updateDecaItem(${i}, 'codigo', this.value)">
+      </td>
+      <td>
+        <input type="text" placeholder="Nome do item" value="${escapeHtml(it.nome)}" oninput="updateDecaItem(${i}, 'nome', this.value)">
+      </td>
+      <td style="width:100px;">
+        <input type="number" step="1" placeholder="0" value="${it.quantidade}" oninput="updateDecaItem(${i}, 'quantidade', this.value)">
+      </td>
+      <td style="width:110px; text-align:center;">
+        <input type="checkbox" ${it.chegou ? 'checked' : ''} onchange="updateDecaItem(${i}, 'chegou', this.checked)" style="width:18px; height:18px; cursor:pointer;">
+      </td>
+      <td class="col-actions">
+        <button class="btn btn-ghost" onclick="removeDecaItem(${i})" title="Remover">✕</button>
+      </td>
+    </tr>`).join('');
+
+  content.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Item</th>
+          <th style="width:100px;">Qtd.</th>
+          <th style="width:110px; text-align:center;">Chegou na obra</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div class="toolbar">
+      <button class="btn" onclick="addDecaItem()">+ Adicionar item</button>
+      <button class="btn btn-ghost" onclick="exportarDecaPDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarDecaPDF(){
+  const apt = currentApt;
+  const items = decaState[apt] || [];
+  const cliente = CLIENTES[apt] || "";
+  const head = ["Código", "Item", "Qtd.", "Chegou na obra"];
+  const body = items.map(it => [it.codigo, it.nome, it.quantidade, it.chegou ? "Sim" : "Não"]);
+  exportarTabelaPDF(
+    "Compras Deca — Apartamento " + apt,
+    cliente,
+    head, body,
+    { filename: "deca_apto_" + apt + ".pdf" }
+  );
+}
+
+function addDecaItem(){
+  decaState[currentApt].push(emptyDecaItem());
+  saveDecaUnit(currentApt).then(renderSidebar);
+  renderDeca(currentApt);
+}
+
+function removeDecaItem(i){
+  decaState[currentApt].splice(i, 1);
+  saveDecaUnit(currentApt).then(renderSidebar);
+  renderDeca(currentApt);
+}
+
+function updateDecaItem(i, field, value){
+  decaState[currentApt][i][field] = value;
+  saveDecaUnit(currentApt).then(renderSidebar);
+  if(field === 'chegou') renderDeca(currentApt);
+}
+
+// ---------- Envidraçamento de Sacada (macro) ----------
+let envidracamentoData = {};
+const EMPRESAS_ENVIDRACAMENTO = ["", "New Quality", "Fazolim", "Outro"];
+
+async function loadEnvidracamento(){
+  try{
+    const res = await window.storage.get("envidracamento:macro", true);
+    envidracamentoData = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    envidracamentoData = {};
+  }
+}
+
+async function saveEnvidracamento(){
+  try{
+    await window.storage.set("envidracamento:macro", JSON.stringify(envidracamentoData), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar envidraçamento", e);
+  }
+}
+
+async function updateEnvidracamento(apt, field, value){
+  if(!envidracamentoData[apt]) envidracamentoData[apt] = {};
+  envidracamentoData[apt][field] = value;
+  await saveEnvidracamento();
+  renderEnvidracamentoTable();
+}
+
+async function renderEnvidracamentoMacro(){
+  await loadEnvidracamento();
+  renderEnvidracamentoTable();
+}
+
+function renderEnvidracamentoTable(){
+  document.getElementById("unitTitle").textContent = "Envidraçamento de Sacada";
+  document.getElementById("unitSubtitle").textContent = "Planilha macro · empresa e instalação por apartamento";
+  document.getElementById("summaryPill").textContent = APTS.length + " unidades";
+
+  let fechados = 0;
+  const rows = APTS.map(apt => {
+    const cliente = CLIENTES[apt] || "";
+    const d = envidracamentoData[apt] || {};
+    if(d.instalado === 'Sim') fechados++;
+    return `
+    <tr>
+      <td class="vin-apt"><b>${apt}</b></td>
+      <td class="vin-cliente">${escapeHtml(cliente)}</td>
+      <td>
+        <select onchange="updateEnvidracamento(${apt}, 'empresa', this.value)">
+          ${EMPRESAS_ENVIDRACAMENTO.map(e => `<option value="${e}" ${e===(d.empresa||'')?'selected':''}>${e || '—'}</option>`).join('')}
+        </select>
+        ${d.empresa === 'Outro' ? `<input type="text" placeholder="Nome da empresa" style="margin-top:6px;" value="${escapeHtml(d.empresaOutro||'')}" onchange="updateEnvidracamento(${apt}, 'empresaOutro', this.value)">` : ''}
+      </td>
+      <td>
+        <select class="${d.instalado==='Sim'?'sel-padrao':d.instalado==='Não'?'sel-personalizado':''}" onchange="updateEnvidracamento(${apt}, 'instalado', this.value)">
+          <option value="" ${!d.instalado?'selected':''}>—</option>
+          <option value="Sim" ${d.instalado==='Sim'?'selected':''}>Sim</option>
+          <option value="Não" ${d.instalado==='Não'?'selected':''}>Não</option>
+        </select>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th style="width:10%">Apto</th>
+          <th style="width:35%">Cliente</th>
+          <th style="width:30%">Empresa</th>
+          <th style="width:25%">Instalado</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div class="total-row">
+      <div class="item"><b>${fechados}/${APTS.length}</b> apartamentos já instalados</div>
+    </div>
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarEnvidracamentoPDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarEnvidracamentoPDF(){
+  const head = ["Apto", "Cliente", "Empresa", "Instalado"];
+  const body = APTS.map(apt => {
+    const d = envidracamentoData[apt] || {};
+    const empresa = d.empresa === 'Outro' ? (d.empresaOutro || 'Outro') : (d.empresa || "—");
+    return [apt, CLIENTES[apt] || "", empresa, d.instalado || "—"];
+  });
+  exportarTabelaPDF(
+    "Envidraçamento de Sacada",
+    "Todas as unidades",
+    head, body,
+    { filename: "envidracamento.pdf" }
+  );
+}
+
+function switchMainSection(section){
+  mainSection = section;
+  document.getElementById("tabProjetos").classList.toggle("active", section === 'projetos');
+  document.getElementById("tabAcabamentos").classList.toggle("active", section === 'acabamentos');
+  document.getElementById("tabVagas").classList.toggle("active", section === 'vagas');
+  document.getElementById("subSwitch").style.display = section === 'acabamentos' ? '' : 'none';
+  if(section !== 'loucas') document.getElementById("loucasSubSwitch").style.display = 'none';
+  document.getElementById("vagasSubSwitch").style.display = section === 'vagas' ? '' : 'none';
+
+  if(section === 'projetos'){
+    document.getElementById("revestimentosNav").style.display = '';
+    document.querySelector("#sidebarLabel span").textContent = 'Projetos';
+    selectUnit(currentApt || APTS[0]);
+  } else if(section === 'vagas'){
+    switchVagasSubTab(vagasSubTab);
+  } else {
+    switchSubSection(subSection);
+  }
+}
+
+// ---------- Vagas e Depósitos: Base geral ----------
+let vagasBaseList = [];
+let depositosBaseList = [];
+let vagasSubTab = 'base';
+let vagasState = {}; // destinação por apto: { vagas: [numero,...], depositos: [numero,...] }
+
+function emptyVagaBase(){ return { numero: "", subsolo: "1" }; }
+
+async function loadVagasBase(){
+  try{
+    const res = await window.storage.get("vagas:base_vagas", true);
+    vagasBaseList = res ? JSON.parse(res.value) : [];
+  }catch(e){ vagasBaseList = []; }
+  try{
+    const res2 = await window.storage.get("vagas:base_depositos", true);
+    depositosBaseList = res2 ? JSON.parse(res2.value) : [];
+  }catch(e){ depositosBaseList = []; }
+}
+
+async function saveVagasBase(){
+  try{
+    await window.storage.set("vagas:base_vagas", JSON.stringify(vagasBaseList), true);
+    await window.storage.set("vagas:base_depositos", JSON.stringify(depositosBaseList), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar base de vagas/depósitos", e);
+  }
+}
+
+function vagasKeyFor(apt){ return "vagas:apt_" + apt; }
+
+async function loadVagasUnit(apt){
+  try{
+    const res = await window.storage.get(vagasKeyFor(apt), true);
+    vagasState[apt] = res ? JSON.parse(res.value) : { vagas: [], depositos: [] };
+  }catch(e){
+    vagasState[apt] = { vagas: [], depositos: [] };
+  }
+}
+
+async function saveVagasUnit(apt){
+  try{
+    await window.storage.set(vagasKeyFor(apt), JSON.stringify(vagasState[apt]), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar destinação", e);
+  }
+}
+
+async function loadTodasDestinacoes(){
+  for(const apt of APTS){
+    if(!(apt in vagasState)) await loadVagasUnit(apt);
+  }
+}
+
+function mapaDestinacoes(){
+  const vagaApt = {}, depositoApt = {};
+  APTS.forEach(apt => {
+    const d = vagasState[apt] || { vagas: [], depositos: [] };
+    d.vagas.forEach(n => vagaApt[n] = apt);
+    d.depositos.forEach(n => depositoApt[n] = apt);
+  });
+  return { vagaApt, depositoApt };
+}
+
+function switchVagasSubTab(tab){
+  vagasSubTab = tab;
+  document.getElementById("tabVagasBase").classList.toggle("active", tab === 'base');
+  document.getElementById("tabVagasDestinacao").classList.toggle("active", tab === 'destinacao');
+  const nav = document.getElementById("revestimentosNav");
+
+  if(tab === 'destinacao'){
+    nav.style.display = '';
+    document.querySelector("#sidebarLabel span").textContent = 'Destinação';
+    selectUnit(currentApt || APTS[0]);
+  } else {
+    nav.style.display = 'none';
+    renderVagasBase();
+  }
+}
+
+async function renderVagasBase(){
+  await loadVagasBase();
+  await loadTodasDestinacoes();
+  const { vagaApt, depositoApt } = mapaDestinacoes();
+
+  document.getElementById("unitTitle").textContent = "Base de Vagas e Depósitos";
+  document.getElementById("unitSubtitle").textContent = "Cadastro geral · numeração e subsolo";
+  document.getElementById("summaryPill").innerHTML = `<b>${vagasBaseList.length}</b> vagas · <b>${depositosBaseList.length}</b> depósitos`;
+
+  function linhaBase(tipo, item, i, mapaApt){
+    const apt = mapaApt[item.numero];
+    const cliente = apt ? (CLIENTES[apt] || '') : '';
+    return `
+    <tr>
+      <td><input type="text" placeholder="Número" value="${escapeHtml(item.numero)}" oninput="updateVagaBase('${tipo}', ${i}, 'numero', this.value)"></td>
+      <td>
+        <select onchange="updateVagaBase('${tipo}', ${i}, 'subsolo', this.value)">
+          <option value="1" ${item.subsolo==='1'?'selected':''}>Subsolo 1</option>
+          <option value="2" ${item.subsolo==='2'?'selected':''}>Subsolo 2</option>
+        </select>
+      </td>
+      <td>${apt ? `<span class="sel-personalizado" style="font-size:12.5px;">Apto ${apt} · ${escapeHtml(cliente)}</span>` : `<span class="sel-padrao" style="font-size:12.5px;">Livre</span>`}</td>
+      <td class="col-actions"><button class="btn btn-ghost" onclick="removeVagaBase('${tipo}', ${i})" title="Remover">✕</button></td>
+    </tr>`;
+  }
+
+  const linhasVagas = vagasBaseList.map((v,i) => linhaBase('vagas', v, i, vagaApt)).join('');
+  const linhasDepositos = depositosBaseList.map((v,i) => linhaBase('depositos', v, i, depositoApt)).join('');
+
+  document.getElementById("content").innerHTML = `
+    <div class="proj-grid">
+      <div class="proj-card">
+        <h3>Vagas</h3>
+        <table>
+          <thead><tr><th>Número</th><th>Subsolo</th><th>Status</th><th class="col-actions"></th></tr></thead>
+          <tbody>${linhasVagas || ''}</tbody>
+        </table>
+        ${vagasBaseList.length===0 ? '<div class="proj-empty" style="margin-top:12px;">Nenhuma vaga cadastrada.</div>' : ''}
+        <div class="toolbar"><button class="btn btn-accent" onclick="addVagaBase('vagas')">+ Adicionar vaga</button></div>
+      </div>
+      <div class="proj-card">
+        <h3>Depósitos</h3>
+        <table>
+          <thead><tr><th>Número</th><th>Subsolo</th><th>Status</th><th class="col-actions"></th></tr></thead>
+          <tbody>${linhasDepositos || ''}</tbody>
+        </table>
+        ${depositosBaseList.length===0 ? '<div class="proj-empty" style="margin-top:12px;">Nenhum depósito cadastrado.</div>' : ''}
+        <div class="toolbar"><button class="btn btn-accent" onclick="addVagaBase('depositos')">+ Adicionar depósito</button></div>
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:18px;">
+      <button class="btn btn-ghost" onclick="exportarVagasBasePDF()">📄 Exportar PDF</button>
+    </div>
+  `;
+}
+
+function exportarVagasBasePDF(){
+  const { vagaApt, depositoApt } = mapaDestinacoes();
+  const linhasVagas = vagasBaseList.map(v => {
+    const apt = vagaApt[v.numero];
+    return `Vaga ${v.numero} — Subsolo ${v.subsolo} — ${apt ? 'Apto ' + apt + ' (' + (CLIENTES[apt]||'') + ')' : 'Livre'}`;
+  });
+  const linhasDepositos = depositosBaseList.map(v => {
+    const apt = depositoApt[v.numero];
+    return `Depósito ${v.numero} — Subsolo ${v.subsolo} — ${apt ? 'Apto ' + apt + ' (' + (CLIENTES[apt]||'') + ')' : 'Livre'}`;
+  });
+  exportarListaPDF(
+    "Base de Vagas e Depósitos",
+    "Cadastro geral · " + vagasBaseList.length + " vagas · " + depositosBaseList.length + " depósitos",
+    [
+      { titulo: "Vagas", linhas: linhasVagas },
+      { titulo: "Depósitos", linhas: linhasDepositos }
+    ],
+    "base_vagas_depositos.pdf"
+  );
+}
+
+function addVagaBase(tipo){
+  (tipo === 'vagas' ? vagasBaseList : depositosBaseList).push(emptyVagaBase());
+  saveVagasBase();
+  renderVagasBase();
+}
+
+function removeVagaBase(tipo, i){
+  (tipo === 'vagas' ? vagasBaseList : depositosBaseList).splice(i, 1);
+  saveVagasBase();
+  renderVagasBase();
+}
+
+function updateVagaBase(tipo, i, campo, valor){
+  (tipo === 'vagas' ? vagasBaseList : depositosBaseList)[i][campo] = valor;
+  saveVagasBase();
+}
+
+// ---------- Vagas e Depósitos: Destinação por apartamento ----------
+async function renderVagas(apt){
+  await loadVagasBase();
+  if(!(apt in vagasState)) await loadVagasUnit(apt);
+  await loadTodasDestinacoes();
+  const { vagaApt, depositoApt } = mapaDestinacoes();
+  const d = vagasState[apt];
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Destinação de vagas e depósitos";
+  document.getElementById("summaryPill").innerHTML = `<b>${d.vagas.length}</b> vaga${d.vagas.length===1?'':'s'} · <b>${d.depositos.length}</b> depósito${d.depositos.length===1?'':'s'}`;
+
+  function subsoloDe(tipo, numero){
+    const lista = tipo === 'vagas' ? vagasBaseList : depositosBaseList;
+    const item = lista.find(v => v.numero === numero);
+    return item ? item.subsolo : '?';
+  }
+
+  function cardHtml(tipo, atribuidos, base, mapaApt, label){
+    const disponiveis = base.filter(item => !mapaApt[item.numero] || mapaApt[item.numero] === apt);
+    const linhas = atribuidos.map((numero, i) => `
+      <div class="vaga-item">
+        <span style="flex:1;">${escapeHtml(numero)} <span class="descritivo-m2">(Subsolo ${subsoloDe(tipo, numero)})</span></span>
+        <button class="btn btn-ghost" onclick="removerDestinacao('${tipo}', ${i})" title="Remover">✕</button>
+      </div>`).join('');
+    const naoAtribuidos = disponiveis.filter(item => !atribuidos.includes(item.numero));
+    return `
+    <div class="proj-card">
+      <h3>${label}</h3>
+      ${linhas || '<div class="proj-empty">Nenhum destinado ainda.</div>'}
+      <div class="toolbar" style="margin-top:12px;">
+        <select onchange="if(this.value) adicionarDestinacao('${tipo}', this.value); this.value='';">
+          <option value="">+ Destinar ${label==='Vagas'?'vaga':'depósito'}…</option>
+          ${naoAtribuidos.map(item => `<option value="${item.numero}">${item.numero} (Subsolo ${item.subsolo})</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById("content").innerHTML = `
+    <div class="proj-grid">
+      ${cardHtml('vagas', d.vagas, vagasBaseList, vagaApt, 'Vagas')}
+      ${cardHtml('depositos', d.depositos, depositosBaseList, depositoApt, 'Depósitos')}
+    </div>
+    <div class="toolbar" style="margin-top:22px;">
+      <button class="btn btn-accent" onclick="gerarComprovantePDF(${apt})">📄 Exportar comprovante PDF</button>
+    </div>
+  `;
+}
+
+function adicionarDestinacao(tipo, numero){
+  if(!vagasState[currentApt][tipo].includes(numero)){
+    vagasState[currentApt][tipo].push(numero);
+    saveVagasUnit(currentApt).then(renderSidebar);
+  }
+  renderVagas(currentApt);
+}
+
+function removerDestinacao(tipo, i){
+  vagasState[currentApt][tipo].splice(i, 1);
+  saveVagasUnit(currentApt).then(renderSidebar);
+  renderVagas(currentApt);
+}
+
+// ---------- Exportação de PDF (genérico, usado em todas as abas) ----------
+function cabecalhoPDF(doc, titulo, subtitulo){
+  doc.setFontSize(15);
+  doc.setTextColor(20,20,20);
+  doc.text("Vista Park Residencial 166", 14, 15);
+  doc.setFontSize(11);
+  doc.text(titulo, 14, 22);
+  if(subtitulo){
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(subtitulo, 14, 27);
+    doc.setTextColor(20,20,20);
+  }
+  doc.setDrawColor(28,58,94);
+  doc.line(14, 30, doc.internal.pageSize.getWidth() - 14, 30);
+}
+
+function rodapePDF(doc){
+  const h = doc.internal.pageSize.getHeight();
+  doc.setFontSize(8);
+  doc.setTextColor(130);
+  doc.text("Emitido em " + new Date().toLocaleDateString('pt-BR') + " · Absoluta Construtora e Incorporadora", 14, h - 10);
+}
+
+// Exporta uma tabela (head + body) — usado nas planilhas macro
+function exportarTabelaPDF(titulo, subtitulo, head, body, opts){
+  opts = opts || {};
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF(opts.landscape ? { orientation: 'landscape' } : undefined);
+  cabecalhoPDF(doc, titulo, subtitulo);
+  doc.autoTable({
+    head: [head],
+    body: body,
+    startY: 34,
+    styles: { fontSize: opts.fontSize || 8, cellPadding: 2 },
+    headStyles: { fillColor: [28,58,94], textColor: 255 },
+    margin: { left: 14, right: 14 }
+  });
+  rodapePDF(doc);
+  doc.save(opts.filename || 'export.pdf');
+}
+
+// Exporta um texto simples em lista — usado nas fichas por apartamento
+function exportarListaPDF(titulo, subtitulo, secoes, filename){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  cabecalhoPDF(doc, titulo, subtitulo);
+  let y = 42;
+  const pageH = doc.internal.pageSize.getHeight();
+  secoes.forEach(sec => {
+    if(y > pageH - 20){ doc.addPage(); y = 20; }
+    doc.setFontSize(11);
+    doc.setTextColor(20,20,20);
+    doc.text(sec.titulo, 14, y);
+    y += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    if(sec.linhas.length === 0){
+      doc.text("Nenhum registro.", 18, y);
+      y += 7;
+    } else {
+      sec.linhas.forEach(linha => {
+        if(y > pageH - 20){ doc.addPage(); y = 20; }
+        doc.text("• " + linha, 18, y);
+        y += 6.5;
+      });
+    }
+    y += 6;
+  });
+  rodapePDF(doc);
+  doc.save(filename);
+}
+
+function gerarComprovantePDF(apt){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const d = vagasState[apt] || { vagas: [], depositos: [] };
+  const cliente = CLIENTES[apt] || "";
+
+  doc.setFontSize(16);
+  doc.text("Vista Park Residencial 166", 20, 24);
+  doc.setFontSize(11);
+  doc.text("Comprovante de Vaga e Depósito", 20, 32);
+  doc.setDrawColor(28, 58, 94);
+  doc.line(20, 36, 190, 36);
+
+  doc.setFontSize(11);
+  let y = 48;
+  doc.text("Apartamento: " + apt, 20, y); y += 8;
+  doc.text("Cliente: " + cliente, 20, y); y += 14;
+
+  doc.setFontSize(12);
+  doc.text("Vagas destinadas:", 20, y); y += 8;
+  doc.setFontSize(11);
+  if(d.vagas.length === 0){ doc.text("Nenhuma", 26, y); y += 7; }
+  d.vagas.forEach(v => {
+    const item = vagasBaseList.find(x => x.numero === v);
+    doc.text("• Vaga " + v + " — Subsolo " + (item ? item.subsolo : "?"), 26, y);
+    y += 7;
+  });
+  y += 6;
+
+  doc.setFontSize(12);
+  doc.text("Depósitos destinados:", 20, y); y += 8;
+  doc.setFontSize(11);
+  if(d.depositos.length === 0){ doc.text("Nenhum", 26, y); y += 7; }
+  d.depositos.forEach(v => {
+    const item = depositosBaseList.find(x => x.numero === v);
+    doc.text("• Depósito " + v + " — Subsolo " + (item ? item.subsolo : "?"), 26, y);
+    y += 7;
+  });
+
+  y += 16;
+  doc.setFontSize(9);
+  doc.setTextColor(120);
+  doc.text("Emitido em " + new Date().toLocaleDateString('pt-BR') + " · Absoluta Construtora e Incorporadora", 20, y);
+
+  doc.save("comprovante_vagas_deposito_apto_" + apt + ".pdf");
+}
+
+function switchSubSection(section){
+  subSection = section;
+  document.getElementById("tabRevestimentos").classList.toggle("active", section === 'revestimentos');
+  document.getElementById("tabVinilico").classList.toggle("active", section === 'vinilico');
+  document.getElementById("tabMarmoraria").classList.toggle("active", section === 'marmoraria');
+  document.getElementById("tabLoucas").classList.toggle("active", section === 'loucas');
+  document.getElementById("tabEnvidracamento").classList.toggle("active", section === 'envidracamento');
+  const nav = document.getElementById("revestimentosNav");
+  const loucasSwitch = document.getElementById("loucasSubSwitch");
+
+  if(section === 'loucas'){
+    loucasSwitch.style.display = '';
+    switchLoucasSubTab(loucasSubTab);
+    return;
+  }
+  loucasSwitch.style.display = 'none';
+
+  if(section === 'vinilico' || section === 'envidracamento'){
+    nav.style.display = 'none';
+    if(section === 'vinilico') renderVinilicoMacro();
+    else renderEnvidracamentoMacro();
+  } else {
+    nav.style.display = '';
+    document.querySelector("#sidebarLabel span").textContent = section === 'marmoraria' ? 'Marmoraria' : 'Revestimentos';
+    selectUnit(currentApt || APTS[0]);
+  }
+}
+
+function switchLoucasSubTab(tab){
+  loucasSubTab = tab;
+  document.getElementById("tabLoucasMacro").classList.toggle("active", tab === 'macro');
+  document.getElementById("tabLoucasDeca").classList.toggle("active", tab === 'deca');
+  const nav = document.getElementById("revestimentosNav");
+
+  if(tab === 'deca'){
+    nav.style.display = '';
+    document.querySelector("#sidebarLabel span").textContent = 'Deca';
+    selectUnit(currentApt || APTS[0]);
+  } else {
+    nav.style.display = 'none';
+    renderLoucasMacro();
+  }
+}
+
+async function selectUnit(apt){
+  currentApt = apt;
+  await renderSidebar();
+
+  if(mainSection === 'projetos'){
+    await renderProjetos(apt);
+  } else if(mainSection === 'vagas'){
+    await renderVagas(apt);
+  } else if(subSection === 'marmoraria'){
+    await renderMarmoraria();
+  } else if(subSection === 'loucas' && loucasSubTab === 'deca'){
+    await renderDeca(apt);
+  } else {
+    if(!(apt in state)) await loadUnit(apt);
+    const cliente = CLIENTES[apt] || "";
+    document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+    document.getElementById("unitSubtitle").textContent = cliente + " · Revestimentos por ambiente e aplicação";
+    renderTable();
+  }
+}
+
+function renderTable(){
+  const rows = state[currentApt] || [];
+  const content = document.getElementById("content");
+
+  if(rows.length === 0){
+    content.innerHTML = `
+      <div class="empty-state">Nenhum ambiente cadastrado ainda.</div>
+      <div class="toolbar" style="justify-content:center;">
+        <button class="btn btn-accent" onclick="addRow()">+ Adicionar ambiente</button>
+      </div>`;
+    document.getElementById("summaryPill").textContent = "";
+    return;
+  }
+
+  let totalM2 = 0;
+  let totalM2Perda = 0;
+  let totalValor = 0;
+  rows.forEach(r => { const v = parseFloat(r.metragem); if(!isNaN(v)) totalM2 += v; totalM2Perda += calcPerda(r.metragem); const val = parseFloat(r.valor); if(!isNaN(val)) totalValor += val; });
+
+  const totalsByMaterial = {};
+  rows.forEach(r => {
+    if(r.material){
+      const areaPerda = calcPerda(r.metragem);
+      const caixas = calcCaixas(r.metragem, r.m2caixa);
+      if(!totalsByMaterial[r.material]) totalsByMaterial[r.material] = { area: 0, caixas: 0 };
+      totalsByMaterial[r.material].area += areaPerda;
+      totalsByMaterial[r.material].caixas += caixas;
+    }
+  });
+
+  document.getElementById("summaryPill").innerHTML = `<b>${rows.length}</b> registros · <b>${totalM2.toFixed(2)} m²</b> real · <b>${totalM2Perda.toFixed(2)} m²</b> c/ 20%`;
+
+  let bodyRows = rows.map((r, i) => {
+    const areaPerda = calcPerda(r.metragem);
+    const caixas = calcCaixas(r.metragem, r.m2caixa);
+    return `
+    <tr>
+      <td class="col-ambiente">
+        <select onchange="updateRow(${i}, 'ambiente', this.value)">
+          ${AMBIENTES_PADRAO.map(a => `<option ${a===r.ambiente?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </td>
+      <td class="col-aplicacao">
+        <select onchange="updateRow(${i}, 'aplicacao', this.value)">
+          ${APLICACOES.map(a => `<option ${a===r.aplicacao?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </td>
+      <td class="col-material">
+        <input type="text" placeholder="Código do revestimento" value="${escapeHtml(r.material)}" oninput="updateRow(${i}, 'material', this.value)">
+      </td>
+      <td class="col-metragem">
+        <input type="number" step="0.01" placeholder="0.00" value="${r.metragem}" oninput="updateRow(${i}, 'metragem', this.value)">
+      </td>
+      <td class="col-perda">
+        <span class="calc-value">${areaPerda > 0 ? areaPerda.toFixed(2) + ' m²' : '—'}</span>
+      </td>
+      <td class="col-m2caixa">
+        <input type="number" step="0.01" placeholder="m²/cx" value="${r.m2caixa}" oninput="updateRow(${i}, 'm2caixa', this.value)">
+      </td>
+      <td class="col-caixas">
+        <span class="calc-value calc-caixas">${caixas > 0 ? caixas : '—'}</span>
+      </td>
+      <td class="col-valor">
+        <input type="number" step="0.01" placeholder="R$ 0,00" value="${r.valor||''}" oninput="updateRow(${i}, 'valor', this.value)">
+      </td>
+      <td class="col-actions">
+        <button class="btn btn-ghost" onclick="removeRow(${i})" title="Remover">✕</button>
+      </td>
+    </tr>
+  `;
+  }).join('');
+
+  const materialSummary = Object.entries(totalsByMaterial)
+    .map(([mat, d]) => `<div class="item"><b>${d.caixas} cx</b> (${d.area.toFixed(2)} m² c/ perda) — ${escapeHtml(mat)}</div>`)
+    .join('');
+
+  const descritivo = rows
+    .filter(r => r.material)
+    .map(r => `<li><b>${escapeHtml(r.ambiente)}</b> — ${escapeHtml(r.aplicacao)}: ${escapeHtml(r.material)} <span class="descritivo-m2">(${(parseFloat(r.metragem)||0).toFixed(2)} m²)</span></li>`)
+    .join('');
+
+  content.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th class="col-ambiente">Ambiente</th>
+          <th class="col-aplicacao">Aplicação</th>
+          <th class="col-material">Código</th>
+          <th class="col-metragem">Área (m²)</th>
+          <th class="col-perda">Área c/ 20%</th>
+          <th class="col-m2caixa">m²/caixa</th>
+          <th class="col-caixas">Caixas</th>
+          <th class="col-valor">Valor (R$)</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div class="toolbar">
+      <button class="btn" onclick="addRow()">+ Adicionar linha</button>
+      <button class="btn btn-ghost" onclick="exportarRevestimentosPDF()">📄 Exportar PDF</button>
+    </div>
+    ${materialSummary ? `<div class="total-row">${materialSummary}</div>` : ''}
+    ${descritivo ? `
+    <div class="descritivo-box">
+      <h3>Descritivo do apartamento ${currentApt}</h3>
+      <ul class="descritivo-list">${descritivo}</ul>
+      <div class="descritivo-total">Total revestido no apartamento: <b>${totalM2.toFixed(2)} m²</b></div>
+    </div>` : ''}
+    ${valorGateHtml('revestimentos_' + currentApt, totalValor, 'Valor total em revestimentos — Apto ' + currentApt)}
+  `;
+}
+
+function exportarRevestimentosPDF(){
+  const apt = currentApt;
+  const rows = state[apt] || [];
+  const cliente = CLIENTES[apt] || "";
+  const linhas = rows.filter(r => r.material).map(r =>
+    `${r.ambiente} — ${r.aplicacao}: ${r.material} (${(parseFloat(r.metragem)||0).toFixed(2)} m²)`
+  );
+  exportarListaPDF(
+    "Revestimentos — Apartamento " + apt,
+    cliente,
+    [{ titulo: "Itens por ambiente", linhas }],
+    "revestimentos_apto_" + apt + ".pdf"
+  );
+}
+
+async function renderMarmoraria(){
+  const apt = currentApt;
+  if(!(apt in marmState)) await loadMarmUnit(apt);
+  const rows = marmState[apt] || [];
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Marmoraria por ambiente";
+  const content = document.getElementById("content");
+
+  if(rows.length === 0){
+    content.innerHTML = `
+      <div class="empty-state">Nenhum ambiente cadastrado ainda.</div>
+      <div class="toolbar" style="justify-content:center;">
+        <button class="btn btn-accent" onclick="addMarmRow()">+ Adicionar ambiente</button>
+      </div>`;
+    document.getElementById("summaryPill").textContent = "";
+    return;
+  }
+
+  let totalM2 = 0;
+  let totalValor = 0;
+  const chapasByMaterial = {};
+
+  rows.forEach(r => {
+    const v = parseFloat(r.metragem);
+    if(!isNaN(v)) totalM2 += v;
+    const chapas = calcChapasNecessarias(r.metragem, r.areaChapa);
+    const valorItem = chapas * (parseFloat(r.valorChapa) || 0);
+    totalValor += valorItem;
+    if(r.material){
+      chapasByMaterial[r.material] = (chapasByMaterial[r.material] || 0) + chapas;
+    }
+  });
+
+  document.getElementById("summaryPill").innerHTML = `<b>${rows.length}</b> registros · <b>${totalM2.toFixed(2)} m²</b> total`;
+
+  let bodyRows = rows.map((r, i) => {
+    const chapas = calcChapasNecessarias(r.metragem, r.areaChapa);
+    return `
+    <tr>
+      <td class="col-ambiente">
+        <select onchange="updateMarmRow(${i}, 'ambiente', this.value)">
+          ${AMBIENTES_MARMORARIA.map(a => `<option ${a===r.ambiente?'selected':''}>${a}</option>`).join('')}
+        </select>
+        ${r.ambiente === 'Extra' ? `<input type="text" placeholder="Descrever item decorativo" style="margin-top:6px;" value="${escapeHtml(r.extraDescricao)}" oninput="updateMarmRow(${i}, 'extraDescricao', this.value)">` : ''}
+      </td>
+      <td class="col-material">
+        <input type="text" placeholder="Pedra / código" value="${escapeHtml(r.material)}" oninput="updateMarmRow(${i}, 'material', this.value)">
+      </td>
+      <td class="col-metragem">
+        <input type="number" step="0.01" placeholder="0.00" value="${r.metragem}" oninput="updateMarmRow(${i}, 'metragem', this.value)">
+      </td>
+      <td class="col-m2caixa">
+        <input type="number" step="0.01" placeholder="m² chapa" value="${r.areaChapa}" oninput="updateMarmRow(${i}, 'areaChapa', this.value)">
+      </td>
+      <td class="col-caixas">
+        <span class="calc-value calc-caixas">${chapas > 0 ? chapas : '—'}</span>
+      </td>
+      <td class="col-valor">
+        <input type="number" step="0.01" placeholder="R$/chapa" value="${r.valorChapa}" oninput="updateMarmRow(${i}, 'valorChapa', this.value)">
+      </td>
+      <td class="col-actions">
+        <button class="btn btn-ghost" onclick="removeMarmRow(${i})" title="Remover">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const chapasSummary = Object.entries(chapasByMaterial)
+    .map(([mat, qtd]) => `<div class="item"><b>${qtd} chapa${qtd===1?'':'s'}</b> — ${escapeHtml(mat)}</div>`)
+    .join('');
+
+  const descritivo = rows
+    .filter(r => r.material)
+    .map(r => {
+      const nomeAmbiente = r.ambiente === 'Extra' && r.extraDescricao ? `Extra — ${escapeHtml(r.extraDescricao)}` : escapeHtml(r.ambiente);
+      return `<li><b>${nomeAmbiente}</b>: ${escapeHtml(r.material)} <span class="descritivo-m2">(${(parseFloat(r.metragem)||0).toFixed(2)} m²)</span></li>`;
+    })
+    .join('');
+
+  content.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th class="col-ambiente">Ambiente</th>
+          <th class="col-material">Pedra</th>
+          <th class="col-metragem">Área usada (m²)</th>
+          <th class="col-m2caixa">Área/chapa (m²)</th>
+          <th class="col-caixas">Chapas</th>
+          <th class="col-valor">R$/chapa</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    <div class="toolbar">
+      <button class="btn" onclick="addMarmRow()">+ Adicionar ambiente</button>
+      <button class="btn btn-ghost" onclick="exportarMarmorariaPDF()">📄 Exportar PDF</button>
+    </div>
+    ${chapasSummary ? `<div class="total-row">${chapasSummary}</div>` : ''}
+    ${descritivo ? `
+    <div class="descritivo-box">
+      <h3>Descritivo do apartamento ${apt}</h3>
+      <ul class="descritivo-list">${descritivo}</ul>
+      <div class="descritivo-total">Total em marmoraria: <b>${totalM2.toFixed(2)} m²</b></div>
+    </div>` : ''}
+    ${valorGateHtml('marmoraria_' + apt, totalValor, 'Valor total em marmoraria — Apto ' + apt)}
+  `;
+}
+
+function exportarMarmorariaPDF(){
+  const apt = currentApt;
+  const rows = marmState[apt] || [];
+  const cliente = CLIENTES[apt] || "";
+  const linhas = rows.filter(r => r.material).map(r => {
+    const nomeAmbiente = r.ambiente === 'Extra' && r.extraDescricao ? `Extra — ${r.extraDescricao}` : r.ambiente;
+    return `${nomeAmbiente}: ${r.material} (${(parseFloat(r.metragem)||0).toFixed(2)} m²)`;
+  });
+  exportarListaPDF(
+    "Marmoraria — Apartamento " + apt,
+    cliente,
+    [{ titulo: "Pedras por ambiente", linhas }],
+    "marmoraria_apto_" + apt + ".pdf"
+  );
+}
+
+function addMarmRow(){
+  marmState[currentApt].push(emptyMarmRow());
+  saveMarmUnit(currentApt).then(renderSidebar);
+  renderMarmoraria();
+}
+
+function removeMarmRow(i){
+  marmState[currentApt].splice(i, 1);
+  saveMarmUnit(currentApt).then(renderSidebar);
+  renderMarmoraria();
+}
+
+function updateMarmRow(i, field, value){
+  marmState[currentApt][i][field] = value;
+  saveMarmUnit(currentApt).then(renderSidebar);
+  if(field === 'ambiente') renderMarmoraria();
+}
+
+function escapeHtml(str){
+  return (str || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+function addRow(){
+  state[currentApt].push(emptyRow());
+  saveUnit(currentApt).then(renderSidebar);
+  renderTable();
+}
+
+function removeRow(i){
+  state[currentApt].splice(i, 1);
+  saveUnit(currentApt).then(renderSidebar);
+  renderTable();
+}
+
+function updateRow(i, field, value){
+  state[currentApt][i][field] = value;
+  saveUnit(currentApt).then(renderSidebar);
+}
+
+// ---------- Cronograma (pendências gerais do prédio) ----------
+const LOCAIS_CRONOGRAMA = [
+  "Subsolo 1","Subsolo 2","Térreo",
+  "Pavimento 1","Pavimento 2","Pavimento 3","Pavimento 4","Pavimento 5","Pavimento 6",
+  "Pavimento 7","Pavimento 8","Pavimento 9","Pavimento 10","Pavimento 11","Pavimento 12",
+  "Ático","Barrilete","Área Comum"
+];
+const CATEGORIAS_PADRAO_CRONOGRAMA = [
+  "Elétrica","Hidráulica","Estrutural","Alvenaria","Pintura","Esquadrias","Acabamento","Limpeza","Finalização","Outro"
+];
+const STATUS_CRONOGRAMA = ["Aberta","Em andamento","Resolvida"];
+const NOVO_VALOR = "__novo__";
+
+let pendencias = [];
+let locaisCustom = [];
+let categoriasCronograma = [];
+let filtroLocal = "";
+let filtroCategoria = "";
+let filtroApto = "";
+
+function todosLocais(){ return LOCAIS_CRONOGRAMA.concat(locaisCustom); }
+function todasCategorias(){ return categoriasCronograma; }
+
+function emptyPendencia(){
+  return { local: LOCAIS_CRONOGRAMA[0], apto: "", categoria: categoriasCronograma[0] || "", descricao: "", status: "Aberta", responsavel: "", prazo: "" };
+}
+
+async function loadPendencias(){
+  try{
+    const res = await window.storage.get("cronograma:pendencias", true);
+    pendencias = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    pendencias = [];
+  }
+  try{
+    const res2 = await window.storage.get("cronograma:listas_custom", true);
+    const listas = res2 ? JSON.parse(res2.value) : {};
+    locaisCustom = listas.locais || [];
+  }catch(e){
+    locaisCustom = [];
+  }
+  try{
+    const res3 = await window.storage.get("cronograma:categorias", true);
+    categoriasCronograma = res3 ? JSON.parse(res3.value) : CATEGORIAS_PADRAO_CRONOGRAMA.slice();
+  }catch(e){
+    categoriasCronograma = CATEGORIAS_PADRAO_CRONOGRAMA.slice();
+  }
+}
+
+async function saveListasCustom(){
+  try{
+    await window.storage.set("cronograma:listas_custom", JSON.stringify({ locais: locaisCustom }), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar listas do cronograma", e);
+  }
+}
+
+async function saveCategoriasCronograma(){
+  try{
+    await window.storage.set("cronograma:categorias", JSON.stringify(categoriasCronograma), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar categorias do cronograma", e);
+  }
+}
+
+async function adicionarNovoLocal(i){
+  const nome = await askText("Nome do novo ambiente/local");
+  if(!nome){ renderCronogramaContent(); return; }
+  if(!todosLocais().includes(nome)){
+    locaisCustom.push(nome);
+    await saveListasCustom();
+  }
+  pendencias[i].local = nome;
+  await savePendencias();
+  renderCronogramaContent();
+}
+
+async function adicionarNovaCategoria(i){
+  const nome = await askText("Nome da nova categoria");
+  if(!nome){ renderCronogramaContent(); return; }
+  if(!categoriasCronograma.includes(nome)){
+    categoriasCronograma.push(nome);
+    await saveCategoriasCronograma();
+  }
+  if(i !== null){
+    pendencias[i].categoria = nome;
+    await savePendencias();
+  }
+  renderCronogramaContent();
+}
+
+async function removerCategoria(nome){
+  categoriasCronograma = categoriasCronograma.filter(c => c !== nome);
+  await saveCategoriasCronograma();
+  if(filtroCategoria === nome) filtroCategoria = "";
+  renderCronogramaContent();
+}
+
+function handleLocalChange(i, value){
+  if(value === NOVO_VALOR){ adicionarNovoLocal(i); return; }
+  updatePendencia(i, 'local', value);
+}
+
+function handleCategoriaChange(i, value){
+  if(value === NOVO_VALOR){ adicionarNovaCategoria(i); return; }
+  updatePendencia(i, 'categoria', value);
+}
+
+async function savePendencias(){
+  try{
+    await window.storage.set("cronograma:pendencias", JSON.stringify(pendencias), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar pendências", e);
+  }
+}
+
+async function renderCronograma(){
+  await loadPendencias();
+  document.getElementById("unitTitle").textContent = "Cronograma";
+  document.getElementById("unitSubtitle").textContent = "Pendências gerais · do subsolo ao ático";
+  renderCronogramaContent();
+}
+
+function setFiltro(campo, valor){
+  if(campo === 'local') filtroLocal = valor;
+  if(campo === 'categoria') filtroCategoria = valor;
+  if(campo === 'apto') filtroApto = valor;
+  renderCronogramaContent();
+}
+
+function limparFiltros(){
+  filtroLocal = ""; filtroCategoria = ""; filtroApto = "";
+  renderCronogramaContent();
+}
+
+function renderCronogramaContent(){
+  const filtradas = pendencias.filter((p, i) => {
+    p.__i = i;
+    return (!filtroLocal || p.local === filtroLocal)
+      && (!filtroCategoria || p.categoria === filtroCategoria)
+      && (!filtroApto || p.apto === filtroApto);
+  });
+
+  const abertas = pendencias.filter(p => p.status !== 'Resolvida').length;
+  document.getElementById("summaryPill").innerHTML = `<b>${abertas}</b> pendências abertas de <b>${pendencias.length}</b> total`;
+
+  const optLocal = todosLocais().map(l => `<option value="${l}" ${filtroLocal===l?'selected':''}>${l}</option>`).join('');
+  const optCategoria = todasCategorias().map(c => `<option value="${c}" ${filtroCategoria===c?'selected':''}>${c}</option>`).join('');
+  const optApto = APTS.map(a => `<option value="${a}" ${filtroApto==String(a)?'selected':''}>${a}</option>`).join('');
+
+  const bodyRows = filtradas.map(p => {
+    const i = p.__i;
+    return `
+    <tr>
+      <td>
+        <select onchange="handleLocalChange(${i}, this.value)">
+          ${todosLocais().map(l => `<option value="${l}" ${l===p.local?'selected':''}>${l}</option>`).join('')}
+          <option value="${NOVO_VALOR}">+ Adicionar novo…</option>
+        </select>
+      </td>
+      <td>
+        <select onchange="updatePendencia(${i}, 'apto', this.value)">
+          <option value="" ${p.apto===''?'selected':''}>—</option>
+          ${APTS.map(a => `<option value="${a}" ${p.apto==String(a)?'selected':''}>${a}</option>`).join('')}
+        </select>
+      </td>
+      <td>
+        <select onchange="handleCategoriaChange(${i}, this.value)">
+          ${todasCategorias().map(c => `<option value="${c}" ${c===p.categoria?'selected':''}>${c}</option>`).join('')}
+          <option value="${NOVO_VALOR}">+ Adicionar nova…</option>
+        </select>
+      </td>
+      <td style="min-width:200px;">
+        <input type="text" placeholder="Descrição da pendência" value="${escapeHtml(p.descricao)}" oninput="updatePendencia(${i}, 'descricao', this.value)">
+      </td>
+      <td>
+        <input type="text" placeholder="Responsável" value="${escapeHtml(p.responsavel)}" oninput="updatePendencia(${i}, 'responsavel', this.value)">
+      </td>
+      <td style="width:130px;">
+        <input type="date" value="${p.prazo}" onchange="updatePendencia(${i}, 'prazo', this.value)">
+      </td>
+      <td>
+        <select class="${p.status==='Resolvida'?'sel-padrao':p.status==='Em andamento'?'':'sel-personalizado'}" onchange="updatePendencia(${i}, 'status', this.value)">
+          ${STATUS_CRONOGRAMA.map(s => `<option ${s===p.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td class="col-actions">
+        <button class="btn btn-ghost" onclick="removePendencia(${i})" title="Remover">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    <div class="toolbar" style="margin-bottom:16px; margin-top:0; flex-wrap:wrap;">
+      <select onchange="setFiltro('local', this.value)" style="width:auto;">
+        <option value="">Todos os locais</option>
+        ${optLocal}
+      </select>
+      <select onchange="setFiltro('categoria', this.value)" style="width:auto;">
+        <option value="">Todas as categorias</option>
+        ${optCategoria}
+      </select>
+      <select onchange="setFiltro('apto', this.value)" style="width:auto;">
+        <option value="">Todos os apês</option>
+        ${optApto}
+      </select>
+      <button class="btn btn-ghost" onclick="limparFiltros()">Limpar filtros</button>
+    </div>
+    <div class="categoria-manager">
+      <span class="categoria-manager-label">Categorias:</span>
+      ${categoriasCronograma.map(c => `
+        <span class="categoria-chip">${escapeHtml(c)}<button onclick="removerCategoria('${escapeHtml(c).replace(/'/g,"\\'")}')" title="Apagar categoria">✕</button></span>
+      `).join('')}
+      <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px;" onclick="adicionarNovaCategoria(null)">+ Nova categoria</button>
+    </div>
+    <div style="overflow-x:auto;">
+    <table style="min-width:1100px;">
+      <thead>
+        <tr>
+          <th style="width:140px;">Local</th>
+          <th style="width:80px;">Apto</th>
+          <th style="width:130px;">Categoria</th>
+          <th>Descrição</th>
+          <th style="width:140px;">Responsável</th>
+          <th style="width:130px;">Prazo</th>
+          <th style="width:130px;">Status</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody>${bodyRows}</tbody>
+    </table>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-accent" onclick="addPendencia()">+ Adicionar pendência</button>
+      <button class="btn btn-ghost" onclick="exportarCronogramaPDF()">📄 Exportar PDF</button>
+    </div>
+    ${filtradas.length === 0 ? '<div class="empty-state">Nenhuma pendência com esse filtro.</div>' : ''}
+  `;
+}
+
+function exportarCronogramaPDF(){
+  const filtradas = pendencias.filter(p =>
+    (!filtroLocal || p.local === filtroLocal)
+    && (!filtroCategoria || p.categoria === filtroCategoria)
+    && (!filtroApto || p.apto === filtroApto)
+  );
+  const head = ["Local", "Apto", "Categoria", "Descrição", "Responsável", "Prazo", "Status"];
+  const body = filtradas.map(p => [p.local, p.apto || "—", p.categoria, p.descricao, p.responsavel, p.prazo, p.status]);
+  const filtroTexto = [filtroLocal, filtroCategoria, filtroApto ? "Apto " + filtroApto : ""].filter(Boolean).join(" · ") || "Todas as pendências";
+  exportarTabelaPDF(
+    "Cronograma — Pendências",
+    filtroTexto,
+    head, body,
+    { filename: "cronograma_pendencias.pdf", landscape: true }
+  );
+}
+
+function addPendencia(){
+  pendencias.push(emptyPendencia());
+  savePendencias();
+  renderCronogramaContent();
+}
+
+function removePendencia(i){
+  pendencias.splice(i, 1);
+  savePendencias();
+  renderCronogramaContent();
+}
+
+function updatePendencia(i, field, value){
+  pendencias[i][field] = value;
+  savePendencias();
+  if(field === 'local' || field === 'categoria' || field === 'apto') renderCronogramaContent();
+}
+
+// ---------- Menu mobile (gaveta) ----------
+function toggleSidebar(){
+  document.getElementById("sidebarWrap").classList.toggle("open");
+  document.getElementById("sidebarOverlay").classList.toggle("show");
+}
+
+function closeSidebar(){
+  document.getElementById("sidebarWrap").classList.remove("open");
+  document.getElementById("sidebarOverlay").classList.remove("show");
+}
+
+// init
+async function initApp(){
+  document.getElementById("sidebarWrap").addEventListener("click", (e) => {
+    if(window.innerWidth <= 860 && (e.target.closest("button") || e.target.closest("li"))){
+      closeSidebar();
+    }
+  });
+  await switchTopSection('personalize');
+}
 </script>
 </body>
 </html>
