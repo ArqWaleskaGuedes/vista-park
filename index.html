@@ -318,35 +318,36 @@
     margin-bottom: 16px;
   }
   @media (max-width: 720px){ .painel-stats{ grid-template-columns: repeat(2, 1fr); } }
-  .painel-stat{
-    background: var(--surface);
-    border: 1px solid var(--border);
+  .painel-tile{
     border-radius: var(--radius);
-    padding: 16px;
-    text-align: center;
+    padding: 18px 16px;
+    color: #fff;
   }
-  .painel-stat-num{
-    font-size: 28px;
-    font-weight: 700;
-    color: var(--text);
-    line-height: 1.1;
-  }
-  .painel-stat-label{
+  .painel-tile-label{
     font-size: 11.5px;
-    color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.04em;
-    margin-top: 6px;
+    opacity: 0.9;
+    margin-bottom: 8px;
   }
-  .painel-stat-aberta .painel-stat-num{ color: var(--danger); }
-  .painel-stat-andamento .painel-stat-num{ color: var(--warn); }
-  .painel-stat-resolvida .painel-stat-num{ color: var(--ok); }
+  .painel-tile-num{
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .painel-tile-total{ background: var(--accent); }
+  .painel-tile-aberta{ background: var(--danger); }
+  .painel-tile-andamento{ background: var(--warn); }
+  .painel-tile-resolvida{ background: var(--ok); }
+  .painel-tile-pct{ background: var(--accent-dim); }
 
   .painel-graficos{
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 16px;
   }
+  .painel-graficos-donuts{ grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 900px){ .painel-graficos-donuts{ grid-template-columns: 1fr; } }
   @media (max-width: 720px){ .painel-graficos{ grid-template-columns: 1fr; } }
   .painel-grafico-card{
     background: var(--surface);
@@ -395,6 +396,71 @@
     color: var(--text-dim);
     font-weight: 600;
     flex-shrink: 0;
+  }
+
+  .donut-wrap{
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .donut{
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .donut-centro{
+    position: absolute;
+    inset: 22%;
+    background: var(--surface);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .donut-centro-num{
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .donut-centro-label{
+    font-size: 9px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .donut-legenda{
+    flex: 1;
+    min-width: 120px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .donut-legenda-item{
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+  }
+  .donut-dot{
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .donut-legenda-nome{
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+  }
+  .donut-legenda-valor{
+    color: var(--text-dim);
+    font-weight: 600;
   }
 
   .mapa-container{
@@ -3346,10 +3412,8 @@ function updateRow(i, field, value){
 
 // ---------- Cronograma (pendências gerais do prédio) ----------
 const LOCAIS_CRONOGRAMA = [
-  "Subsolo 1","Subsolo 2","Térreo",
-  "Pavimento 1","Pavimento 2","Pavimento 3","Pavimento 4","Pavimento 5","Pavimento 6",
-  "Pavimento 7","Pavimento 8","Pavimento 9","Pavimento 10","Pavimento 11","Pavimento 12",
-  "Ático","Barrilete","Área Comum"
+  "Subsolo 01","Subsolo 02","Térreo Área Interna","Térreo Área Externa",
+  "Escadarias / Halls de Serviço","Ático / Barrilete"
 ];
 const CATEGORIAS_PADRAO_CRONOGRAMA = [
   "Elétrica","Hidráulica","Estrutural","Alvenaria","Pintura","Esquadrias","Acabamento","Limpeza","Finalização","Outro"
@@ -3363,11 +3427,15 @@ let categoriasCronograma = [];
 let filtroLocal = "";
 let filtroCategoria = "";
 let filtroApto = "";
+let cronogramaView = 'geral';
 
 function todosLocais(){ return LOCAIS_CRONOGRAMA.concat(locaisCustom); }
 function todasCategorias(){ return categoriasCronograma; }
 
 function emptyPendencia(){
+  if(cronogramaView === 'unidades'){
+    return { local: "", apto: String(filtroApto || APTS[0]), categoria: categoriasCronograma[0] || "", descricao: "", status: "Aberta", responsavel: "", prazo: "" };
+  }
   return { local: LOCAIS_CRONOGRAMA[0], apto: "", categoria: categoriasCronograma[0] || "", descricao: "", status: "Aberta", responsavel: "", prazo: "" };
 }
 
@@ -3486,15 +3554,16 @@ function limparFiltros(){
 }
 
 function renderPainelCronograma(){
-  const total = pendencias.length;
-  const abertas = pendencias.filter(p => p.status === 'Aberta').length;
-  const andamento = pendencias.filter(p => p.status === 'Em andamento').length;
-  const resolvidas = pendencias.filter(p => p.status === 'Resolvida').length;
+  const escopo = pendencias.filter(p => cronogramaView === 'geral' ? !p.apto : !!p.apto);
+  const total = escopo.length;
+  const abertas = escopo.filter(p => p.status === 'Aberta').length;
+  const andamento = escopo.filter(p => p.status === 'Em andamento').length;
+  const resolvidas = escopo.filter(p => p.status === 'Resolvida').length;
   const pctResolvido = total > 0 ? Math.round((resolvidas / total) * 100) : 0;
 
   function contagemPor(campo){
     const mapa = {};
-    pendencias.forEach(p => {
+    escopo.forEach(p => {
       const chave = p[campo] || '—';
       mapa[chave] = (mapa[chave] || 0) + 1;
     });
@@ -3512,41 +3581,79 @@ function renderPainelCronograma(){
       </div>`).join('');
   }
 
+  const PALETA = ['#1c3a5e','#a8781a','#3f7a53','#b23b3b','#6a7a8c','#8a5a9a','#c17a4f','#4f8ab2'];
+
+  function donutHtml(dados, tituloCentro){
+    if(dados.length === 0 || total === 0) return '<div class="proj-empty">Sem dados ainda.</div>';
+    const soma = dados.reduce((a,[,v]) => a+v, 0);
+    let acc = 0;
+    const stops = dados.map(([nome, qtd], i) => {
+      const cor = PALETA[i % PALETA.length];
+      const de = (acc/soma)*100;
+      acc += qtd;
+      const ate = (acc/soma)*100;
+      return `${cor} ${de}% ${ate}%`;
+    }).join(', ');
+    const legenda = dados.map(([nome, qtd], i) => `
+      <div class="donut-legenda-item">
+        <span class="donut-dot" style="background:${PALETA[i % PALETA.length]};"></span>
+        <span class="donut-legenda-nome" title="${escapeHtml(nome)}">${escapeHtml(nome)}</span>
+        <span class="donut-legenda-valor">${qtd}</span>
+      </div>`).join('');
+    return `
+      <div class="donut-wrap">
+        <div class="donut" style="background: conic-gradient(${stops});">
+          <div class="donut-centro">
+            <div class="donut-centro-num">${soma}</div>
+            <div class="donut-centro-label">${tituloCentro}</div>
+          </div>
+        </div>
+        <div class="donut-legenda">${legenda}</div>
+      </div>`;
+  }
+
+  const porStatus = [['Abertas', abertas], ['Em andamento', andamento], ['Resolvidas', resolvidas]].filter(d => d[1] > 0);
   const porCategoria = contagemPor('categoria');
-  const porLocal = contagemPor('local').slice(0, 10);
+  const porTerceiroBruto = cronogramaView === 'geral' ? contagemPor('local') : contagemPor('apto');
+  const porTerceiro = (cronogramaView === 'geral' ? porTerceiroBruto : porTerceiroBruto.map(([n,q]) => ['Apto ' + n, q])).slice(0, 10);
+  const tituloTerceiro = cronogramaView === 'geral' ? 'Por área (top 10)' : 'Por apê (top 10)';
 
   return `
   <div class="painel-cronograma">
     <div class="painel-stats">
-      <div class="painel-stat">
-        <div class="painel-stat-num">${total}</div>
-        <div class="painel-stat-label">Total</div>
+      <div class="painel-tile painel-tile-total">
+        <div class="painel-tile-label">Total</div>
+        <div class="painel-tile-num">${total}</div>
       </div>
-      <div class="painel-stat painel-stat-aberta">
-        <div class="painel-stat-num">${abertas}</div>
-        <div class="painel-stat-label">Abertas</div>
+      <div class="painel-tile painel-tile-aberta">
+        <div class="painel-tile-label">Abertas</div>
+        <div class="painel-tile-num">${abertas}</div>
       </div>
-      <div class="painel-stat painel-stat-andamento">
-        <div class="painel-stat-num">${andamento}</div>
-        <div class="painel-stat-label">Em andamento</div>
+      <div class="painel-tile painel-tile-andamento">
+        <div class="painel-tile-label">Em andamento</div>
+        <div class="painel-tile-num">${andamento}</div>
       </div>
-      <div class="painel-stat painel-stat-resolvida">
-        <div class="painel-stat-num">${resolvidas}</div>
-        <div class="painel-stat-label">Resolvidas</div>
+      <div class="painel-tile painel-tile-resolvida">
+        <div class="painel-tile-label">Resolvidas</div>
+        <div class="painel-tile-num">${resolvidas}</div>
       </div>
-      <div class="painel-stat">
-        <div class="painel-stat-num">${pctResolvido}%</div>
-        <div class="painel-stat-label">Concluído</div>
+      <div class="painel-tile painel-tile-pct">
+        <div class="painel-tile-label">Concluído</div>
+        <div class="painel-tile-num">${pctResolvido}%</div>
       </div>
     </div>
-    <div class="painel-graficos">
+    <div class="painel-graficos painel-graficos-donuts">
       <div class="painel-grafico-card">
-        <h4>Por categoria</h4>
-        ${barrasHtml(porCategoria, 'var(--accent)')}
+        <h4>Por status</h4>
+        ${donutHtml(porStatus, 'total')}
       </div>
       <div class="painel-grafico-card">
-        <h4>Por local (top 10)</h4>
-        ${barrasHtml(porLocal, 'var(--accent-dim)')}
+        <h4>Por categoria</h4>
+        ${donutHtml(porCategoria, 'total')}
+      </div>
+      <div class="painel-grafico-card">
+        <h4>${tituloTerceiro}</h4>
+        ${barrasHtml(porTerceiro, 'var(--accent-dim)')}
       </div>
     </div>
   </div>`;
@@ -3555,7 +3662,9 @@ function renderPainelCronograma(){
 function renderCronogramaContent(){
   const filtradas = pendencias.filter((p, i) => {
     p.__i = i;
-    return (!filtroLocal || p.local === filtroLocal)
+    const pertenceView = cronogramaView === 'geral' ? !p.apto : !!p.apto;
+    return pertenceView
+      && (!filtroLocal || p.local === filtroLocal)
       && (!filtroCategoria || p.categoria === filtroCategoria)
       && (!filtroApto || p.apto === filtroApto);
   });
@@ -3571,18 +3680,18 @@ function renderCronogramaContent(){
     const i = p.__i;
     return `
     <tr>
+      ${cronogramaView === 'geral' ? `
       <td>
         <select onchange="handleLocalChange(${i}, this.value)">
           ${todosLocais().map(l => `<option value="${l}" ${l===p.local?'selected':''}>${l}</option>`).join('')}
           <option value="${NOVO_VALOR}">+ Adicionar novo…</option>
         </select>
-      </td>
+      </td>` : `
       <td>
         <select onchange="updatePendencia(${i}, 'apto', this.value)">
-          <option value="" ${p.apto===''?'selected':''}>—</option>
           ${APTS.map(a => `<option value="${a}" ${p.apto==String(a)?'selected':''}>${a}</option>`).join('')}
         </select>
-      </td>
+      </td>`}
       <td>
         <select onchange="handleCategoriaChange(${i}, this.value)">
           ${todasCategorias().map(c => `<option value="${c}" ${c===p.categoria?'selected':''}>${c}</option>`).join('')}
@@ -3613,18 +3722,23 @@ function renderCronogramaContent(){
 
   document.getElementById("content").innerHTML = `
     ${painelHtml}
+    <div class="mini-toggle" style="margin-bottom:16px;">
+      <button class="mini-toggle-btn ${cronogramaView==='geral'?'active':''}" onclick="trocarViewCronograma('geral')">Geral</button>
+      <button class="mini-toggle-btn ${cronogramaView==='unidades'?'active':''}" onclick="trocarViewCronograma('unidades')">Unidades</button>
+    </div>
     <div class="toolbar" style="margin-bottom:16px; margin-top:0; flex-wrap:wrap;">
+      ${cronogramaView === 'geral' ? `
       <select onchange="setFiltro('local', this.value)" style="width:auto;">
-        <option value="">Todos os locais</option>
+        <option value="">Todas as áreas</option>
         ${optLocal}
-      </select>
-      <select onchange="setFiltro('categoria', this.value)" style="width:auto;">
-        <option value="">Todas as categorias</option>
-        ${optCategoria}
-      </select>
+      </select>` : `
       <select onchange="setFiltro('apto', this.value)" style="width:auto;">
         <option value="">Todos os apês</option>
         ${optApto}
+      </select>`}
+      <select onchange="setFiltro('categoria', this.value)" style="width:auto;">
+        <option value="">Todas as categorias</option>
+        ${optCategoria}
       </select>
       <button class="btn btn-ghost" onclick="limparFiltros()">Limpar filtros</button>
     </div>
@@ -3639,8 +3753,7 @@ function renderCronogramaContent(){
     <table style="min-width:1100px;">
       <thead>
         <tr>
-          <th style="width:140px;">Local</th>
-          <th style="width:80px;">Apto</th>
+          <th style="width:140px;">${cronogramaView === 'geral' ? 'Área' : 'Apto'}</th>
           <th style="width:130px;">Categoria</th>
           <th>Descrição</th>
           <th style="width:140px;">Responsável</th>
@@ -3660,15 +3773,28 @@ function renderCronogramaContent(){
   `;
 }
 
+function trocarViewCronograma(view){
+  cronogramaView = view;
+  filtroLocal = "";
+  filtroApto = "";
+  renderCronogramaContent();
+}
+
 function exportarCronogramaPDF(){
-  const filtradas = pendencias.filter(p =>
-    (!filtroLocal || p.local === filtroLocal)
-    && (!filtroCategoria || p.categoria === filtroCategoria)
-    && (!filtroApto || p.apto === filtroApto)
-  );
-  const head = ["Local", "Apto", "Categoria", "Descrição", "Responsável", "Prazo", "Status"];
-  const body = filtradas.map(p => [p.local, p.apto || "—", p.categoria, p.descricao, p.responsavel, p.prazo, p.status]);
-  const filtroTexto = [filtroLocal, filtroCategoria, filtroApto ? "Apto " + filtroApto : ""].filter(Boolean).join(" · ") || "Todas as pendências";
+  const filtradas = pendencias.filter(p => {
+    const pertenceView = cronogramaView === 'geral' ? !p.apto : !!p.apto;
+    return pertenceView
+      && (!filtroLocal || p.local === filtroLocal)
+      && (!filtroCategoria || p.categoria === filtroCategoria)
+      && (!filtroApto || p.apto === filtroApto);
+  });
+  const head = cronogramaView === 'geral'
+    ? ["Área", "Categoria", "Descrição", "Responsável", "Prazo", "Status"]
+    : ["Apto", "Categoria", "Descrição", "Responsável", "Prazo", "Status"];
+  const body = filtradas.map(p => cronogramaView === 'geral'
+    ? [p.local, p.categoria, p.descricao, p.responsavel, p.prazo, p.status]
+    : [p.apto, p.categoria, p.descricao, p.responsavel, p.prazo, p.status]);
+  const filtroTexto = [cronogramaView === 'geral' ? 'Geral' : 'Unidades', filtroLocal, filtroCategoria, filtroApto ? "Apto " + filtroApto : ""].filter(Boolean).join(" · ");
   exportarTabelaPDF(
     "Cronograma — Pendências",
     filtroTexto,
