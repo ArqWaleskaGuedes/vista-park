@@ -278,6 +278,64 @@
     border: 1px solid var(--border);
     border-radius: var(--radius);
   }
+  .drill-section{
+    margin-bottom: 18px;
+  }
+  .drill-label{
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+    margin: 12px 0 8px;
+  }
+  .drill-label:first-child{ margin-top: 0; }
+  .drill-chips{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .drill-chip{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 7px 8px 7px 14px;
+    font-size: 12.5px;
+    color: var(--text);
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .drill-chip:hover{ border-color: var(--accent-dim); }
+  .drill-chip.active{
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--on-accent);
+  }
+  .drill-chip-count{
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .drill-chip.active .drill-chip-count{
+    background: rgba(255,255,255,0.25);
+    color: var(--on-accent);
+  }
+
+  .categoria-manager-toggle{
+    font-size: 12.5px;
+    color: var(--text-dim);
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: inline-block;
+    user-select: none;
+  }
+  .categoria-manager-toggle:hover{ color: var(--accent); }
   .categoria-manager-label{
     font-size: 12px;
     color: var(--text-dim);
@@ -313,11 +371,12 @@
   }
   .painel-stats{
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 12px;
     margin-bottom: 16px;
   }
-  @media (max-width: 720px){ .painel-stats{ grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 900px){ .painel-stats{ grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 480px){ .painel-stats{ grid-template-columns: repeat(2, 1fr); } }
   .painel-tile{
     border-radius: var(--radius);
     padding: 18px 16px;
@@ -340,6 +399,7 @@
   .painel-tile-andamento{ background: var(--warn); }
   .painel-tile-resolvida{ background: var(--ok); }
   .painel-tile-pct{ background: var(--accent-dim); }
+  .painel-tile-prazo{ background: #6a4a2a; }
 
   .painel-graficos{
     display: grid;
@@ -1045,6 +1105,7 @@
         </svg>
       </button>
     </div>
+    <div id="usuarioLogadoInfo" style="font-size:11px; color:var(--text-dim); margin-bottom:14px;"></div>
     <div class="tab-switch" id="topSwitch" style="margin-bottom:20px;">
       <button class="tab-btn active" id="tabPersonalize" onclick="switchTopSection('personalize')">Personalize</button>
       <button class="tab-btn" id="tabCronograma" onclick="switchTopSection('cronograma')">Cronograma</button>
@@ -1128,6 +1189,32 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="pendenciaModal" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-title">Nova pendência</div>
+    <div id="pendenciaModalContexto" class="subsolo-label" style="margin-top:0;"></div>
+
+    <div class="subsolo-label">Categoria</div>
+    <select id="pendenciaModalCategoria" class="modal-input" style="margin-bottom:14px;"></select>
+
+    <div class="subsolo-label">Descrição *</div>
+    <input type="text" id="pendenciaModalDescricao" class="modal-input" placeholder="Descreva a pendência" style="margin-bottom:14px;" onkeydown="if(event.key==='Enter') confirmarNovaPendencia()">
+
+    <div class="subsolo-label">Responsável</div>
+    <input type="text" id="pendenciaModalResponsavel" class="modal-input" placeholder="Opcional" style="margin-bottom:14px;">
+
+    <div class="subsolo-label">Prazo</div>
+    <input type="date" id="pendenciaModalPrazo" class="modal-input">
+    <div style="font-size:11px; color:var(--text-dim); margin-top:6px;">Entrega da obra: 30/09/2026</div>
+
+    <div class="modal-error" id="pendenciaModalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalPendencia()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmarNovaPendencia()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="googleModal" style="display:none;">
   <div class="modal-box" style="text-align:center;">
     <div class="modal-title" style="text-align:left;">Identifique-se</div>
@@ -1155,6 +1242,24 @@ firebase.initializeApp(firebaseConfig);
 const firebaseDb = firebase.database();
 verificarRedirectGoogle();
 let firebaseOk = true;
+
+// Mantém a pessoa logada entre visitas (sessão persistente do Google)
+firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e => console.error("Erro ao definir persistência", e));
+
+let authInicializado = false;
+let _authReadyResolve;
+const authReady = new Promise(resolve => { _authReadyResolve = resolve; });
+
+firebase.auth().onAuthStateChanged(user => {
+  if(user){
+    currentUser = user.displayName || user.email;
+    currentUserEmail = user.email;
+  }
+  if(!authInicializado){
+    authInicializado = true;
+    _authReadyResolve();
+  }
+});
 
 // Substitui o armazenamento de teste do Claude (window.storage) por Firebase Realtime Database.
 // Mesma "forma" de chamada usada no resto do código (get/set com a mesma assinatura),
@@ -1402,10 +1507,33 @@ async function verificarRedirectGoogle(){
 }
 
 async function garantirIdentificacao(){
-  if(currentUser) return;
+  await authReady;
+  if(currentUser){ atualizarIndicadorUsuario(); return; }
   const resultado = await pedirLoginGoogle();
   currentUser = resultado.nome;
   currentUserEmail = resultado.email;
+  atualizarIndicadorUsuario();
+}
+
+function atualizarIndicadorUsuario(){
+  const el = document.getElementById("usuarioLogadoInfo");
+  if(!el) return;
+  if(currentUser){
+    el.innerHTML = escapeHtml(currentUser) + ' · <a href="#" onclick="sairDaConta(); return false;" style="color:var(--accent);">Sair</a>';
+  } else {
+    el.textContent = '';
+  }
+}
+
+async function sairDaConta(){
+  try{
+    await firebase.auth().signOut();
+  }catch(e){
+    console.error("Erro ao sair", e);
+  }
+  currentUser = "";
+  currentUserEmail = "";
+  location.reload();
 }
 
 async function registrarAtividade(secao, detalhe){
@@ -3428,6 +3556,12 @@ let filtroLocal = "";
 let filtroCategoria = "";
 let filtroApto = "";
 let cronogramaView = 'geral';
+let categoriasVisiveis = false;
+
+function toggleGerenciarCategorias(){
+  categoriasVisiveis = !categoriasVisiveis;
+  renderCronogramaContent();
+}
 
 function todosLocais(){ return LOCAIS_CRONOGRAMA.concat(locaisCustom); }
 function todasCategorias(){ return categoriasCronograma; }
@@ -3553,6 +3687,16 @@ function limparFiltros(){
   renderCronogramaContent();
 }
 
+const ENTREGA_OBRA = "2026-09-30";
+
+function diasAteEntrega(){
+  const hoje = new Date();
+  hoje.setHours(0,0,0,0);
+  const entrega = new Date(ENTREGA_OBRA + "T00:00:00");
+  const diff = Math.round((entrega - hoje) / (1000*60*60*24));
+  return diff >= 0 ? diff : 0;
+}
+
 function renderPainelCronograma(){
   const escopo = pendencias.filter(p => cronogramaView === 'geral' ? !p.apto : !!p.apto);
   const total = escopo.length;
@@ -3641,6 +3785,10 @@ function renderPainelCronograma(){
         <div class="painel-tile-label">Concluído</div>
         <div class="painel-tile-num">${pctResolvido}%</div>
       </div>
+      <div class="painel-tile painel-tile-prazo">
+        <div class="painel-tile-label">Dias até 30/09</div>
+        <div class="painel-tile-num">${diasAteEntrega()}</div>
+      </div>
     </div>
     <div class="painel-graficos painel-graficos-donuts">
       <div class="painel-grafico-card">
@@ -3671,10 +3819,6 @@ function renderCronogramaContent(){
 
   const abertas = pendencias.filter(p => p.status !== 'Resolvida').length;
   document.getElementById("summaryPill").innerHTML = `<b>${abertas}</b> pendências abertas de <b>${pendencias.length}</b> total`;
-
-  const optLocal = todosLocais().map(l => `<option value="${l}" ${filtroLocal===l?'selected':''}>${l}</option>`).join('');
-  const optCategoria = todasCategorias().map(c => `<option value="${c}" ${filtroCategoria===c?'selected':''}>${c}</option>`).join('');
-  const optApto = APTS.map(a => `<option value="${a}" ${filtroApto==String(a)?'selected':''}>${a}</option>`).join('');
 
   const bodyRows = filtradas.map(p => {
     const i = p.__i;
@@ -3720,29 +3864,42 @@ function renderCronogramaContent(){
 
   const painelHtml = renderPainelCronograma();
 
+  const escopoAtual = pendencias.filter(p => cronogramaView === 'geral' ? !p.apto : !!p.apto);
+  function contarPor(campo, valor){
+    return escopoAtual.filter(p => String(p[campo]) === String(valor)).length;
+  }
+  const chipsCategoria = todasCategorias().map(c => {
+    const n = contarPor('categoria', c);
+    const cEsc = c.replace(/'/g, "\\'");
+    return `<button class="drill-chip ${filtroCategoria===c?'active':''}" onclick="setFiltro('categoria', '${filtroCategoria===c?'':cEsc}')">${escapeHtml(c)} <span class="drill-chip-count">${n}</span></button>`;
+  }).join('');
+  const chipsLocal = todosLocais().map(l => {
+    const n = contarPor('local', l);
+    const lEsc = l.replace(/'/g, "\\'");
+    return `<button class="drill-chip ${filtroLocal===l?'active':''}" onclick="setFiltro('local', '${filtroLocal===l?'':lEsc}')">${escapeHtml(l)} <span class="drill-chip-count">${n}</span></button>`;
+  }).join('');
+  const chipsApto = APTS.map(a => {
+    const n = contarPor('apto', a);
+    return `<button class="drill-chip ${filtroApto==String(a)?'active':''}" onclick="setFiltro('apto', '${filtroApto==String(a)?'':a}')">Apto ${a} <span class="drill-chip-count">${n}</span></button>`;
+  }).join('');
+
   document.getElementById("content").innerHTML = `
     ${painelHtml}
     <div class="mini-toggle" style="margin-bottom:16px;">
       <button class="mini-toggle-btn ${cronogramaView==='geral'?'active':''}" onclick="trocarViewCronograma('geral')">Geral</button>
       <button class="mini-toggle-btn ${cronogramaView==='unidades'?'active':''}" onclick="trocarViewCronograma('unidades')">Unidades</button>
     </div>
+    <div class="drill-section">
+      <div class="drill-label">Por categoria — clique pra entrar</div>
+      <div class="drill-chips">${chipsCategoria}</div>
+      <div class="drill-label">${cronogramaView === 'geral' ? 'Por área — clique pra entrar' : 'Por apê — clique pra entrar'}</div>
+      <div class="drill-chips">${cronogramaView === 'geral' ? chipsLocal : chipsApto}</div>
+    </div>
     <div class="toolbar" style="margin-bottom:16px; margin-top:0; flex-wrap:wrap;">
-      ${cronogramaView === 'geral' ? `
-      <select onchange="setFiltro('local', this.value)" style="width:auto;">
-        <option value="">Todas as áreas</option>
-        ${optLocal}
-      </select>` : `
-      <select onchange="setFiltro('apto', this.value)" style="width:auto;">
-        <option value="">Todos os apês</option>
-        ${optApto}
-      </select>`}
-      <select onchange="setFiltro('categoria', this.value)" style="width:auto;">
-        <option value="">Todas as categorias</option>
-        ${optCategoria}
-      </select>
       <button class="btn btn-ghost" onclick="limparFiltros()">Limpar filtros</button>
     </div>
-    <div class="categoria-manager">
+    <div class="categoria-manager-toggle" onclick="toggleGerenciarCategorias()">${categoriasVisiveis ? '▾' : '▸'} Gerenciar categorias</div>
+    <div class="categoria-manager" style="${categoriasVisiveis ? '' : 'display:none;'}">
       <span class="categoria-manager-label">Categorias:</span>
       ${categoriasCronograma.map(c => `
         <span class="categoria-chip">${escapeHtml(c)}<button onclick="removerCategoria('${escapeHtml(c).replace(/'/g,"\\'")}')" title="Apagar categoria">✕</button></span>
@@ -3804,8 +3961,45 @@ function exportarCronogramaPDF(){
 }
 
 function addPendencia(){
-  pendencias.push(emptyPendencia());
-  savePendencias();
+  const categorias = todasCategorias();
+  document.getElementById("pendenciaModalCategoria").innerHTML = categorias.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  document.getElementById("pendenciaModalDescricao").value = '';
+  document.getElementById("pendenciaModalResponsavel").value = '';
+  document.getElementById("pendenciaModalPrazo").value = ENTREGA_OBRA;
+  document.getElementById("pendenciaModalError").style.display = 'none';
+
+  const contexto = cronogramaView === 'unidades'
+    ? 'Apartamento ' + (filtroApto || APTS[0])
+    : (filtroLocal || LOCAIS_CRONOGRAMA[0]);
+  document.getElementById("pendenciaModalContexto").textContent = contexto;
+
+  document.getElementById("pendenciaModal").style.display = 'flex';
+  setTimeout(() => document.getElementById("pendenciaModalDescricao").focus(), 50);
+}
+
+function fecharModalPendencia(){
+  document.getElementById("pendenciaModal").style.display = 'none';
+}
+
+async function confirmarNovaPendencia(){
+  const descricao = document.getElementById("pendenciaModalDescricao").value.trim();
+  const errEl = document.getElementById("pendenciaModalError");
+  if(!descricao){
+    errEl.textContent = 'Descreve a pendência antes de adicionar.';
+    errEl.style.display = '';
+    return;
+  }
+  const categoria = document.getElementById("pendenciaModalCategoria").value;
+  const responsavel = document.getElementById("pendenciaModalResponsavel").value.trim();
+  const prazo = document.getElementById("pendenciaModalPrazo").value;
+
+  const nova = cronogramaView === 'unidades'
+    ? { local: "", apto: String(filtroApto || APTS[0]), categoria, descricao, status: "Aberta", responsavel, prazo }
+    : { local: filtroLocal || LOCAIS_CRONOGRAMA[0], apto: "", categoria, descricao, status: "Aberta", responsavel, prazo };
+
+  pendencias.push(nova);
+  await savePendencias();
+  fecharModalPendencia();
   renderCronogramaContent();
 }
 
