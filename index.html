@@ -308,6 +308,95 @@
   }
   .categoria-chip button:hover{ background: var(--danger); color: #fff; }
 
+  .painel-cronograma{
+    margin-bottom: 22px;
+  }
+  .painel-stats{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  @media (max-width: 720px){ .painel-stats{ grid-template-columns: repeat(2, 1fr); } }
+  .painel-stat{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    text-align: center;
+  }
+  .painel-stat-num{
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+  .painel-stat-label{
+    font-size: 11.5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 6px;
+  }
+  .painel-stat-aberta .painel-stat-num{ color: var(--danger); }
+  .painel-stat-andamento .painel-stat-num{ color: var(--warn); }
+  .painel-stat-resolvida .painel-stat-num{ color: var(--ok); }
+
+  .painel-graficos{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 720px){ .painel-graficos{ grid-template-columns: 1fr; } }
+  .painel-grafico-card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .painel-grafico-card h4{
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    margin-bottom: 14px;
+    font-weight: 600;
+  }
+  .barra-linha{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+    font-size: 12.5px;
+  }
+  .barra-label{
+    width: 110px;
+    flex-shrink: 0;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .barra-trilha{
+    flex: 1;
+    background: var(--surface-2);
+    border-radius: 4px;
+    height: 10px;
+    overflow: hidden;
+  }
+  .barra-preenchida{
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+  .barra-valor{
+    width: 24px;
+    text-align: right;
+    color: var(--text-dim);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
   .mapa-container{
     position: relative;
     width: 100%;
@@ -998,6 +1087,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const firebaseDb = firebase.database();
+verificarRedirectGoogle();
 let firebaseOk = true;
 
 // Substitui o armazenamento de teste do Claude (window.storage) por Firebase Realtime Database.
@@ -1204,15 +1294,44 @@ async function fazerLoginGoogle(){
   try{
     const provider = new firebase.auth.GoogleAuthProvider();
     const result = await firebase.auth().signInWithPopup(provider);
-    const user = result.user;
-    document.getElementById("googleModal").style.display = 'none';
-    if(_googleResolve){
-      _googleResolve({ nome: user.displayName || user.email, email: user.email });
-      _googleResolve = null;
+    aplicarUsuarioGoogle(result.user);
+  }catch(e){
+    console.error("Erro no login com Google (popup)", e);
+    const erroPopup = ['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/operation-not-supported-in-this-environment'];
+    if(erroPopup.includes(e.code)){
+      try{
+        const provider = new firebase.auth.GoogleAuthProvider();
+        await firebase.auth().signInWithRedirect(provider);
+        // a página recarrega sozinha após o login — o resto acontece em verificarRedirectGoogle()
+      }catch(e2){
+        console.error("Erro no login com Google (redirect)", e2);
+        showAlert("Não foi possível entrar com sua conta Google. Verifica sua conexão e tenta de novo.");
+      }
+    } else {
+      showAlert("Não foi possível entrar com sua conta Google. Verifica sua conexão e tenta de novo.");
+    }
+  }
+}
+
+function aplicarUsuarioGoogle(user){
+  document.getElementById("googleModal").style.display = 'none';
+  if(_googleResolve){
+    _googleResolve({ nome: user.displayName || user.email, email: user.email });
+    _googleResolve = null;
+  } else {
+    currentUser = user.displayName || user.email;
+    currentUserEmail = user.email;
+  }
+}
+
+async function verificarRedirectGoogle(){
+  try{
+    const result = await firebase.auth().getRedirectResult();
+    if(result && result.user){
+      aplicarUsuarioGoogle(result.user);
     }
   }catch(e){
-    console.error("Erro no login com Google", e);
-    showAlert("Não foi possível entrar com sua conta Google. Verifica sua conexão e tenta de novo.");
+    console.error("Erro ao verificar retorno do login Google", e);
   }
 }
 
@@ -3366,6 +3485,73 @@ function limparFiltros(){
   renderCronogramaContent();
 }
 
+function renderPainelCronograma(){
+  const total = pendencias.length;
+  const abertas = pendencias.filter(p => p.status === 'Aberta').length;
+  const andamento = pendencias.filter(p => p.status === 'Em andamento').length;
+  const resolvidas = pendencias.filter(p => p.status === 'Resolvida').length;
+  const pctResolvido = total > 0 ? Math.round((resolvidas / total) * 100) : 0;
+
+  function contagemPor(campo){
+    const mapa = {};
+    pendencias.forEach(p => {
+      const chave = p[campo] || '—';
+      mapa[chave] = (mapa[chave] || 0) + 1;
+    });
+    return Object.entries(mapa).sort((a,b) => b[1] - a[1]);
+  }
+
+  function barrasHtml(dados, corVar){
+    if(dados.length === 0) return '<div class="proj-empty">Sem dados ainda.</div>';
+    const max = Math.max(...dados.map(d => d[1]));
+    return dados.map(([nome, qtd]) => `
+      <div class="barra-linha">
+        <span class="barra-label" title="${escapeHtml(nome)}">${escapeHtml(nome)}</span>
+        <div class="barra-trilha"><div class="barra-preenchida" style="width:${Math.max((qtd/max)*100, 4)}%; background:${corVar};"></div></div>
+        <span class="barra-valor">${qtd}</span>
+      </div>`).join('');
+  }
+
+  const porCategoria = contagemPor('categoria');
+  const porLocal = contagemPor('local').slice(0, 10);
+
+  return `
+  <div class="painel-cronograma">
+    <div class="painel-stats">
+      <div class="painel-stat">
+        <div class="painel-stat-num">${total}</div>
+        <div class="painel-stat-label">Total</div>
+      </div>
+      <div class="painel-stat painel-stat-aberta">
+        <div class="painel-stat-num">${abertas}</div>
+        <div class="painel-stat-label">Abertas</div>
+      </div>
+      <div class="painel-stat painel-stat-andamento">
+        <div class="painel-stat-num">${andamento}</div>
+        <div class="painel-stat-label">Em andamento</div>
+      </div>
+      <div class="painel-stat painel-stat-resolvida">
+        <div class="painel-stat-num">${resolvidas}</div>
+        <div class="painel-stat-label">Resolvidas</div>
+      </div>
+      <div class="painel-stat">
+        <div class="painel-stat-num">${pctResolvido}%</div>
+        <div class="painel-stat-label">Concluído</div>
+      </div>
+    </div>
+    <div class="painel-graficos">
+      <div class="painel-grafico-card">
+        <h4>Por categoria</h4>
+        ${barrasHtml(porCategoria, 'var(--accent)')}
+      </div>
+      <div class="painel-grafico-card">
+        <h4>Por local (top 10)</h4>
+        ${barrasHtml(porLocal, 'var(--accent-dim)')}
+      </div>
+    </div>
+  </div>`;
+}
+
 function renderCronogramaContent(){
   const filtradas = pendencias.filter((p, i) => {
     p.__i = i;
@@ -3423,7 +3609,10 @@ function renderCronogramaContent(){
     </tr>`;
   }).join('');
 
+  const painelHtml = renderPainelCronograma();
+
   document.getElementById("content").innerHTML = `
+    ${painelHtml}
     <div class="toolbar" style="margin-bottom:16px; margin-top:0; flex-wrap:wrap;">
       <select onchange="setFiltro('local', this.value)" style="width:auto;">
         <option value="">Todos os locais</option>
