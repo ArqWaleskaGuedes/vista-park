@@ -1189,6 +1189,21 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="categoriaModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">Nova categoria</div>
+    <div class="subsolo-label" style="margin-top:0;">Nome</div>
+    <input type="text" id="categoriaModalNome" class="modal-input" placeholder="Nome da categoria" style="margin-bottom:16px;" onkeydown="if(event.key==='Enter') categoriaModalSubmit()">
+    <div class="subsolo-label">Cor</div>
+    <input type="color" id="categoriaModalCor" style="width:100%; height:42px; border:1px solid var(--border); border-radius:6px; cursor:pointer; background:var(--bg); padding:2px;">
+    <div class="modal-error" id="categoriaModalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="categoriaModalCancel()">Cancelar</button>
+      <button class="btn btn-accent" onclick="categoriaModalSubmit()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="pendenciaModal" style="display:none;">
   <div class="modal-box" style="max-width:420px;">
     <div class="modal-title">Nova pendência</div>
@@ -3544,9 +3559,85 @@ const LOCAIS_CRONOGRAMA = [
   "Escadarias / Halls de Serviço","Ático / Barrilete"
 ];
 const CATEGORIAS_PADRAO_CRONOGRAMA = [
-  "Elétrica","Hidráulica","Estrutural","Alvenaria","Pintura","Esquadrias","Acabamento","Limpeza","Finalização","Outro"
+  "Elétrica","Hidráulica","Estrutural","Alvenaria","Pintura","Marmoraria","Revestimentos","Esquadrias","Acabamento","Limpeza","Finalização","Outro"
 ];
 const STATUS_CRONOGRAMA = ["Aberta","Em andamento","Resolvida"];
+
+const CORES_CATEGORIA = {
+  "Elétrica": { bg: "#e0559b", texto: "#ffffff" },
+  "Hidráulica": { bg: "#17a2b8", texto: "#ffffff" },
+  "Alvenaria": { bg: "#2563eb", texto: "#ffffff" },
+  "Pintura": { bg: "#e6b800", texto: "#3a2e00" },
+  "Marmoraria": { bg: "#d2691e", texto: "#ffffff" },
+  "Revestimentos": { bg: "#8a5a9a", texto: "#ffffff" },
+  "Esquadrias": { bg: "#8a8f98", texto: "#ffffff" },
+  "Finalização": { bg: "#b23b3b", texto: "#ffffff" },
+  "Limpeza": { bg: "#1a1a1a", texto: "#ffffff" }
+};
+let coresCategoriaCustom = {};
+
+function corCategoria(nome){
+  if(coresCategoriaCustom[nome]) return coresCategoriaCustom[nome];
+  return CORES_CATEGORIA[nome] || { bg: "#5b6b85", texto: "#ffffff" };
+}
+
+async function loadCoresCategoriaCustom(){
+  try{
+    const res = await window.storage.get("cronograma:cores_categorias", true);
+    coresCategoriaCustom = res ? JSON.parse(res.value) : {};
+  }catch(e){
+    coresCategoriaCustom = {};
+  }
+}
+
+async function salvarCoresCategoriaCustom(){
+  try{
+    await window.storage.set("cronograma:cores_categorias", JSON.stringify(coresCategoriaCustom), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar cores das categorias", e);
+  }
+}
+
+function corTextoParaFundo(hex){
+  hex = hex.replace('#','');
+  const r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+  const luminancia = (0.299*r + 0.587*g + 0.114*b) / 255;
+  return luminancia > 0.6 ? '#2a2a2a' : '#ffffff';
+}
+
+let _categoriaResolve = null;
+const PALETA_SUGESTAO = ['#e0559b','#17a2b8','#2563eb','#e6b800','#d2691e','#8a5a9a','#3f7a53','#b23b3b','#5b6b85'];
+
+function askCategoriaComCor(){
+  return new Promise(resolve => {
+    _categoriaResolve = resolve;
+    document.getElementById("categoriaModalNome").value = '';
+    document.getElementById("categoriaModalCor").value = PALETA_SUGESTAO[Math.floor(Math.random()*PALETA_SUGESTAO.length)];
+    document.getElementById("categoriaModalError").style.display = 'none';
+    document.getElementById("categoriaModal").style.display = 'flex';
+    setTimeout(() => document.getElementById("categoriaModalNome").focus(), 50);
+  });
+}
+
+function categoriaModalCancel(){
+  document.getElementById("categoriaModal").style.display = 'none';
+  if(_categoriaResolve){ _categoriaResolve(null); _categoriaResolve = null; }
+}
+
+function categoriaModalSubmit(){
+  const nome = document.getElementById("categoriaModalNome").value.trim();
+  const errEl = document.getElementById("categoriaModalError");
+  if(!nome){
+    errEl.textContent = 'Digita um nome pra categoria.';
+    errEl.style.display = '';
+    return;
+  }
+  const cor = document.getElementById("categoriaModalCor").value;
+  document.getElementById("categoriaModal").style.display = 'none';
+  if(_categoriaResolve){ _categoriaResolve({ nome, cor }); _categoriaResolve = null; }
+}
+
 const NOVO_VALOR = "__novo__";
 
 let pendencias = [];
@@ -3574,6 +3665,7 @@ function emptyPendencia(){
 }
 
 async function loadPendencias(){
+  await loadCoresCategoriaCustom();
   try{
     const res = await window.storage.get("cronograma:pendencias", true);
     pendencias = res ? JSON.parse(res.value) : [];
@@ -3593,6 +3685,14 @@ async function loadPendencias(){
   }catch(e){
     categoriasCronograma = CATEGORIAS_PADRAO_CRONOGRAMA.slice();
   }
+  let precisaSalvarCategorias = false;
+  ["Marmoraria", "Revestimentos"].forEach(c => {
+    if(!categoriasCronograma.includes(c)){
+      categoriasCronograma.push(c);
+      precisaSalvarCategorias = true;
+    }
+  });
+  if(precisaSalvarCategorias) await saveCategoriasCronograma();
 }
 
 async function saveListasCustom(){
@@ -3628,12 +3728,15 @@ async function adicionarNovoLocal(i){
 }
 
 async function adicionarNovaCategoria(i){
-  const nome = await askText("Nome da nova categoria");
-  if(!nome){ renderCronogramaContent(); return; }
+  const resultado = await askCategoriaComCor();
+  if(!resultado){ renderCronogramaContent(); return; }
+  const { nome, cor } = resultado;
   if(!categoriasCronograma.includes(nome)){
     categoriasCronograma.push(nome);
     await saveCategoriasCronograma();
   }
+  coresCategoriaCustom[nome] = { bg: cor, texto: corTextoParaFundo(cor) };
+  await salvarCoresCategoriaCustom();
   if(i !== null){
     pendencias[i].categoria = nome;
     await savePendencias();
@@ -3727,12 +3830,13 @@ function renderPainelCronograma(){
 
   const PALETA = ['#1c3a5e','#a8781a','#3f7a53','#b23b3b','#6a7a8c','#8a5a9a','#c17a4f','#4f8ab2'];
 
-  function donutHtml(dados, tituloCentro){
+  function donutHtml(dados, tituloCentro, usarCoresCategoria){
     if(dados.length === 0 || total === 0) return '<div class="proj-empty">Sem dados ainda.</div>';
     const soma = dados.reduce((a,[,v]) => a+v, 0);
     let acc = 0;
+    const corDe = (nome, i) => usarCoresCategoria ? corCategoria(nome).bg : PALETA[i % PALETA.length];
     const stops = dados.map(([nome, qtd], i) => {
-      const cor = PALETA[i % PALETA.length];
+      const cor = corDe(nome, i);
       const de = (acc/soma)*100;
       acc += qtd;
       const ate = (acc/soma)*100;
@@ -3740,7 +3844,7 @@ function renderPainelCronograma(){
     }).join(', ');
     const legenda = dados.map(([nome, qtd], i) => `
       <div class="donut-legenda-item">
-        <span class="donut-dot" style="background:${PALETA[i % PALETA.length]};"></span>
+        <span class="donut-dot" style="background:${corDe(nome, i)};"></span>
         <span class="donut-legenda-nome" title="${escapeHtml(nome)}">${escapeHtml(nome)}</span>
         <span class="donut-legenda-valor">${qtd}</span>
       </div>`).join('');
@@ -3797,7 +3901,7 @@ function renderPainelCronograma(){
       </div>
       <div class="painel-grafico-card">
         <h4>Por categoria</h4>
-        ${donutHtml(porCategoria, 'total')}
+        ${donutHtml(porCategoria, 'total', true)}
       </div>
       <div class="painel-grafico-card">
         <h4>${tituloTerceiro}</h4>
@@ -3871,7 +3975,10 @@ function renderCronogramaContent(){
   const chipsCategoria = todasCategorias().map(c => {
     const n = contarPor('categoria', c);
     const cEsc = c.replace(/'/g, "\\'");
-    return `<button class="drill-chip ${filtroCategoria===c?'active':''}" onclick="setFiltro('categoria', '${filtroCategoria===c?'':cEsc}')">${escapeHtml(c)} <span class="drill-chip-count">${n}</span></button>`;
+    const cor = corCategoria(c);
+    const ativo = filtroCategoria === c;
+    const estilo = `background:${cor.bg}; color:${cor.texto}; border-color:${cor.bg}; ${ativo ? 'box-shadow:0 0 0 2px var(--text); ' : ''}`;
+    return `<button class="drill-chip ${ativo?'active':''}" style="${estilo}" onclick="setFiltro('categoria', '${ativo?'':cEsc}')">${escapeHtml(c)} <span class="drill-chip-count" style="background:rgba(255,255,255,0.3); color:${cor.texto};">${n}</span></button>`;
   }).join('');
   const chipsLocal = todosLocais().map(l => {
     const n = contarPor('local', l);
@@ -3902,7 +4009,7 @@ function renderCronogramaContent(){
     <div class="categoria-manager" style="${categoriasVisiveis ? '' : 'display:none;'}">
       <span class="categoria-manager-label">Categorias:</span>
       ${categoriasCronograma.map(c => `
-        <span class="categoria-chip">${escapeHtml(c)}<button onclick="removerCategoria('${escapeHtml(c).replace(/'/g,"\\'")}')" title="Apagar categoria">✕</button></span>
+        <span class="categoria-chip" style="background:${corCategoria(c).bg}; color:${corCategoria(c).texto}; border-color:${corCategoria(c).bg};">${escapeHtml(c)}<button onclick="removerCategoria('${escapeHtml(c).replace(/'/g,"\\'")}')" title="Apagar categoria" style="color:${corCategoria(c).texto}; opacity:0.75;">✕</button></span>
       `).join('')}
       <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px;" onclick="adicionarNovaCategoria(null)">+ Nova categoria</button>
     </div>
