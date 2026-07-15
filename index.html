@@ -3329,12 +3329,8 @@ async function gerarComprovantePDF(apt){
       const my = imgY + (parseFloat(pos.y) / 100) * imgH;
       doc.setFillColor(178, 59, 59);
       doc.setDrawColor(255, 255, 255);
-      doc.setLineWidth(0.8);
-      doc.circle(mx, my, 4.2, 'FD');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7);
-      doc.setTextColor(255, 255, 255);
-      doc.text(String(apt), mx, my + 1.4, { align: 'center' });
+      doc.setLineWidth(0.6);
+      doc.circle(mx, my, 2.4, 'FD');
     }
 
     let tipoAtual = 'vagas';
