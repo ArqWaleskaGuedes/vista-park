@@ -1178,6 +1178,29 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="confirmModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title" id="confirmModalTitulo">Confirmar</div>
+    <div class="modal-msg" id="confirmModalMsg"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="confirmModalResponder(false)">Pular</button>
+      <button class="btn btn-accent" onclick="confirmModalResponder(true)">Marcar agora</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="calibracaoModal" style="display:none;">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-title" id="calibracaoModalTitulo">Clique no mapa</div>
+    <div style="border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:crosshair;">
+      <img id="calibracaoModalImg" src="" style="width:100%; display:block;" onclick="cliqueCalibracao(event)">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="pularCalibracao()">Pular esse item</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="textModal" style="display:none;">
   <div class="modal-box">
     <div class="modal-title" id="textModalTitle">Novo item</div>
@@ -1393,6 +1416,22 @@ function showAlert(msg, title){
 
 function closeAlertModal(){
   document.getElementById("alertModal").style.display = 'none';
+}
+
+let _confirmResolve = null;
+
+function askConfirm(titulo, mensagem){
+  return new Promise(resolve => {
+    _confirmResolve = resolve;
+    document.getElementById("confirmModalTitulo").textContent = titulo;
+    document.getElementById("confirmModalMsg").textContent = mensagem;
+    document.getElementById("confirmModal").style.display = 'flex';
+  });
+}
+
+function confirmModalResponder(valor){
+  document.getElementById("confirmModal").style.display = 'none';
+  if(_confirmResolve){ _confirmResolve(valor); _confirmResolve = null; }
 }
 
 let _textResolve = null;
@@ -3061,7 +3100,98 @@ function desenharFolhaMarcaDagua(doc, cx, cy, comprimento, anguloRad, corRgb){
   ctx.restore();
 }
 
+// ---------- Posições calibradas no mapa (sob demanda, ao exportar comprovante) ----------
+let mapaPosicoes = { vagas: {}, depositos: {} };
+
+async function loadMapaPosicoes(){
+  try{
+    const res = await window.storage.get("vagas:mapa_posicoes", true);
+    mapaPosicoes = res ? JSON.parse(res.value) : { vagas: {}, depositos: {} };
+  }catch(e){
+    mapaPosicoes = { vagas: {}, depositos: {} };
+  }
+  if(!mapaPosicoes.vagas) mapaPosicoes.vagas = {};
+  if(!mapaPosicoes.depositos) mapaPosicoes.depositos = {};
+}
+
+async function saveMapaPosicoes(){
+  try{
+    await window.storage.set("vagas:mapa_posicoes", JSON.stringify(mapaPosicoes), true);
+    flashSaved();
+    registrarAtividade("Vagas/Depósitos", "Mapa — posição calibrada");
+  }catch(e){
+    console.error("Erro ao salvar posições do mapa", e);
+  }
+}
+
+let _calibracaoResolve = null;
+
+function calibrarPosicaoInterativa(tipo, numero, subsolo){
+  return new Promise(resolve => {
+    _calibracaoResolve = resolve;
+    const label = tipo === 'vagas' ? 'Vaga' : 'Depósito';
+    document.getElementById("calibracaoModalTitulo").textContent =
+      "Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
+    document.getElementById("calibracaoModalImg").src = subsolo === '1' ? MAPA_SUBSOLO1 : MAPA_SUBSOLO2;
+    document.getElementById("calibracaoModal").style.display = 'flex';
+  });
+}
+
+function cliqueCalibracao(event){
+  const img = document.getElementById("calibracaoModalImg");
+  const rect = img.getBoundingClientRect();
+  const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
+  const yPercent = ((event.clientY - rect.top) / rect.height) * 100;
+  document.getElementById("calibracaoModal").style.display = 'none';
+  if(_calibracaoResolve){
+    _calibracaoResolve({ x: xPercent.toFixed(2), y: yPercent.toFixed(2) });
+    _calibracaoResolve = null;
+  }
+}
+
+function pularCalibracao(){
+  document.getElementById("calibracaoModal").style.display = 'none';
+  if(_calibracaoResolve){
+    _calibracaoResolve(null);
+    _calibracaoResolve = null;
+  }
+}
+
+async function garantirCalibracoes(apt, d){
+  await loadMapaPosicoes();
+  const pendentes = [];
+  d.vagas.forEach(v => {
+    const item = vagasBaseList.find(b => b.numero === v);
+    if(item && !mapaPosicoes.vagas[v]) pendentes.push({ tipo: 'vagas', numero: v, subsolo: item.subsolo });
+  });
+  d.depositos.forEach(v => {
+    const item = depositosBaseList.find(b => b.numero === v);
+    if(item && !mapaPosicoes.depositos[v]) pendentes.push({ tipo: 'depositos', numero: v, subsolo: item.subsolo });
+  });
+
+  if(pendentes.length === 0) return;
+
+  const quer = await askConfirm(
+    "Marcar no mapa?",
+    "Essa(s) " + pendentes.length + " posição(ões) ainda não foram marcadas no mapa (" +
+    pendentes.map(p => (p.tipo==='vagas'?'Vaga':'Depósito') + " " + p.numero).join(', ') +
+    "). Quer marcar agora pra elas aparecerem no comprovante? (Pular gera o PDF sem marcação)"
+  );
+  if(!quer) return;
+
+  for(const p of pendentes){
+    const pos = await calibrarPosicaoInterativa(p.tipo, p.numero, p.subsolo);
+    if(pos){
+      mapaPosicoes[p.tipo][p.numero] = pos;
+      await saveMapaPosicoes();
+    }
+  }
+}
+
 async function gerarComprovantePDF(apt){
+  const d0 = vagasState[apt] || { vagas: [], depositos: [] };
+  await garantirCalibracoes(apt, d0);
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const d = vagasState[apt] || { vagas: [], depositos: [] };
@@ -3191,6 +3321,32 @@ async function gerarComprovantePDF(apt){
     const imgH = imgW / ratio;
 
     doc.addImage(imgData, 'PNG', imgX, imgY, imgW, imgH);
+
+    function marcarNoMapa(numero){
+      const pos = mapaPosicoes[tipoAtual][numero];
+      if(!pos) return;
+      const mx = imgX + (parseFloat(pos.x) / 100) * imgW;
+      const my = imgY + (parseFloat(pos.y) / 100) * imgH;
+      doc.setFillColor(178, 59, 59);
+      doc.setDrawColor(255, 255, 255);
+      doc.setLineWidth(0.8);
+      doc.circle(mx, my, 4.2, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(255, 255, 255);
+      doc.text(String(apt), mx, my + 1.4, { align: 'center' });
+    }
+
+    let tipoAtual = 'vagas';
+    d.vagas.forEach(v => {
+      const item = vagasBaseList.find(b => b.numero === v);
+      if(item && item.subsolo === subsolo) marcarNoMapa(v);
+    });
+    tipoAtual = 'depositos';
+    d.depositos.forEach(v => {
+      const item = depositosBaseList.find(b => b.numero === v);
+      if(item && item.subsolo === subsolo) marcarNoMapa(v);
+    });
   });
 
   doc.save("comprovante_vagas_deposito_apto_" + apt + ".pdf");
