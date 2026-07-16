@@ -1192,11 +1192,16 @@
 <div class="modal-overlay" id="calibracaoModal" style="display:none;">
   <div class="modal-box" style="max-width:640px;">
     <div class="modal-title" id="calibracaoModalTitulo">Clique no mapa</div>
-    <div style="border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:crosshair;">
+    <div id="calibracaoModalContainer" style="position:relative; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:crosshair;">
       <img id="calibracaoModalImg" src="" style="width:100%; display:block;" onclick="cliqueCalibracao(event)">
+      <div id="calibracaoModalMarcador" style="display:none; position:absolute; width:10px; height:10px; margin:-5px 0 0 -5px; background:#b23b3b; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 1px #b23b3b; pointer-events:none;"></div>
     </div>
-    <div class="modal-actions">
+    <div class="modal-actions" id="calibracaoModalAcoesPular">
       <button class="btn btn-ghost" onclick="pularCalibracao()">Pular esse item</button>
+    </div>
+    <div class="modal-actions" id="calibracaoModalAcoesConfirmar" style="display:none;">
+      <button class="btn btn-ghost" onclick="refazerCalibracao()">Clicar de novo</button>
+      <button class="btn btn-accent" onclick="confirmarCalibracao()">✓ Confirmar posição</button>
     </div>
   </div>
 </div>
@@ -2818,6 +2823,7 @@ function trocarAndarMapa(subsolo){
 async function renderVagasMapa(){
   await loadVagasBase();
   await loadTodasDestinacoes();
+  await loadMapaPosicoes();
   renderVagasMapaConteudo();
 }
 
@@ -2827,6 +2833,7 @@ function renderVagasMapaConteudo(){
   document.getElementById("summaryPill").textContent = "";
 
   const imgSrc = mapaFloorAtual === '1' ? MAPA_SUBSOLO1 : MAPA_SUBSOLO2;
+  const totalMarcadas = Object.keys(mapaPosicoes.vagas || {}).length + Object.keys(mapaPosicoes.depositos || {}).length;
 
   document.getElementById("content").innerHTML = `
     <div class="toolbar" style="margin-bottom:14px; flex-wrap:wrap;">
@@ -2838,7 +2845,45 @@ function renderVagasMapaConteudo(){
     <div class="mapa-container">
       <img src="${imgSrc}" class="mapa-imagem" draggable="false">
     </div>
+    <div class="proj-card" style="margin-top:16px;">
+      <h3>Marcações no mapa <span style="font-weight:400; color:var(--text-dim); font-size:11.5px; text-transform:none; letter-spacing:normal;">(${totalMarcadas} posições salvas no total)</span></h3>
+      <div class="toolbar" style="margin-top:10px;">
+        <input type="text" id="limparUmNumero" placeholder="Número (ex: 56)" style="width:140px;">
+        <select id="limparUmTipo" style="width:auto;">
+          <option value="vagas">Vaga</option>
+          <option value="depositos">Depósito</option>
+        </select>
+        <button class="btn btn-ghost" onclick="limparUmaMarcacao()">Limpar essa marcação</button>
+        <button class="btn btn-ghost" style="color:var(--danger); border-color:var(--danger);" onclick="limparTodasMarcacoes()">🗑️ Limpar todas as marcações</button>
+      </div>
+    </div>
   `;
+}
+
+async function limparUmaMarcacao(){
+  await loadMapaPosicoes();
+  const numero = document.getElementById("limparUmNumero").value.trim();
+  const tipo = document.getElementById("limparUmTipo").value;
+  if(!numero){ showAlert("Digita o número da vaga ou depósito."); return; }
+  if(!mapaPosicoes[tipo][numero]){
+    showAlert((tipo === 'vagas' ? 'Vaga' : 'Depósito') + " " + numero + " não tem marcação salva.");
+    return;
+  }
+  delete mapaPosicoes[tipo][numero];
+  await saveMapaPosicoes();
+  showAlert("Marcação removida. Na próxima vez que essa vaga/depósito for usada num comprovante, vai pedir pra clicar de novo.");
+  renderVagasMapaConteudo();
+}
+
+async function limparTodasMarcacoes(){
+  const quer = await askConfirm(
+    "Limpar todas as marcações?",
+    "Isso apaga TODAS as posições já marcadas no mapa (as duas plantas). Você vai precisar clicar de novo em cada vaga/depósito conforme forem sendo usados em comprovantes. Essa ação não tem como desfazer."
+  );
+  if(!quer) return;
+  mapaPosicoes = { vagas: {}, depositos: {} };
+  await saveMapaPosicoes();
+  renderVagasMapaConteudo();
 }
 
 function exportarVagasBasePDF(){
@@ -3126,13 +3171,19 @@ async function saveMapaPosicoes(){
 
 let _calibracaoResolve = null;
 
+let _cliquePendente = null;
+
 function calibrarPosicaoInterativa(tipo, numero, subsolo){
   return new Promise(resolve => {
     _calibracaoResolve = resolve;
+    _cliquePendente = null;
     const label = tipo === 'vagas' ? 'Vaga' : 'Depósito';
     document.getElementById("calibracaoModalTitulo").textContent =
       "Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
     document.getElementById("calibracaoModalImg").src = subsolo === '1' ? MAPA_SUBSOLO1 : MAPA_SUBSOLO2;
+    document.getElementById("calibracaoModalMarcador").style.display = 'none';
+    document.getElementById("calibracaoModalAcoesPular").style.display = '';
+    document.getElementById("calibracaoModalAcoesConfirmar").style.display = 'none';
     document.getElementById("calibracaoModal").style.display = 'flex';
   });
 }
@@ -3142,9 +3193,28 @@ function cliqueCalibracao(event){
   const rect = img.getBoundingClientRect();
   const xPercent = ((event.clientX - rect.left) / rect.width) * 100;
   const yPercent = ((event.clientY - rect.top) / rect.height) * 100;
+  _cliquePendente = { x: xPercent.toFixed(2), y: yPercent.toFixed(2) };
+
+  const marcador = document.getElementById("calibracaoModalMarcador");
+  marcador.style.left = xPercent + '%';
+  marcador.style.top = yPercent + '%';
+  marcador.style.display = '';
+
+  document.getElementById("calibracaoModalAcoesPular").style.display = 'none';
+  document.getElementById("calibracaoModalAcoesConfirmar").style.display = '';
+}
+
+function refazerCalibracao(){
+  _cliquePendente = null;
+  document.getElementById("calibracaoModalMarcador").style.display = 'none';
+  document.getElementById("calibracaoModalAcoesPular").style.display = '';
+  document.getElementById("calibracaoModalAcoesConfirmar").style.display = 'none';
+}
+
+function confirmarCalibracao(){
   document.getElementById("calibracaoModal").style.display = 'none';
   if(_calibracaoResolve){
-    _calibracaoResolve({ x: xPercent.toFixed(2), y: yPercent.toFixed(2) });
+    _calibracaoResolve(_cliquePendente);
     _calibracaoResolve = null;
   }
 }
@@ -3330,7 +3400,7 @@ async function gerarComprovantePDF(apt){
       doc.setFillColor(178, 59, 59);
       doc.setDrawColor(255, 255, 255);
       doc.setLineWidth(0.4);
-      doc.circle(mx, my, 1.4, 'FD');
+      doc.circle(mx, my, 0.9, 'FD');
     }
 
     let tipoAtual = 'vagas';
