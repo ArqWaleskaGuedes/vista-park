@@ -1191,7 +1191,11 @@
 
 <div class="modal-overlay" id="calibracaoModal" style="display:none;">
   <div class="modal-box" style="max-width:640px;">
-    <div class="modal-title" id="calibracaoModalTitulo">Clique no mapa</div>
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+      <div class="modal-title" id="calibracaoModalTitulo" style="margin-bottom:0;">Clique no mapa</div>
+      <button onclick="cancelarCalibracaoTudo()" style="background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:12px; white-space:nowrap; text-decoration:underline; padding:2px;">✕ Cancelar tudo e sair</button>
+    </div>
+    <div style="height:12px;"></div>
     <div id="calibracaoModalContainer" style="position:relative; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:crosshair;">
       <img id="calibracaoModalImg" src="" style="width:100%; display:block;" onclick="cliqueCalibracao(event)">
       <div id="calibracaoModalMarcador" style="display:none; position:absolute; width:10px; height:10px; margin:-5px 0 0 -5px; background:#b23b3b; border:2px solid #fff; border-radius:50%; box-shadow:0 0 0 1px #b23b3b; pointer-events:none;"></div>
@@ -3173,19 +3177,30 @@ let _calibracaoResolve = null;
 
 let _cliquePendente = null;
 
-function calibrarPosicaoInterativa(tipo, numero, subsolo){
+let _calibracaoCancelada = false;
+
+function calibrarPosicaoInterativa(tipo, numero, subsolo, indice, total){
   return new Promise(resolve => {
     _calibracaoResolve = resolve;
     _cliquePendente = null;
     const label = tipo === 'vagas' ? 'Vaga' : 'Depósito';
     document.getElementById("calibracaoModalTitulo").textContent =
-      "Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
+      "(" + indice + "/" + total + ") Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
     document.getElementById("calibracaoModalImg").src = subsolo === '1' ? MAPA_SUBSOLO1 : MAPA_SUBSOLO2;
     document.getElementById("calibracaoModalMarcador").style.display = 'none';
     document.getElementById("calibracaoModalAcoesPular").style.display = '';
     document.getElementById("calibracaoModalAcoesConfirmar").style.display = 'none';
     document.getElementById("calibracaoModal").style.display = 'flex';
   });
+}
+
+function cancelarCalibracaoTudo(){
+  _calibracaoCancelada = true;
+  document.getElementById("calibracaoModal").style.display = 'none';
+  if(_calibracaoResolve){
+    _calibracaoResolve(null);
+    _calibracaoResolve = null;
+  }
 }
 
 function cliqueCalibracao(event){
@@ -3239,7 +3254,7 @@ async function garantirCalibracoes(apt, d){
     if(item && !mapaPosicoes.depositos[v]) pendentes.push({ tipo: 'depositos', numero: v, subsolo: item.subsolo });
   });
 
-  if(pendentes.length === 0) return;
+  if(pendentes.length === 0) return true;
 
   const quer = await askConfirm(
     "Marcar no mapa?",
@@ -3247,20 +3262,26 @@ async function garantirCalibracoes(apt, d){
     pendentes.map(p => (p.tipo==='vagas'?'Vaga':'Depósito') + " " + p.numero).join(', ') +
     "). Quer marcar agora pra elas aparecerem no comprovante? (Pular gera o PDF sem marcação)"
   );
-  if(!quer) return;
+  if(!quer) return true;
 
+  _calibracaoCancelada = false;
+  let indice = 0;
   for(const p of pendentes){
-    const pos = await calibrarPosicaoInterativa(p.tipo, p.numero, p.subsolo);
+    indice++;
+    const pos = await calibrarPosicaoInterativa(p.tipo, p.numero, p.subsolo, indice, pendentes.length);
+    if(_calibracaoCancelada) return false;
     if(pos){
       mapaPosicoes[p.tipo][p.numero] = pos;
       await saveMapaPosicoes();
     }
   }
+  return true;
 }
 
 async function gerarComprovantePDF(apt){
   const d0 = vagasState[apt] || { vagas: [], depositos: [] };
-  await garantirCalibracoes(apt, d0);
+  const continuar = await garantirCalibracoes(apt, d0);
+  if(!continuar) return;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
@@ -3400,7 +3421,7 @@ async function gerarComprovantePDF(apt){
       doc.setFillColor(178, 59, 59);
       doc.setDrawColor(255, 255, 255);
       doc.setLineWidth(0.4);
-      doc.circle(mx, my, 0.9, 'FD');
+      doc.circle(mx, my, 1.2, 'FD');
     }
 
     let tipoAtual = 'vagas';
