@@ -1183,8 +1183,23 @@
     <div class="modal-title" id="confirmModalTitulo">Confirmar</div>
     <div class="modal-msg" id="confirmModalMsg"></div>
     <div class="modal-actions">
-      <button class="btn btn-ghost" onclick="confirmModalResponder(false)">Pular</button>
-      <button class="btn btn-accent" onclick="confirmModalResponder(true)">Marcar agora</button>
+      <button class="btn btn-ghost" id="confirmModalBtnNao" onclick="confirmModalResponder(false)">Pular</button>
+      <button class="btn btn-accent" id="confirmModalBtnSim" onclick="confirmModalResponder(true)">Marcar agora</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="revisaoModal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
+      <div class="modal-title" style="margin-bottom:0;">Marcações no mapa — Apto <span id="revisaoModalApt"></span></div>
+      <button onclick="fecharRevisaoComEscolha()" title="Fechar" style="background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:20px; line-height:1; padding:2px 4px;">✕</button>
+    </div>
+    <div class="modal-msg">Confira ou corrija antes de gerar o comprovante.</div>
+    <div id="revisaoModalLista" style="max-height:320px; overflow-y:auto; margin:14px 0;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="cancelarRevisao()">Cancelar exportação</button>
+      <button class="btn btn-accent" onclick="continuarRevisao()">Continuar e gerar PDF</button>
     </div>
   </div>
 </div>
@@ -1193,7 +1208,7 @@
   <div class="modal-box" style="max-width:640px;">
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
       <div class="modal-title" id="calibracaoModalTitulo" style="margin-bottom:0;">Clique no mapa</div>
-      <button onclick="cancelarCalibracaoTudo()" style="background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:12px; white-space:nowrap; text-decoration:underline; padding:2px;">✕ Cancelar tudo e sair</button>
+      <button onclick="cancelarCalibracaoTudo()" title="Fechar sem marcar" style="background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:20px; line-height:1; padding:2px 4px;">✕</button>
     </div>
     <div style="height:12px;"></div>
     <div id="calibracaoModalContainer" style="position:relative; border:1px solid var(--border); border-radius:6px; overflow:hidden; cursor:crosshair;">
@@ -1429,11 +1444,13 @@ function closeAlertModal(){
 
 let _confirmResolve = null;
 
-function askConfirm(titulo, mensagem){
+function askConfirm(titulo, mensagem, labelNao, labelSim){
   return new Promise(resolve => {
     _confirmResolve = resolve;
     document.getElementById("confirmModalTitulo").textContent = titulo;
     document.getElementById("confirmModalMsg").textContent = mensagem;
+    document.getElementById("confirmModalBtnNao").textContent = labelNao || 'Pular';
+    document.getElementById("confirmModalBtnSim").textContent = labelSim || 'Marcar agora';
     document.getElementById("confirmModal").style.display = 'flex';
   });
 }
@@ -2678,6 +2695,34 @@ async function loadVagasBase(){
   }catch(e){ depositosBaseList = []; }
   vagasBaseList = ordenarPorNumero(vagasBaseList);
   depositosBaseList = ordenarPorNumero(depositosBaseList);
+
+  // Migração: depósito 01-11 é Subsolo 1, 12-36 é Subsolo 2 (corrige dados antigos gravados errado)
+  let precisaMigrar = false;
+  const numerosTrocados = [];
+  depositosBaseList.forEach(d => {
+    const n = parseInt(d.numero, 10);
+    const subsoloCorreto = n <= 11 ? '1' : '2';
+    if(d.subsolo !== subsoloCorreto){
+      d.subsolo = subsoloCorreto;
+      numerosTrocados.push(d.numero);
+      precisaMigrar = true;
+    }
+  });
+  if(precisaMigrar){
+    await saveVagasBase();
+    // As posições marcadas antes (no subsolo errado) não valem mais — limpa pra pedir recalibração
+    if(numerosTrocados.length > 0){
+      await loadMapaPosicoes();
+      let limpouAlguma = false;
+      numerosTrocados.forEach(numero => {
+        if(mapaPosicoes.depositos[numero]){
+          delete mapaPosicoes.depositos[numero];
+          limpouAlguma = true;
+        }
+      });
+      if(limpouAlguma) await saveMapaPosicoes();
+    }
+  }
 }
 
 async function saveVagasBase(){
@@ -2755,8 +2800,8 @@ async function seedVagasBaseInicial(){
   vagasBaseList.push({ numero: '111', subsolo: '2' });
 
   depositosBaseList = [];
-  for(let n = 26; n <= 36; n++) depositosBaseList.push({ numero: String(n).padStart(2,'0'), subsolo: '1' });
-  for(let n = 1; n <= 25; n++) depositosBaseList.push({ numero: String(n).padStart(2,'0'), subsolo: '2' });
+  for(let n = 1; n <= 11; n++) depositosBaseList.push({ numero: String(n).padStart(2,'0'), subsolo: '1' });
+  for(let n = 12; n <= 36; n++) depositosBaseList.push({ numero: String(n).padStart(2,'0'), subsolo: '2' });
 
   vagasBaseList = ordenarPorNumero(vagasBaseList);
   depositosBaseList = ordenarPorNumero(depositosBaseList);
@@ -3184,8 +3229,9 @@ function calibrarPosicaoInterativa(tipo, numero, subsolo, indice, total){
     _calibracaoResolve = resolve;
     _cliquePendente = null;
     const label = tipo === 'vagas' ? 'Vaga' : 'Depósito';
+    const prefixo = total > 1 ? "(" + indice + "/" + total + ") " : "";
     document.getElementById("calibracaoModalTitulo").textContent =
-      "(" + indice + "/" + total + ") Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
+      prefixo + "Clique onde fica: " + label + " " + numero + " (Subsolo " + subsolo + ")";
     document.getElementById("calibracaoModalImg").src = subsolo === '1' ? MAPA_SUBSOLO1 : MAPA_SUBSOLO2;
     document.getElementById("calibracaoModalMarcador").style.display = 'none';
     document.getElementById("calibracaoModalAcoesPular").style.display = '';
@@ -3242,40 +3288,89 @@ function pularCalibracao(){
   }
 }
 
+let _revisaoResolve = null;
+let _revisaoItens = [];
+let _snapshotMapaPosicoes = null;
+
+function renderRevisaoLista(){
+  document.getElementById("revisaoModalLista").innerHTML = _revisaoItens.map(it => {
+    const label = it.tipo === 'vagas' ? 'Vaga' : 'Depósito';
+    const statusHtml = it.marcado
+      ? '<span style="color:var(--ok); font-size:11px;">✓ marcado</span>'
+      : '<span style="color:var(--warn); font-size:11px;">não marcado</span>';
+    return `<div style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border);">
+      <span>${label} ${escapeHtml(it.numero)} <span style="color:var(--text-dim); font-size:11px;">(Subsolo ${it.subsolo})</span> — ${statusHtml}</span>
+      <button class="btn btn-ghost" onclick="recalibrarItem('${it.tipo}','${it.numero}','${it.subsolo}')">${it.marcado ? 'Refazer' : 'Marcar'}</button>
+    </div>`;
+  }).join('');
+}
+
+function abrirRevisaoMapa(apt, itens){
+  return new Promise(resolve => {
+    _revisaoResolve = resolve;
+    _revisaoItens = itens;
+    _snapshotMapaPosicoes = JSON.parse(JSON.stringify(mapaPosicoes));
+    document.getElementById("revisaoModalApt").textContent = apt;
+    renderRevisaoLista();
+    document.getElementById("revisaoModal").style.display = 'flex';
+  });
+}
+
+async function fecharRevisaoComEscolha(){
+  const manter = await askConfirm(
+    "Sair da revisão do mapa",
+    "Você pode ter marcado ou corrigido alguma posição nesta sessão. Quer manter essas marcações, ou descartar e voltar como estava antes de abrir essa tela?",
+    "Descartar",
+    "Manter marcações"
+  );
+  if(!manter){
+    mapaPosicoes = _snapshotMapaPosicoes;
+    await saveMapaPosicoes();
+  }
+  document.getElementById("revisaoModal").style.display = 'none';
+  if(_revisaoResolve){ _revisaoResolve(false); _revisaoResolve = null; }
+}
+
+async function recalibrarItem(tipo, numero, subsolo){
+  document.getElementById("revisaoModal").style.display = 'none';
+  _calibracaoCancelada = false;
+  const pos = await calibrarPosicaoInterativa(tipo, numero, subsolo, 1, 1);
+  if(pos){
+    mapaPosicoes[tipo][numero] = pos;
+    await saveMapaPosicoes();
+    const item = _revisaoItens.find(it => it.tipo===tipo && it.numero===numero);
+    if(item) item.marcado = true;
+  }
+  _calibracaoCancelada = false;
+  document.getElementById("revisaoModal").style.display = 'flex';
+  renderRevisaoLista();
+}
+
+function cancelarRevisao(){
+  document.getElementById("revisaoModal").style.display = 'none';
+  if(_revisaoResolve){ _revisaoResolve(false); _revisaoResolve = null; }
+}
+
+function continuarRevisao(){
+  document.getElementById("revisaoModal").style.display = 'none';
+  if(_revisaoResolve){ _revisaoResolve(true); _revisaoResolve = null; }
+}
+
 async function garantirCalibracoes(apt, d){
   await loadMapaPosicoes();
-  const pendentes = [];
+  const itens = [];
   d.vagas.forEach(v => {
     const item = vagasBaseList.find(b => b.numero === v);
-    if(item && !mapaPosicoes.vagas[v]) pendentes.push({ tipo: 'vagas', numero: v, subsolo: item.subsolo });
+    if(item) itens.push({ tipo: 'vagas', numero: v, subsolo: item.subsolo, marcado: !!mapaPosicoes.vagas[v] });
   });
   d.depositos.forEach(v => {
     const item = depositosBaseList.find(b => b.numero === v);
-    if(item && !mapaPosicoes.depositos[v]) pendentes.push({ tipo: 'depositos', numero: v, subsolo: item.subsolo });
+    if(item) itens.push({ tipo: 'depositos', numero: v, subsolo: item.subsolo, marcado: !!mapaPosicoes.depositos[v] });
   });
 
-  if(pendentes.length === 0) return true;
+  if(itens.length === 0) return true;
 
-  const quer = await askConfirm(
-    "Marcar no mapa?",
-    "Essa(s) " + pendentes.length + " posição(ões) ainda não foram marcadas no mapa (" +
-    pendentes.map(p => (p.tipo==='vagas'?'Vaga':'Depósito') + " " + p.numero).join(', ') +
-    "). Quer marcar agora pra elas aparecerem no comprovante? (Pular gera o PDF sem marcação)"
-  );
-  if(!quer) return true;
-
-  _calibracaoCancelada = false;
-  let indice = 0;
-  for(const p of pendentes){
-    indice++;
-    const pos = await calibrarPosicaoInterativa(p.tipo, p.numero, p.subsolo, indice, pendentes.length);
-    if(_calibracaoCancelada) return false;
-    if(pos){
-      mapaPosicoes[p.tipo][p.numero] = pos;
-      await saveMapaPosicoes();
-    }
-  }
-  return true;
+  return await abrirRevisaoMapa(apt, itens);
 }
 
 async function gerarComprovantePDF(apt){
