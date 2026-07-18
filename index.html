@@ -3175,14 +3175,20 @@ function cabecalhoPDF(doc, titulo, subtitulo){
   doc.text("Vista Park Residencial 166", 14, 15);
   doc.setFontSize(11);
   doc.text(titulo, 14, 22);
+  let y = 27;
   if(subtitulo){
     doc.setFontSize(9);
     doc.setTextColor(120);
-    doc.text(subtitulo, 14, 27);
+    String(subtitulo).split('\n').forEach(linha => {
+      doc.text(linha, 14, y);
+      y += 4.5;
+    });
     doc.setTextColor(20,20,20);
   }
+  const yLinha = subtitulo ? y : 30;
   doc.setDrawColor(28,58,94);
-  doc.line(14, 30, doc.internal.pageSize.getWidth() - 14, 30);
+  doc.line(14, yLinha, doc.internal.pageSize.getWidth() - 14, yLinha);
+  return yLinha;
 }
 
 function rodapePDF(doc){
@@ -3197,11 +3203,11 @@ function exportarTabelaPDF(titulo, subtitulo, head, body, opts){
   opts = opts || {};
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF(opts.landscape ? { orientation: 'landscape' } : undefined);
-  cabecalhoPDF(doc, titulo, subtitulo);
+  const yLinha = cabecalhoPDF(doc, titulo, subtitulo);
   doc.autoTable({
     head: [head],
     body: body,
-    startY: 34,
+    startY: yLinha + 4,
     styles: { fontSize: opts.fontSize || 8, cellPadding: 2 },
     headStyles: { fillColor: [28,58,94], textColor: 255 },
     margin: { left: 14, right: 14 }
@@ -3214,8 +3220,8 @@ function exportarTabelaPDF(titulo, subtitulo, head, body, opts){
 function exportarListaPDF(titulo, subtitulo, secoes, filename){
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  cabecalhoPDF(doc, titulo, subtitulo);
-  let y = 42;
+  const yLinha = cabecalhoPDF(doc, titulo, subtitulo);
+  let y = yLinha + 12;
   const pageH = doc.internal.pageSize.getHeight();
   secoes.forEach(sec => {
     if(y > pageH - 20){ doc.addPage(); y = 20; }
@@ -5116,7 +5122,8 @@ function atualizarQtdRequisicao(idx, valor){
 
 function atualizarTextoRequisicao(){
   let texto = "📋 *Requisição de Compra — Vista Park*\n";
-  texto += "Obra RD04 — Rua José Monteiro Filho, 166\n";
+  texto += "Obra RD04\n";
+  texto += "Endereço: Rua José Monteiro Filho, 166\n";
   texto += new Date().toLocaleDateString('pt-BR') + "\n\n";
   _requisicaoItensAtual.forEach(r => {
     const it = r.it;
@@ -5165,7 +5172,7 @@ function exportarRequisicaoPDF(){
   ]);
   exportarTabelaPDF(
     "Requisição de Compra",
-    "Obra RD04 · Rua José Monteiro Filho, 166 · " + itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
+    "Obra RD04\nEndereço: Rua José Monteiro Filho, 166\n" + itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
     head, body,
     { filename: "requisicao_compra.pdf", landscape: true }
   );
