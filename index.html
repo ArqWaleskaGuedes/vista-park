@@ -1345,13 +1345,17 @@
 </div>
 
 <div class="modal-overlay" id="requisicaoModal" style="display:none;">
-  <div class="modal-box" style="max-width:480px;">
+  <div class="modal-box" style="max-width:560px;">
     <div class="modal-title">Requisição de compra</div>
-    <div class="modal-msg">Confira os itens e envie pro setor de compras.</div>
-    <textarea id="requisicaoModalTexto" readonly style="width:100%; height:200px; font-family:inherit; font-size:12.5px; padding:10px; border:1px solid var(--border); border-radius:6px; resize:vertical; background:var(--surface-2); color:var(--text);"></textarea>
+    <div class="modal-msg">Define quanto comprar de cada item (já vem sugerido).</div>
+    <div id="requisicaoModalLista" style="max-height:240px; overflow-y:auto; margin:12px 0; border-bottom:1px solid var(--border); padding-bottom:8px;"></div>
+    <textarea id="requisicaoModalTexto" readonly style="width:100%; height:170px; font-family:inherit; font-size:12.5px; padding:10px; border:1px solid var(--border); border-radius:6px; resize:vertical; background:var(--surface-2); color:var(--text);"></textarea>
+    <div class="subsolo-label">E-mail do setor de compras</div>
+    <input type="email" id="requisicaoModalEmail" class="modal-input" placeholder="compras@empresa.com.br" oninput="salvarEmailCompras(this.value)">
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharRequisicaoModal()">Fechar</button>
       <button class="btn btn-ghost" onclick="copiarMensagemRequisicao()">📋 Copiar mensagem</button>
+      <button class="btn btn-ghost" onclick="enviarRequisicaoPorEmail()">✉️ Enviar por e-mail</button>
       <button class="btn btn-accent" onclick="exportarRequisicaoPDF()">📄 Baixar PDF</button>
     </div>
   </div>
@@ -4740,6 +4744,7 @@ let _selecionadosRequisicao = new Set();
 async function renderSuprimentos(){
   await loadSuprimentos();
   await loadFornecedoresBase();
+  await loadEmailCompras();
   document.getElementById("unitTitle").textContent = "Suprimentos";
   document.getElementById("unitSubtitle").textContent = "Estoque virtual da obra — organizado por categoria";
 
@@ -5031,6 +5036,38 @@ function importarPlanilhaSuprimentos(event){
 }
 
 let _requisicaoItensAtual = [];
+let emailCompras = "";
+
+async function loadEmailCompras(){
+  try{
+    const res = await window.storage.get("suprimentos:email_compras", true);
+    emailCompras = res ? res.value : "";
+  }catch(e){
+    emailCompras = "";
+  }
+}
+
+async function salvarEmailCompras(valor){
+  emailCompras = valor.trim();
+  try{
+    await window.storage.set("suprimentos:email_compras", emailCompras, true);
+  }catch(e){
+    console.error("Erro ao salvar e-mail de compras", e);
+  }
+}
+
+function enviarRequisicaoPorEmail(){
+  const email = document.getElementById("requisicaoModalEmail").value.trim();
+  if(!email){
+    showAlert("Preenche o e-mail do setor de compras antes de enviar.");
+    return;
+  }
+  const assunto = "Requisição de Compra — Vista Park — " + new Date().toLocaleDateString('pt-BR');
+  const corpo = document.getElementById("requisicaoModalTexto").value.replace(/\*/g, '');
+  const link = "mailto:" + email + "?subject=" + encodeURIComponent(assunto) + "&body=" + encodeURIComponent(corpo);
+  window.location.href = link;
+}
+
 
 function gerarRequisicao(modo){
   const itens = modo === 'baixos'
@@ -5041,23 +5078,53 @@ function gerarRequisicao(modo){
     showAlert("Nenhum item pra incluir na requisição.");
     return;
   }
-  _requisicaoItensAtual = itens;
 
+  _requisicaoItensAtual = itens.map(it => {
+    const atual = parseFloat(it.quantidade);
+    const min = parseFloat(it.estoqueMinimo);
+    const sugestao = (!isNaN(atual) && !isNaN(min) && min > atual) ? String(min - atual) : '';
+    return { it, qtdComprar: sugestao };
+  });
+
+  renderRequisicaoLista();
+  atualizarTextoRequisicao();
+  document.getElementById("requisicaoModalEmail").value = emailCompras;
+  document.getElementById("requisicaoModal").style.display = 'flex';
+}
+
+function renderRequisicaoLista(){
+  document.getElementById("requisicaoModalLista").innerHTML = _requisicaoItensAtual.map((r, idx) => `
+    <div style="display:flex; align-items:center; gap:8px; padding:7px 0; border-top:1px solid var(--border); font-size:12.5px;">
+      <span style="flex:1;">
+        ${escapeHtml(r.it.nome || 'Item sem nome')}
+        <span style="color:var(--text-dim); display:block; font-size:11px;">atual: ${escapeHtml(r.it.quantidade||'0')}${r.it.unidade?' '+escapeHtml(r.it.unidade):''}${r.it.estoqueMinimo?' · mín: '+escapeHtml(r.it.estoqueMinimo):''}</span>
+      </span>
+      <input type="text" placeholder="Qtd a comprar" value="${escapeHtml(r.qtdComprar)}" style="width:100px; flex:none;" oninput="atualizarQtdRequisicao(${idx}, this.value)">
+    </div>
+  `).join('');
+}
+
+function atualizarQtdRequisicao(idx, valor){
+  _requisicaoItensAtual[idx].qtdComprar = valor;
+  atualizarTextoRequisicao();
+}
+
+function atualizarTextoRequisicao(){
   let texto = "📋 *Requisição de Compra — Vista Park*\n";
   texto += new Date().toLocaleDateString('pt-BR') + "\n\n";
-  itens.forEach(it => {
+  _requisicaoItensAtual.forEach(r => {
+    const it = r.it;
     texto += "• " + (it.nome || "Item sem nome");
     if(it.categoria) texto += " (" + it.categoria + ")";
+    texto += "\n   Comprar: " + (r.qtdComprar || "—") + (it.unidade ? " " + it.unidade : "");
     texto += "\n   Estoque atual: " + (it.quantidade || "0") + (it.unidade ? " " + it.unidade : "");
     if(it.estoqueMinimo) texto += " · Mínimo: " + it.estoqueMinimo;
     if(it.fornecedor) texto += "\n   Fornecedor sugerido: " + it.fornecedor;
     if(it.observacao) texto += "\n   Obs: " + it.observacao;
     texto += "\n\n";
   });
-  texto += "Por favor, providenciar reposição. Obrigada!";
-
+  texto += "Por favor, providenciar a compra. Obrigada!";
   document.getElementById("requisicaoModalTexto").value = texto;
-  document.getElementById("requisicaoModal").style.display = 'flex';
 }
 
 function fecharRequisicaoModal(){
@@ -5083,8 +5150,13 @@ function copiarMensagemRequisicao(){
 
 function exportarRequisicaoPDF(){
   const itens = _requisicaoItensAtual;
-  const head = ["Item", "Categoria", "Estoque atual", "Mínimo", "Fornecedor sugerido", "Observação"];
-  const body = itens.map(it => [it.nome, it.categoria||'', (it.quantidade||'0') + (it.unidade?' '+it.unidade:''), it.estoqueMinimo||'', it.fornecedor||'', it.observacao||'']);
+  const head = ["Item", "Categoria", "Qtd a comprar", "Estoque atual", "Mínimo", "Fornecedor sugerido", "Observação"];
+  const body = itens.map(r => [
+    r.it.nome, r.it.categoria||'',
+    (r.qtdComprar || '—') + (r.it.unidade ? ' ' + r.it.unidade : ''),
+    (r.it.quantidade||'0') + (r.it.unidade?' '+r.it.unidade:''),
+    r.it.estoqueMinimo||'', r.it.fornecedor||'', r.it.observacao||''
+  ]);
   exportarTabelaPDF(
     "Requisição de Compra",
     itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
