@@ -1042,6 +1042,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-app-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-database-compat.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/12.15.0/firebase-auth-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -1079,6 +1080,12 @@
       <button class="hub-item" onclick="entrarSubcamada('vagas')">
         <div class="hub-item-text">
           <div class="hub-item-title">Vagas e Depósitos</div>
+        </div>
+        <div class="hub-item-lock">🔒</div>
+      </button>
+      <button class="hub-item" onclick="entrarSubcamada('suprimentos')">
+        <div class="hub-item-text">
+          <div class="hub-item-title">Suprimentos</div>
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
@@ -1273,6 +1280,52 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModalPendencia()">Cancelar</button>
       <button class="btn btn-accent" onclick="confirmarNovaPendencia()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="suprimentoModal" style="display:none;">
+  <div class="modal-box" style="max-width:420px;">
+    <div class="modal-title">Novo item de suprimento</div>
+
+    <div class="subsolo-label" style="margin-top:0;">Nome do item *</div>
+    <input type="text" id="suprimentoModalNome" class="modal-input" placeholder="Ex: Cimento CP-II" style="margin-bottom:14px;" onkeydown="if(event.key==='Enter') confirmarNovoSuprimento()">
+
+    <div class="subsolo-label">Categoria</div>
+    <select id="suprimentoModalCategoria" class="modal-input" style="margin-bottom:14px;"></select>
+
+    <div style="display:flex; gap:10px; margin-bottom:14px;">
+      <div style="flex:1;">
+        <div class="subsolo-label" style="margin-top:0;">Quantidade</div>
+        <input type="text" id="suprimentoModalQtd" class="modal-input" placeholder="Ex: 50">
+      </div>
+      <div style="flex:1;">
+        <div class="subsolo-label" style="margin-top:0;">Unidade</div>
+        <input type="text" id="suprimentoModalUnidade" class="modal-input" placeholder="Ex: sacos">
+      </div>
+      <div style="flex:1;">
+        <div class="subsolo-label" style="margin-top:0;">Estoque mín.</div>
+        <input type="text" id="suprimentoModalMinimo" class="modal-input" placeholder="Ex: 10">
+      </div>
+    </div>
+
+    <div class="subsolo-label">Fornecedor</div>
+    <input type="text" id="suprimentoModalFornecedor" class="modal-input" placeholder="Opcional" style="margin-bottom:14px;">
+
+    <div class="subsolo-label">Status</div>
+    <select id="suprimentoModalStatus" class="modal-input" style="margin-bottom:14px;">
+      <option>Pendente</option>
+      <option>Comprado</option>
+      <option>Entregue</option>
+    </select>
+
+    <div class="subsolo-label">Observação</div>
+    <input type="text" id="suprimentoModalObs" class="modal-input" placeholder="Opcional">
+
+    <div class="modal-error" id="suprimentoModalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalSuprimento()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmarNovoSuprimento()">Adicionar</button>
     </div>
   </div>
 </div>
@@ -1491,9 +1544,10 @@ function textModalCancel(){
 const SENHAS_SUBCAMADA = {
   personalize: "26354",
   cronograma: "72635",
-  vagas: "240928"
+  vagas: "240928",
+  suprimentos: "1357"
 };
-let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false };
+let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false };
 
 function attemptAccess(){
   document.getElementById("coverScreen").style.display = "none";
@@ -1503,7 +1557,7 @@ function attemptAccess(){
 
 async function pedirSenhaSubcamada(section){
   if(subcamadaLiberada[section]) return true;
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : 'Vagas e Depósitos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : 'Suprimentos';
   let erro = '';
   while(true){
     const senha = await askPassword("Senha para acessar " + nomeAmigavel, erro);
@@ -1672,7 +1726,7 @@ async function renderAtividade(){
 }
 
 function renderSubcamadaBloqueada(section){
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : 'Vagas e Depósitos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : 'Suprimentos';
   document.getElementById("unitTitle").textContent = nomeAmigavel;
   document.getElementById("unitSubtitle").textContent = "Acesso restrito";
   document.getElementById("summaryPill").textContent = "";
@@ -1733,6 +1787,14 @@ async function switchTopSection(section){
     unitsLabel.style.display = '';
     setSidebarLabel('Vagas e Depósitos', 'Destinação de vagas e depósitos');
     switchVagasSubTab(vagasSubTab);
+  } else if(section === 'suprimentos'){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    vagasSwitch.style.display = 'none';
+    nav.style.display = 'none';
+    unitsLabel.style.display = 'none';
+    renderSuprimentos();
   } else {
     mainSwitch.style.display = '';
     vagasSwitch.style.display = 'none';
@@ -4483,6 +4545,299 @@ async function entrarSubcamada(section){
 function voltarAoHub(){
   document.getElementById("mainAppUI").style.display = 'none';
   document.getElementById("hubScreen").style.display = '';
+}
+
+// ---------- Suprimentos ----------
+let suprimentos = [];
+let categoriasSuprimentos = [];
+const STATUS_SUPRIMENTO = ["Pendente","Comprado","Entregue"];
+const CATEGORIAS_PADRAO_SUPRIMENTOS = ["Elétrica","Hidráulica","Civil","Acabamento","Geral","Outro"];
+let filtroCategoriaSuprimento = "";
+
+async function loadSuprimentos(){
+  try{
+    const res = await window.storage.get("suprimentos:itens", true);
+    suprimentos = res ? JSON.parse(res.value) : [];
+  }catch(e){
+    suprimentos = [];
+  }
+  try{
+    const res2 = await window.storage.get("suprimentos:categorias", true);
+    categoriasSuprimentos = res2 ? JSON.parse(res2.value) : CATEGORIAS_PADRAO_SUPRIMENTOS.slice();
+  }catch(e){
+    categoriasSuprimentos = CATEGORIAS_PADRAO_SUPRIMENTOS.slice();
+  }
+}
+
+async function saveSuprimentos(){
+  try{
+    await window.storage.set("suprimentos:itens", JSON.stringify(suprimentos), true);
+    flashSaved();
+    registrarAtividade("Suprimentos", "Lista atualizada");
+  }catch(e){
+    console.error("Erro ao salvar suprimentos", e);
+  }
+}
+
+async function saveCategoriasSuprimentos(){
+  try{
+    await window.storage.set("suprimentos:categorias", JSON.stringify(categoriasSuprimentos), true);
+    flashSaved();
+  }catch(e){
+    console.error("Erro ao salvar categorias de suprimentos", e);
+  }
+}
+
+function estoqueBaixo(it){
+  const qtd = parseFloat(it.quantidade);
+  const min = parseFloat(it.estoqueMinimo);
+  return !isNaN(qtd) && !isNaN(min) && min > 0 && qtd <= min;
+}
+
+async function renderSuprimentos(){
+  await loadSuprimentos();
+  document.getElementById("unitTitle").textContent = "Suprimentos";
+  document.getElementById("unitSubtitle").textContent = "Itens a comprar — adicione manualmente ou importe de uma planilha";
+
+  const baixos = suprimentos.filter(estoqueBaixo);
+  document.getElementById("summaryPill").innerHTML = `<b>${suprimentos.length}</b> itens${baixos.length > 0 ? ` · <b style="color:var(--danger);">${baixos.length} em estoque baixo</b>` : ''}`;
+
+  const filtradas = suprimentos
+    .map((it, i) => ({ it, i }))
+    .filter(({ it }) => !filtroCategoriaSuprimento || it.categoria === filtroCategoriaSuprimento);
+
+  const chipsCategoria = categoriasSuprimentos.map(c => {
+    const n = suprimentos.filter(it => it.categoria === c).length;
+    const cor = corCategoria(c);
+    const ativo = filtroCategoriaSuprimento === c;
+    const cEsc = c.replace(/'/g, "\\'");
+    const estilo = `background:${cor.bg}; color:${cor.texto}; border-color:${cor.bg}; ${ativo ? 'box-shadow:0 0 0 2px var(--text); ' : ''}`;
+    return `<button class="drill-chip" style="${estilo}" onclick="filtroCategoriaSuprimento = filtroCategoriaSuprimento==='${cEsc}' ? '' : '${cEsc}'; renderSuprimentos();">${escapeHtml(c)} <span class="drill-chip-count" style="background:rgba(255,255,255,0.3); color:${cor.texto};">${n}</span></button>`;
+  }).join('');
+
+  const linhas = filtradas.map(({ it, i }) => {
+    const baixo = estoqueBaixo(it);
+    return `
+    <tr ${baixo ? 'style="background: rgba(178,59,59,0.07);"' : ''}>
+      <td style="min-width:180px;">
+        ${baixo ? '<span title="Estoque baixo">⚠️</span> ' : ''}<input type="text" placeholder="Nome do item" value="${escapeHtml(it.nome||'')}" oninput="updateSuprimento(${i}, 'nome', this.value)" style="width:calc(100% - 22px); display:inline-block;">
+      </td>
+      <td style="width:150px;">
+        <select onchange="updateSuprimento(${i}, 'categoria', this.value)">
+          <option value="">—</option>
+          ${categoriasSuprimentos.map(c => `<option value="${escapeHtml(c)}" ${c===it.categoria?'selected':''}>${escapeHtml(c)}</option>`).join('')}
+        </select>
+      </td>
+      <td style="width:80px;"><input type="text" placeholder="Qtd" value="${escapeHtml(it.quantidade||'')}" oninput="updateSuprimento(${i}, 'quantidade', this.value)" style="${baixo?'color:var(--danger); font-weight:600;':''}"></td>
+      <td style="width:80px;"><input type="text" placeholder="Un." value="${escapeHtml(it.unidade||'')}" oninput="updateSuprimento(${i}, 'unidade', this.value)"></td>
+      <td style="width:90px;"><input type="text" placeholder="Mín." title="Estoque mínimo" value="${escapeHtml(it.estoqueMinimo||'')}" oninput="updateSuprimento(${i}, 'estoqueMinimo', this.value)"></td>
+      <td style="min-width:140px;"><input type="text" placeholder="Fornecedor" value="${escapeHtml(it.fornecedor||'')}" oninput="updateSuprimento(${i}, 'fornecedor', this.value)"></td>
+      <td style="width:130px;">
+        <select class="${it.status==='Entregue'?'sel-padrao':it.status==='Comprado'?'':'sel-personalizado'}" onchange="updateSuprimento(${i}, 'status', this.value)">
+          ${STATUS_SUPRIMENTO.map(s => `<option ${s===it.status?'selected':''}>${s}</option>`).join('')}
+        </select>
+      </td>
+      <td style="min-width:160px;"><input type="text" placeholder="Observação" value="${escapeHtml(it.observacao||'')}" oninput="updateSuprimento(${i}, 'observacao', this.value)"></td>
+      <td class="col-actions"><button class="btn btn-ghost" onclick="removerSuprimento(${i})" title="Remover">✕</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    ${baixos.length > 0 ? `
+    <div style="background:rgba(178,59,59,0.09); border:1px solid var(--danger); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--text);">
+      ⚠️ <b>${baixos.length} item(ns) com estoque baixo:</b> ${baixos.map(it => escapeHtml(it.nome)).join(', ')}
+    </div>` : ''}
+    <div class="toolbar" style="margin-bottom:12px; flex-wrap:wrap;">
+      <button class="btn btn-accent" onclick="abrirModalSuprimento()">+ Adicionar item</button>
+      <label class="btn btn-ghost" style="cursor:pointer; margin:0;">
+        📎 Importar planilha
+        <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importarPlanilhaSuprimentos(event)">
+      </label>
+      <button class="btn btn-ghost" onclick="exportarSuprimentosPDF()">📄 Exportar PDF</button>
+    </div>
+    <div class="categoria-manager-toggle" onclick="toggleGerenciarCategoriasSuprimentos()">${categoriasSuprimentosVisiveis ? '▾' : '▸'} Gerenciar categorias</div>
+    <div class="categoria-manager" style="${categoriasSuprimentosVisiveis ? '' : 'display:none;'}">
+      <span class="categoria-manager-label">Categorias:</span>
+      ${categoriasSuprimentos.map(c => `
+        <span class="categoria-chip" style="background:${corCategoria(c).bg}; color:${corCategoria(c).texto}; border-color:${corCategoria(c).bg};">${escapeHtml(c)}<button onclick="removerCategoriaSuprimento('${escapeHtml(c).replace(/'/g,"\\'")}')" title="Apagar categoria" style="color:${corCategoria(c).texto}; opacity:0.75;">✕</button></span>
+      `).join('')}
+      <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px;" onclick="adicionarNovaCategoriaSuprimento()">+ Nova categoria</button>
+    </div>
+    <div class="drill-chips" style="margin-bottom:14px;">${chipsCategoria}</div>
+    <div style="overflow-x:auto;">
+      <table style="min-width:1050px;">
+        <thead>
+          <tr>
+            <th>Item</th><th>Categoria</th><th>Qtd</th><th>Un.</th><th>Mín.</th><th>Fornecedor</th><th>Status</th><th>Observação</th><th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>
+    </div>
+    ${filtradas.length === 0 ? '<div class="empty-state">Nenhum item com esse filtro.</div>' : ''}
+  `;
+}
+
+function updateSuprimento(i, campo, valor){
+  suprimentos[i][campo] = valor;
+  saveSuprimentos();
+}
+
+async function removerSuprimento(i){
+  suprimentos.splice(i, 1);
+  await saveSuprimentos();
+  renderSuprimentos();
+}
+
+let categoriasSuprimentosVisiveis = false;
+
+function toggleGerenciarCategoriasSuprimentos(){
+  categoriasSuprimentosVisiveis = !categoriasSuprimentosVisiveis;
+  renderSuprimentos();
+}
+
+async function adicionarNovaCategoriaSuprimento(){
+  const resultado = await askCategoriaComCor();
+  if(!resultado) return;
+  const { nome, cor } = resultado;
+  if(!categoriasSuprimentos.includes(nome)){
+    categoriasSuprimentos.push(nome);
+    await saveCategoriasSuprimentos();
+  }
+  coresCategoriaCustom[nome] = { bg: cor, texto: corTextoParaFundo(cor) };
+  await salvarCoresCategoriaCustom();
+  renderSuprimentos();
+}
+
+async function removerCategoriaSuprimento(nome){
+  categoriasSuprimentos = categoriasSuprimentos.filter(c => c !== nome);
+  await saveCategoriasSuprimentos();
+  if(filtroCategoriaSuprimento === nome) filtroCategoriaSuprimento = "";
+  renderSuprimentos();
+}
+
+function abrirModalSuprimento(){
+  document.getElementById("suprimentoModalNome").value = '';
+  document.getElementById("suprimentoModalCategoria").innerHTML =
+    '<option value="">—</option>' + categoriasSuprimentos.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  document.getElementById("suprimentoModalQtd").value = '';
+  document.getElementById("suprimentoModalUnidade").value = '';
+  document.getElementById("suprimentoModalMinimo").value = '';
+  document.getElementById("suprimentoModalFornecedor").value = '';
+  document.getElementById("suprimentoModalStatus").value = 'Pendente';
+  document.getElementById("suprimentoModalObs").value = '';
+  document.getElementById("suprimentoModalError").style.display = 'none';
+  document.getElementById("suprimentoModal").style.display = 'flex';
+  setTimeout(() => document.getElementById("suprimentoModalNome").focus(), 50);
+}
+
+function fecharModalSuprimento(){
+  document.getElementById("suprimentoModal").style.display = 'none';
+}
+
+async function confirmarNovoSuprimento(){
+  const nome = document.getElementById("suprimentoModalNome").value.trim();
+  const errEl = document.getElementById("suprimentoModalError");
+  if(!nome){
+    errEl.textContent = 'Digita o nome do item.';
+    errEl.style.display = '';
+    return;
+  }
+  suprimentos.push({
+    nome,
+    categoria: document.getElementById("suprimentoModalCategoria").value,
+    quantidade: document.getElementById("suprimentoModalQtd").value.trim(),
+    unidade: document.getElementById("suprimentoModalUnidade").value.trim(),
+    estoqueMinimo: document.getElementById("suprimentoModalMinimo").value.trim(),
+    fornecedor: document.getElementById("suprimentoModalFornecedor").value.trim(),
+    status: document.getElementById("suprimentoModalStatus").value,
+    observacao: document.getElementById("suprimentoModalObs").value.trim()
+  });
+  await saveSuprimentos();
+  fecharModalSuprimento();
+  renderSuprimentos();
+}
+
+function importarPlanilhaSuprimentos(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const linhas = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      const mapaColunas = {
+        nome: ['nome','item','descrição','descricao','produto','material'],
+        categoria: ['categoria','tipo','grupo'],
+        quantidade: ['quantidade','qtd','qtde','quant'],
+        unidade: ['unidade','un','un.','medida'],
+        estoqueMinimo: ['estoque mínimo','estoque minimo','mínimo','minimo','min','qtd mínima','qtd minima'],
+        fornecedor: ['fornecedor','marca','loja'],
+        observacao: ['observação','observacao','obs','nota','notas']
+      };
+
+      function acharValor(linha, chaves){
+        const chavesLinha = Object.keys(linha);
+        for(const alvo of chaves){
+          const achada = chavesLinha.find(k => k.trim().toLowerCase() === alvo);
+          if(achada && linha[achada] !== '') return String(linha[achada]).trim();
+        }
+        return '';
+      }
+
+      let importados = 0;
+      let categoriasNovas = false;
+      linhas.forEach(linha => {
+        const nome = acharValor(linha, mapaColunas.nome);
+        if(!nome) return;
+        const categoria = acharValor(linha, mapaColunas.categoria);
+        if(categoria && !categoriasSuprimentos.includes(categoria)){
+          categoriasSuprimentos.push(categoria);
+          categoriasNovas = true;
+        }
+        suprimentos.push({
+          nome,
+          categoria,
+          quantidade: acharValor(linha, mapaColunas.quantidade),
+          unidade: acharValor(linha, mapaColunas.unidade),
+          estoqueMinimo: acharValor(linha, mapaColunas.estoqueMinimo),
+          fornecedor: acharValor(linha, mapaColunas.fornecedor),
+          status: 'Pendente',
+          observacao: acharValor(linha, mapaColunas.observacao)
+        });
+        importados++;
+      });
+
+      if(importados === 0){
+        showAlert("Não consegui reconhecer os itens da planilha. Confere se a primeira linha tem os nomes das colunas (ex: Nome, Categoria, Quantidade, Unidade, Estoque Mínimo, Fornecedor).");
+        return;
+      }
+
+      if(categoriasNovas) await saveCategoriasSuprimentos();
+      await saveSuprimentos();
+      renderSuprimentos();
+      showAlert(importados + " item(ns) importado(s) da planilha.");
+    }catch(err){
+      console.error("Erro ao importar planilha", err);
+      showAlert("Não consegui ler esse arquivo. Confere se é um .xlsx, .xls ou .csv válido.");
+    }
+    event.target.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function exportarSuprimentosPDF(){
+  const head = ["Item", "Categoria", "Qtd", "Un.", "Mín.", "Fornecedor", "Status", "Observação"];
+  const body = suprimentos.map(it => [it.nome, it.categoria||'', it.quantidade, it.unidade, it.estoqueMinimo||'', it.fornecedor, it.status, it.observacao]);
+  exportarTabelaPDF(
+    "Suprimentos",
+    suprimentos.length + " itens",
+    head, body,
+    { filename: "suprimentos.pdf", landscape: true }
+  );
 }
 
 async function initApp(){
