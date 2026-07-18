@@ -1292,7 +1292,7 @@
     <input type="text" id="suprimentoModalNome" class="modal-input" placeholder="Ex: Cimento CP-II" style="margin-bottom:14px;" onkeydown="if(event.key==='Enter') confirmarNovoSuprimento()">
 
     <div class="subsolo-label">Categoria</div>
-    <select id="suprimentoModalCategoria" class="modal-input" style="margin-bottom:14px;"></select>
+    <select id="suprimentoModalCategoria" class="modal-input" style="margin-bottom:14px;" onchange="atualizarFornecedorModalPelaCategoria()"></select>
 
     <div style="display:flex; gap:10px; margin-bottom:14px;">
       <div style="flex:1;">
@@ -1326,6 +1326,27 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModalSuprimento()">Cancelar</button>
       <button class="btn btn-accent" onclick="confirmarNovoSuprimento()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="fornecedorModal" style="display:none;">
+  <div class="modal-box" style="max-width:400px;">
+    <div class="modal-title">Novo fornecedor</div>
+
+    <div class="subsolo-label" style="margin-top:0;">Nome *</div>
+    <input type="text" id="fornecedorModalNome" class="modal-input" placeholder="Nome do fornecedor" style="margin-bottom:14px;" onkeydown="if(event.key==='Enter') confirmarNovoFornecedor()">
+
+    <div class="subsolo-label" style="margin-top:0;">Categorias (até 2, opcional)</div>
+    <div style="display:flex; gap:10px; margin-bottom:14px;">
+      <select id="fornecedorModalCategoria1" class="modal-input" style="flex:1;"></select>
+      <select id="fornecedorModalCategoria2" class="modal-input" style="flex:1;"></select>
+    </div>
+
+    <div class="modal-error" id="fornecedorModalError" style="display:none;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModalFornecedor()">Cancelar</button>
+      <button class="btn btn-accent" onclick="confirmarNovoFornecedor()">Adicionar</button>
     </div>
   </div>
 </div>
@@ -4620,14 +4641,63 @@ function toggleGerenciarFornecedores(){
   renderSuprimentos();
 }
 
-async function adicionarNovoFornecedor(){
-  const nome = await askText("Nome do fornecedor");
-  if(!nome) return null;
+let _fornecedorResolve = null;
+
+function abrirModalFornecedor(){
+  return new Promise(resolve => {
+    _fornecedorResolve = resolve;
+    document.getElementById("fornecedorModalNome").value = '';
+    const optsVazio = '<option value="">—</option>' + categoriasSuprimentos.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    document.getElementById("fornecedorModalCategoria1").innerHTML = optsVazio;
+    document.getElementById("fornecedorModalCategoria2").innerHTML = optsVazio;
+    document.getElementById("fornecedorModalError").style.display = 'none';
+    document.getElementById("fornecedorModal").style.display = 'flex';
+    setTimeout(() => document.getElementById("fornecedorModalNome").focus(), 50);
+  });
+}
+
+function fecharModalFornecedor(){
+  document.getElementById("fornecedorModal").style.display = 'none';
+  if(_fornecedorResolve){ _fornecedorResolve(null); _fornecedorResolve = null; }
+}
+
+async function confirmarNovoFornecedor(){
+  const nome = document.getElementById("fornecedorModalNome").value.trim();
+  const errEl = document.getElementById("fornecedorModalError");
+  if(!nome){
+    errEl.textContent = 'Digita o nome do fornecedor.';
+    errEl.style.display = '';
+    return;
+  }
+  const c1 = document.getElementById("fornecedorModalCategoria1").value;
+  const c2 = document.getElementById("fornecedorModalCategoria2").value;
+  const categorias = [...new Set([c1, c2].filter(Boolean))];
+
   if(!fornecedoresBase.find(f => f.nome === nome)){
-    fornecedoresBase.push({ nome, contato: '' });
+    fornecedoresBase.push({ nome, contato: '', categorias });
     await saveFornecedoresBase();
   }
-  return nome;
+  document.getElementById("fornecedorModal").style.display = 'none';
+  if(_fornecedorResolve){ _fornecedorResolve(nome); _fornecedorResolve = null; }
+}
+
+async function adicionarNovoFornecedor(){
+  return await abrirModalFornecedor();
+}
+
+function fornecedoresParaCategoria(categoria){
+  if(!categoria) return fornecedoresBase;
+  return fornecedoresBase.filter(f => !f.categorias || f.categorias.length === 0 || f.categorias.includes(categoria));
+}
+
+async function atualizarCategoriasFornecedor(nome, indice, valor){
+  const f = fornecedoresBase.find(f => f.nome === nome);
+  if(!f) return;
+  if(!f.categorias) f.categorias = [];
+  f.categorias[indice] = valor;
+  f.categorias = [...new Set(f.categorias.filter(Boolean))];
+  await saveFornecedoresBase();
+  renderSuprimentos();
 }
 
 async function removerFornecedorBase(nome){
@@ -4655,8 +4725,8 @@ async function handleFornecedorChange(i, valor){
 async function handleFornecedorModalChange(select){
   if(select.value === NOVO_VALOR){
     const nome = await adicionarNovoFornecedor();
-    select.innerHTML = '<option value="">—</option>' + fornecedoresBase.map(f => `<option value="${escapeHtml(f.nome)}">${escapeHtml(f.nome)}</option>`).join('') + `<option value="${NOVO_VALOR}">+ Adicionar novo…</option>`;
-    select.value = nome || '';
+    atualizarFornecedorModalPelaCategoria();
+    if(nome) select.value = nome;
   }
 }
 
@@ -4690,7 +4760,7 @@ async function renderSuprimentos(){
         ${baixo ? '<span title="Estoque baixo">⚠️</span> ' : ''}<input type="text" placeholder="Nome do item" value="${escapeHtml(it.nome||'')}" oninput="updateSuprimento(${i}, 'nome', this.value)" style="width:calc(100% - 22px); display:inline-block;">
       </td>
       <td style="width:150px;">
-        <select onchange="updateSuprimento(${i}, 'categoria', this.value)">
+        <select onchange="updateSuprimentoCategoria(${i}, this.value)">
           <option value="">—</option>
           ${categoriasSuprimentos.map(c => `<option value="${escapeHtml(c)}" ${c===it.categoria?'selected':''}>${escapeHtml(c)}</option>`).join('')}
         </select>
@@ -4701,7 +4771,7 @@ async function renderSuprimentos(){
       <td style="min-width:150px;">
         <select onchange="handleFornecedorChange(${i}, this.value)">
           <option value="">—</option>
-          ${fornecedoresBase.map(f => `<option value="${escapeHtml(f.nome)}" ${f.nome===it.fornecedor?'selected':''}>${escapeHtml(f.nome)}</option>`).join('')}
+          ${fornecedoresParaCategoria(it.categoria).map(f => `<option value="${escapeHtml(f.nome)}" ${f.nome===it.fornecedor?'selected':''}>${escapeHtml(f.nome)}</option>`).join('')}
           ${it.fornecedor && !fornecedoresBase.find(f => f.nome === it.fornecedor) ? `<option value="${escapeHtml(it.fornecedor)}" selected>${escapeHtml(it.fornecedor)}</option>` : ''}
           <option value="${NOVO_VALOR}">+ Adicionar novo…</option>
         </select>
@@ -4739,13 +4809,19 @@ async function renderSuprimentos(){
     </div>
     <div class="categoria-manager-toggle" onclick="toggleGerenciarFornecedores()">${fornecedoresVisiveis ? '▾' : '▸'} Gerenciar fornecedores</div>
     <div class="categoria-manager" style="${fornecedoresVisiveis ? '' : 'display:none;'}">
-      ${fornecedoresBase.length === 0 ? '<span class="proj-empty">Nenhum fornecedor cadastrado ainda.</span>' : fornecedoresBase.map(f => `
-        <div class="vaga-item" style="max-width:420px;">
-          <span style="width:130px;">${escapeHtml(f.nome)}</span>
-          <input type="text" placeholder="Contato/telefone (opcional)" value="${escapeHtml(f.contato||'')}" oninput="atualizarContatoFornecedor('${escapeHtml(f.nome).replace(/'/g,"\\'")}', this.value)">
-          <button class="btn btn-ghost" onclick="removerFornecedorBase('${escapeHtml(f.nome).replace(/'/g,"\\'")}')" title="Remover">✕</button>
-        </div>
-      `).join('')}
+      ${fornecedoresBase.length === 0 ? '<span class="proj-empty">Nenhum fornecedor cadastrado ainda.</span>' : fornecedoresBase.map(f => {
+        const nEsc = escapeHtml(f.nome).replace(/'/g,"\\'");
+        const cats = f.categorias || [];
+        const optsVazio = c => `<option value="">Sem categoria</option>` + categoriasSuprimentos.map(cat => `<option value="${escapeHtml(cat)}" ${cat===c?'selected':''}>${escapeHtml(cat)}</option>`).join('');
+        return `
+        <div class="vaga-item" style="max-width:560px; flex-wrap:wrap;">
+          <span style="width:120px;">${escapeHtml(f.nome)}</span>
+          <input type="text" placeholder="Contato/telefone" value="${escapeHtml(f.contato||'')}" oninput="atualizarContatoFornecedor('${nEsc}', this.value)" style="width:130px; flex:none;">
+          <select onchange="atualizarCategoriasFornecedor('${nEsc}', 0, this.value)" style="width:120px; flex:none;">${optsVazio(cats[0])}</select>
+          <select onchange="atualizarCategoriasFornecedor('${nEsc}', 1, this.value)" style="width:120px; flex:none;">${optsVazio(cats[1])}</select>
+          <button class="btn btn-ghost" onclick="removerFornecedorBase('${nEsc}')" title="Remover">✕</button>
+        </div>`;
+      }).join('')}
       <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px; margin-top:8px;" onclick="adicionarNovoFornecedor().then(() => renderSuprimentos())">+ Novo fornecedor</button>
     </div>
     <div class="drill-chips" style="margin-bottom:14px;">${chipsCategoria}</div>
@@ -4766,6 +4842,12 @@ async function renderSuprimentos(){
 function updateSuprimento(i, campo, valor){
   suprimentos[i][campo] = valor;
   saveSuprimentos();
+}
+
+async function updateSuprimentoCategoria(i, valor){
+  suprimentos[i].categoria = valor;
+  await saveSuprimentos();
+  renderSuprimentos();
 }
 
 async function removerSuprimento(i){
@@ -4808,13 +4890,21 @@ function abrirModalSuprimento(){
   document.getElementById("suprimentoModalQtd").value = '';
   document.getElementById("suprimentoModalUnidade").value = '';
   document.getElementById("suprimentoModalMinimo").value = '';
-  document.getElementById("suprimentoModalFornecedor").innerHTML =
-    '<option value="">—</option>' + fornecedoresBase.map(f => `<option value="${escapeHtml(f.nome)}">${escapeHtml(f.nome)}</option>`).join('') + `<option value="${NOVO_VALOR}">+ Adicionar novo…</option>`;
+  atualizarFornecedorModalPelaCategoria();
   document.getElementById("suprimentoModalStatus").value = 'Pendente';
   document.getElementById("suprimentoModalObs").value = '';
   document.getElementById("suprimentoModalError").style.display = 'none';
   document.getElementById("suprimentoModal").style.display = 'flex';
   setTimeout(() => document.getElementById("suprimentoModalNome").focus(), 50);
+}
+
+function atualizarFornecedorModalPelaCategoria(){
+  const categoria = document.getElementById("suprimentoModalCategoria").value;
+  const select = document.getElementById("suprimentoModalFornecedor");
+  const atual = select.value;
+  select.innerHTML =
+    '<option value="">—</option>' + fornecedoresParaCategoria(categoria).map(f => `<option value="${escapeHtml(f.nome)}">${escapeHtml(f.nome)}</option>`).join('') + `<option value="${NOVO_VALOR}">+ Adicionar novo…</option>`;
+  if([...select.options].some(o => o.value === atual)) select.value = atual;
 }
 
 function fecharModalSuprimento(){
