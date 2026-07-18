@@ -1312,13 +1312,6 @@
     <div class="subsolo-label">Fornecedor</div>
     <select id="suprimentoModalFornecedor" class="modal-input" style="margin-bottom:14px;" onchange="handleFornecedorModalChange(this)"></select>
 
-    <div class="subsolo-label">Status</div>
-    <select id="suprimentoModalStatus" class="modal-input" style="margin-bottom:14px;">
-      <option>Pendente</option>
-      <option>Comprado</option>
-      <option>Entregue</option>
-    </select>
-
     <div class="subsolo-label">Observação</div>
     <input type="text" id="suprimentoModalObs" class="modal-input" placeholder="Opcional">
 
@@ -1347,6 +1340,19 @@
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="fecharModalFornecedor()">Cancelar</button>
       <button class="btn btn-accent" onclick="confirmarNovoFornecedor()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="requisicaoModal" style="display:none;">
+  <div class="modal-box" style="max-width:480px;">
+    <div class="modal-title">Requisição de compra</div>
+    <div class="modal-msg">Confira os itens e envie pro setor de compras.</div>
+    <textarea id="requisicaoModalTexto" readonly style="width:100%; height:200px; font-family:inherit; font-size:12.5px; padding:10px; border:1px solid var(--border); border-radius:6px; resize:vertical; background:var(--surface-2); color:var(--text);"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharRequisicaoModal()">Fechar</button>
+      <button class="btn btn-ghost" onclick="copiarMensagemRequisicao()">📋 Copiar mensagem</button>
+      <button class="btn btn-accent" onclick="exportarRequisicaoPDF()">📄 Baixar PDF</button>
     </div>
   </div>
 </div>
@@ -4571,7 +4577,6 @@ function voltarAoHub(){
 // ---------- Suprimentos ----------
 let suprimentos = [];
 let categoriasSuprimentos = [];
-const STATUS_SUPRIMENTO = ["Pendente","Comprado","Entregue"];
 const CATEGORIAS_PADRAO_SUPRIMENTOS = ["Elétrica","Hidráulica","Civil","Acabamento","Geral","Outro"];
 let filtroCategoriaSuprimento = "";
 
@@ -4730,32 +4735,22 @@ async function handleFornecedorModalChange(select){
   }
 }
 
+let _selecionadosRequisicao = new Set();
+
 async function renderSuprimentos(){
   await loadSuprimentos();
   await loadFornecedoresBase();
   document.getElementById("unitTitle").textContent = "Suprimentos";
-  document.getElementById("unitSubtitle").textContent = "Itens a comprar — adicione manualmente ou importe de uma planilha";
+  document.getElementById("unitSubtitle").textContent = "Estoque virtual da obra — organizado por categoria";
 
   const baixos = suprimentos.filter(estoqueBaixo);
   document.getElementById("summaryPill").innerHTML = `<b>${suprimentos.length}</b> itens${baixos.length > 0 ? ` · <b style="color:var(--danger);">${baixos.length} em estoque baixo</b>` : ''}`;
 
-  const filtradas = suprimentos
-    .map((it, i) => ({ it, i }))
-    .filter(({ it }) => !filtroCategoriaSuprimento || it.categoria === filtroCategoriaSuprimento);
-
-  const chipsCategoria = categoriasSuprimentos.map(c => {
-    const n = suprimentos.filter(it => it.categoria === c).length;
-    const cor = corCategoria(c);
-    const ativo = filtroCategoriaSuprimento === c;
-    const cEsc = c.replace(/'/g, "\\'");
-    const estilo = `background:${cor.bg}; color:${cor.texto}; border-color:${cor.bg}; ${ativo ? 'box-shadow:0 0 0 2px var(--text); ' : ''}`;
-    return `<button class="drill-chip" style="${estilo}" onclick="filtroCategoriaSuprimento = filtroCategoriaSuprimento==='${cEsc}' ? '' : '${cEsc}'; renderSuprimentos();">${escapeHtml(c)} <span class="drill-chip-count" style="background:rgba(255,255,255,0.3); color:${cor.texto};">${n}</span></button>`;
-  }).join('');
-
-  const linhas = filtradas.map(({ it, i }) => {
+  function linhaSuprimento(it, i){
     const baixo = estoqueBaixo(it);
     return `
     <tr ${baixo ? 'style="background: rgba(178,59,59,0.07);"' : ''}>
+      <td style="width:30px; text-align:center;"><input type="checkbox" ${_selecionadosRequisicao.has(i)?'checked':''} onchange="toggleSelecaoRequisicao(${i})"></td>
       <td style="min-width:180px;">
         ${baixo ? '<span title="Estoque baixo">⚠️</span> ' : ''}<input type="text" placeholder="Nome do item" value="${escapeHtml(it.nome||'')}" oninput="updateSuprimento(${i}, 'nome', this.value)" style="width:calc(100% - 22px); display:inline-block;">
       </td>
@@ -4768,7 +4763,7 @@ async function renderSuprimentos(){
       <td style="width:80px;"><input type="text" placeholder="Qtd" value="${escapeHtml(it.quantidade||'')}" oninput="updateSuprimento(${i}, 'quantidade', this.value)" style="${baixo?'color:var(--danger); font-weight:600;':''}"></td>
       <td style="width:80px;"><input type="text" placeholder="Un." value="${escapeHtml(it.unidade||'')}" oninput="updateSuprimento(${i}, 'unidade', this.value)"></td>
       <td style="width:90px;"><input type="text" placeholder="Mín." title="Estoque mínimo" value="${escapeHtml(it.estoqueMinimo||'')}" oninput="updateSuprimento(${i}, 'estoqueMinimo', this.value)"></td>
-      <td style="min-width:150px;">
+      <td style="width:130px;">
         <select onchange="handleFornecedorChange(${i}, this.value)">
           <option value="">—</option>
           ${fornecedoresParaCategoria(it.categoria).map(f => `<option value="${escapeHtml(f.nome)}" ${f.nome===it.fornecedor?'selected':''}>${escapeHtml(f.nome)}</option>`).join('')}
@@ -4776,15 +4771,45 @@ async function renderSuprimentos(){
           <option value="${NOVO_VALOR}">+ Adicionar novo…</option>
         </select>
       </td>
-      <td style="width:130px;">
-        <select class="${it.status==='Entregue'?'sel-padrao':it.status==='Comprado'?'':'sel-personalizado'}" onchange="updateSuprimento(${i}, 'status', this.value)">
-          ${STATUS_SUPRIMENTO.map(s => `<option ${s===it.status?'selected':''}>${s}</option>`).join('')}
-        </select>
-      </td>
       <td style="min-width:160px;"><input type="text" placeholder="Observação" value="${escapeHtml(it.observacao||'')}" oninput="updateSuprimento(${i}, 'observacao', this.value)"></td>
       <td class="col-actions"><button class="btn btn-ghost" onclick="removerSuprimento(${i})" title="Remover">✕</button></td>
     </tr>`;
+  }
+
+  function tabelaHtml(itens){
+    return `
+    <div style="overflow-x:auto; margin-bottom:22px;">
+      <table style="min-width:1080px;">
+        <thead>
+          <tr>
+            <th style="width:30px;"></th><th>Item</th><th>Categoria</th><th>Qtd</th><th>Un.</th><th>Mín.</th><th>Fornecedor</th><th>Observação</th><th class="col-actions"></th>
+          </tr>
+        </thead>
+        <tbody>${itens.map(({it, i}) => linhaSuprimento(it, i)).join('')}</tbody>
+      </table>
+    </div>`;
+  }
+
+  const comIndice = suprimentos.map((it, i) => ({ it, i }));
+  const gruposHtml = categoriasSuprimentos.map(cat => {
+    const itens = comIndice.filter(({it}) => it.categoria === cat);
+    if(itens.length === 0) return '';
+    const cor = corCategoria(cat);
+    return `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+      <span style="background:${cor.bg}; color:${cor.texto}; padding:4px 12px; border-radius:999px; font-size:12.5px; font-weight:600;">${escapeHtml(cat)}</span>
+      <span style="font-size:11.5px; color:var(--text-dim);">${itens.length} item${itens.length===1?'':'ns'}</span>
+    </div>
+    ${tabelaHtml(itens)}`;
   }).join('');
+
+  const semCategoria = comIndice.filter(({it}) => !it.categoria);
+  const semCategoriaHtml = semCategoria.length === 0 ? '' : `
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+      <span style="background:var(--surface-2); color:var(--text-dim); padding:4px 12px; border-radius:999px; font-size:12.5px; font-weight:600;">Sem categoria</span>
+      <span style="font-size:11.5px; color:var(--text-dim);">${semCategoria.length} item${semCategoria.length===1?'':'ns'}</span>
+    </div>
+    ${tabelaHtml(semCategoria)}`;
 
   document.getElementById("content").innerHTML = `
     ${baixos.length > 0 ? `
@@ -4797,7 +4822,12 @@ async function renderSuprimentos(){
         📎 Importar planilha
         <input type="file" accept=".xlsx,.xls,.csv" style="display:none;" onchange="importarPlanilhaSuprimentos(event)">
       </label>
-      <button class="btn btn-ghost" onclick="exportarSuprimentosPDF()">📄 Exportar PDF</button>
+      <button class="btn btn-ghost" onclick="exportarSuprimentosPDF()">📄 Exportar PDF do estoque</button>
+    </div>
+    <div class="toolbar" style="margin-bottom:16px; flex-wrap:wrap; background:rgba(28,58,94,0.05); border-radius:var(--radius); padding:10px 12px;">
+      <span style="font-size:12px; color:var(--text-dim); align-self:center;">Requisição de compra:</span>
+      <button class="btn btn-accent" onclick="gerarRequisicao('baixos')" ${baixos.length===0?'disabled':''}>⚠️ Gerar dos itens em falta (${baixos.length})</button>
+      <button class="btn btn-ghost" onclick="gerarRequisicao('selecionados')" ${_selecionadosRequisicao.size===0?'disabled':''}>Gerar dos selecionados (${_selecionadosRequisicao.size})</button>
     </div>
     <div class="categoria-manager-toggle" onclick="toggleGerenciarCategoriasSuprimentos()">${categoriasSuprimentosVisiveis ? '▾' : '▸'} Gerenciar categorias</div>
     <div class="categoria-manager" style="${categoriasSuprimentosVisiveis ? '' : 'display:none;'}">
@@ -4824,19 +4854,17 @@ async function renderSuprimentos(){
       }).join('')}
       <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px; margin-top:8px;" onclick="adicionarNovoFornecedor().then(() => renderSuprimentos())">+ Novo fornecedor</button>
     </div>
-    <div class="drill-chips" style="margin-bottom:14px;">${chipsCategoria}</div>
-    <div style="overflow-x:auto;">
-      <table style="min-width:1050px;">
-        <thead>
-          <tr>
-            <th>Item</th><th>Categoria</th><th>Qtd</th><th>Un.</th><th>Mín.</th><th>Fornecedor</th><th>Status</th><th>Observação</th><th class="col-actions"></th>
-          </tr>
-        </thead>
-        <tbody>${linhas}</tbody>
-      </table>
-    </div>
-    ${filtradas.length === 0 ? '<div class="empty-state">Nenhum item com esse filtro.</div>' : ''}
+    <div style="height:6px;"></div>
+    ${gruposHtml}
+    ${semCategoriaHtml}
+    ${suprimentos.length === 0 ? '<div class="empty-state">Nenhum item ainda. Adiciona manualmente ou importa uma planilha.</div>' : ''}
   `;
+}
+
+function toggleSelecaoRequisicao(i){
+  if(_selecionadosRequisicao.has(i)) _selecionadosRequisicao.delete(i);
+  else _selecionadosRequisicao.add(i);
+  renderSuprimentos();
 }
 
 function updateSuprimento(i, campo, valor){
@@ -4891,7 +4919,6 @@ function abrirModalSuprimento(){
   document.getElementById("suprimentoModalUnidade").value = '';
   document.getElementById("suprimentoModalMinimo").value = '';
   atualizarFornecedorModalPelaCategoria();
-  document.getElementById("suprimentoModalStatus").value = 'Pendente';
   document.getElementById("suprimentoModalObs").value = '';
   document.getElementById("suprimentoModalError").style.display = 'none';
   document.getElementById("suprimentoModal").style.display = 'flex';
@@ -4926,7 +4953,6 @@ async function confirmarNovoSuprimento(){
     unidade: document.getElementById("suprimentoModalUnidade").value.trim(),
     estoqueMinimo: document.getElementById("suprimentoModalMinimo").value.trim(),
     fornecedor: document.getElementById("suprimentoModalFornecedor").value.trim(),
-    status: document.getElementById("suprimentoModalStatus").value,
     observacao: document.getElementById("suprimentoModalObs").value.trim()
   });
   await saveSuprimentos();
@@ -4981,7 +5007,6 @@ function importarPlanilhaSuprimentos(event){
           unidade: acharValor(linha, mapaColunas.unidade),
           estoqueMinimo: acharValor(linha, mapaColunas.estoqueMinimo),
           fornecedor: acharValor(linha, mapaColunas.fornecedor),
-          status: 'Pendente',
           observacao: acharValor(linha, mapaColunas.observacao)
         });
         importados++;
@@ -5005,9 +5030,72 @@ function importarPlanilhaSuprimentos(event){
   reader.readAsArrayBuffer(file);
 }
 
+let _requisicaoItensAtual = [];
+
+function gerarRequisicao(modo){
+  const itens = modo === 'baixos'
+    ? suprimentos.filter(estoqueBaixo)
+    : Array.from(_selecionadosRequisicao).map(i => suprimentos[i]).filter(Boolean);
+
+  if(itens.length === 0){
+    showAlert("Nenhum item pra incluir na requisição.");
+    return;
+  }
+  _requisicaoItensAtual = itens;
+
+  let texto = "📋 *Requisição de Compra — Vista Park*\n";
+  texto += new Date().toLocaleDateString('pt-BR') + "\n\n";
+  itens.forEach(it => {
+    texto += "• " + (it.nome || "Item sem nome");
+    if(it.categoria) texto += " (" + it.categoria + ")";
+    texto += "\n   Estoque atual: " + (it.quantidade || "0") + (it.unidade ? " " + it.unidade : "");
+    if(it.estoqueMinimo) texto += " · Mínimo: " + it.estoqueMinimo;
+    if(it.fornecedor) texto += "\n   Fornecedor sugerido: " + it.fornecedor;
+    if(it.observacao) texto += "\n   Obs: " + it.observacao;
+    texto += "\n\n";
+  });
+  texto += "Por favor, providenciar reposição. Obrigada!";
+
+  document.getElementById("requisicaoModalTexto").value = texto;
+  document.getElementById("requisicaoModal").style.display = 'flex';
+}
+
+function fecharRequisicaoModal(){
+  document.getElementById("requisicaoModal").style.display = 'none';
+}
+
+function copiarMensagemRequisicao(){
+  const texto = document.getElementById("requisicaoModalTexto").value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(texto).then(() => {
+      showAlert("Mensagem copiada! Já pode colar no WhatsApp ou onde precisar.");
+    }).catch(() => {
+      showAlert("Não consegui copiar automaticamente. Seleciona o texto na caixa e copia manualmente (Ctrl+C).");
+    });
+  } else {
+    const el = document.getElementById("requisicaoModalTexto");
+    el.removeAttribute('readonly');
+    el.select();
+    el.setAttribute('readonly', true);
+    showAlert("Seleciona o texto na caixa e copia manualmente (Ctrl+C).");
+  }
+}
+
+function exportarRequisicaoPDF(){
+  const itens = _requisicaoItensAtual;
+  const head = ["Item", "Categoria", "Estoque atual", "Mínimo", "Fornecedor sugerido", "Observação"];
+  const body = itens.map(it => [it.nome, it.categoria||'', (it.quantidade||'0') + (it.unidade?' '+it.unidade:''), it.estoqueMinimo||'', it.fornecedor||'', it.observacao||'']);
+  exportarTabelaPDF(
+    "Requisição de Compra",
+    itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
+    head, body,
+    { filename: "requisicao_compra.pdf", landscape: true }
+  );
+}
+
 function exportarSuprimentosPDF(){
-  const head = ["Item", "Categoria", "Qtd", "Un.", "Mín.", "Fornecedor", "Status", "Observação"];
-  const body = suprimentos.map(it => [it.nome, it.categoria||'', it.quantidade, it.unidade, it.estoqueMinimo||'', it.fornecedor, it.status, it.observacao]);
+  const head = ["Item", "Categoria", "Qtd", "Un.", "Mín.", "Fornecedor", "Observação"];
+  const body = suprimentos.map(it => [it.nome, it.categoria||'', it.quantidade, it.unidade, it.estoqueMinimo||'', it.fornecedor, it.observacao]);
   exportarTabelaPDF(
     "Suprimentos",
     suprimentos.length + " itens",
