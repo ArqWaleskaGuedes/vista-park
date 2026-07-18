@@ -5080,10 +5080,13 @@ function gerarRequisicao(modo){
   }
 
   _requisicaoItensAtual = itens.map(it => {
-    const atual = parseFloat(it.quantidade);
-    const min = parseFloat(it.estoqueMinimo);
-    const sugestao = (!isNaN(atual) && !isNaN(min) && min > atual) ? String(min - atual) : '';
-    return { it, qtdComprar: sugestao };
+    let qtdComprar = it.quantidadeComprar || '';
+    if(!qtdComprar){
+      const atual = parseFloat(it.quantidade);
+      const min = parseFloat(it.estoqueMinimo);
+      qtdComprar = (!isNaN(atual) && !isNaN(min) && min > atual) ? String(min - atual) : '';
+    }
+    return { it, qtdComprar };
   });
 
   renderRequisicaoLista();
@@ -5106,11 +5109,14 @@ function renderRequisicaoLista(){
 
 function atualizarQtdRequisicao(idx, valor){
   _requisicaoItensAtual[idx].qtdComprar = valor;
+  _requisicaoItensAtual[idx].it.quantidadeComprar = valor;
+  saveSuprimentos();
   atualizarTextoRequisicao();
 }
 
 function atualizarTextoRequisicao(){
   let texto = "📋 *Requisição de Compra — Vista Park*\n";
+  texto += "Obra RD04 — Rua José Monteiro Filho, 166\n";
   texto += new Date().toLocaleDateString('pt-BR') + "\n\n";
   _requisicaoItensAtual.forEach(r => {
     const it = r.it;
@@ -5159,7 +5165,7 @@ function exportarRequisicaoPDF(){
   ]);
   exportarTabelaPDF(
     "Requisição de Compra",
-    itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
+    "Obra RD04 · Rua José Monteiro Filho, 166 · " + itens.length + " item(ns) — " + new Date().toLocaleDateString('pt-BR'),
     head, body,
     { filename: "requisicao_compra.pdf", landscape: true }
   );
