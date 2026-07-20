@@ -1206,7 +1206,7 @@
     <div id="revisaoModalLista" style="max-height:320px; overflow-y:auto; margin:14px 0;"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" onclick="cancelarRevisao()">Cancelar exportação</button>
-      <button class="btn btn-accent" onclick="continuarRevisao()">Continuar e gerar PDF</button>
+      <button class="btn btn-accent" id="revisaoModalBtnContinuar" onclick="continuarRevisao()">Continuar e gerar PDF</button>
     </div>
   </div>
 </div>
@@ -3149,9 +3149,15 @@ async function renderVagas(apt){
       ${cardHtml('depositos', d.depositos, depositosBaseList, depositoApt, 'Depósitos')}
     </div>
     <div class="toolbar" style="margin-top:22px;">
+      <button class="btn btn-ghost" onclick="revisarMarcacoesApt(${apt})">🗺️ Revisar marcações no mapa</button>
       <button class="btn btn-accent" onclick="gerarComprovantePDF(${apt})">📄 Exportar comprovante PDF</button>
     </div>
   `;
+}
+
+async function revisarMarcacoesApt(apt){
+  const d = vagasState[apt] || { vagas: [], depositos: [] };
+  await garantirCalibracoes(apt, d, true);
 }
 
 function calcularValorTotalVagas(apt){
@@ -3426,12 +3432,13 @@ function renderRevisaoLista(){
   }).join('');
 }
 
-function abrirRevisaoMapa(apt, itens){
+function abrirRevisaoMapa(apt, itens, apenasRevisao){
   return new Promise(resolve => {
     _revisaoResolve = resolve;
     _revisaoItens = itens;
     _snapshotMapaPosicoes = JSON.parse(JSON.stringify(mapaPosicoes));
     document.getElementById("revisaoModalApt").textContent = apt;
+    document.getElementById("revisaoModalBtnContinuar").textContent = apenasRevisao ? 'Concluir revisão' : 'Continuar e gerar PDF';
     renderRevisaoLista();
     document.getElementById("revisaoModal").style.display = 'flex';
   });
@@ -3477,7 +3484,7 @@ function continuarRevisao(){
   if(_revisaoResolve){ _revisaoResolve(true); _revisaoResolve = null; }
 }
 
-async function garantirCalibracoes(apt, d){
+async function garantirCalibracoes(apt, d, apenasRevisao){
   await loadMapaPosicoes();
   const itens = [];
   d.vagas.forEach(v => {
@@ -3489,9 +3496,12 @@ async function garantirCalibracoes(apt, d){
     if(item) itens.push({ tipo: 'depositos', numero: v, subsolo: item.subsolo, marcado: !!mapaPosicoes.depositos[v] });
   });
 
-  if(itens.length === 0) return true;
+  if(itens.length === 0){
+    if(apenasRevisao) showAlert("Esse apê ainda não tem vaga nem depósito destinado.");
+    return true;
+  }
 
-  return await abrirRevisaoMapa(apt, itens);
+  return await abrirRevisaoMapa(apt, itens, apenasRevisao);
 }
 
 async function gerarComprovantePDF(apt){
