@@ -3144,24 +3144,44 @@ async function exportarRelatorioGeralVagas(){
     margin: { left: 14, right: 14 }
   });
 
-  // Página 3 — por apartamento
+  // Página 3 — vagas por apartamento (uma linha por vaga)
   doc.addPage();
-  let yLinha3 = cabecalhoPDF(doc, "Relatório Geral — Por Apartamento", "");
+  let yLinha3 = cabecalhoPDF(doc, "Relatório Geral — Vagas por Apartamento", "");
+  const linhasVagasApt = [];
+  APTS.forEach(apt => {
+    const d = vagasState[apt] || { vagas: [], depositos: [] };
+    if(d.vagas.length === 0) return;
+    d.vagas.forEach((vaga, i) => {
+      linhasVagasApt.push([i === 0 ? apt : '', i === 0 ? (CLIENTES[apt]||'') : '', vaga]);
+    });
+  });
   doc.autoTable({
-    head: [["Apto", "Cliente", "Vagas", "Depósitos", "Valor extra"]],
-    body: APTS.map(apt => {
-      const d = vagasState[apt] || { vagas: [], depositos: [] };
-      let valorApt = 0;
-      if(d.valores && d.valores.depositos) Object.values(d.valores.depositos).forEach(v => { const n = parseFloat(v); if(!isNaN(n)) valorApt += n; });
-      return [
-        apt, CLIENTES[apt] || '',
-        d.vagas.length ? d.vagas.join(', ') : '—',
-        d.depositos.length ? d.depositos.join(', ') : '—',
-        valorApt > 0 ? "R$ " + valorApt.toLocaleString('pt-BR', {minimumFractionDigits:2}) : ''
-      ];
-    }),
+    head: [["Apto", "Cliente", "Vaga"]],
+    body: linhasVagasApt,
     startY: yLinha3 + 6,
-    styles: { fontSize: 7.5, cellPadding: 1.5 },
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [28,58,94], textColor: 255 },
+    margin: { left: 14, right: 14 }
+  });
+
+  // Página 4 — depósitos por apartamento (uma linha por depósito)
+  doc.addPage();
+  let yLinha4 = cabecalhoPDF(doc, "Relatório Geral — Depósitos por Apartamento", "");
+  const linhasDepApt = [];
+  APTS.forEach(apt => {
+    const d = vagasState[apt] || { vagas: [], depositos: [] };
+    if(d.depositos.length === 0) return;
+    d.depositos.forEach((dep, i) => {
+      const valor = d.valores && d.valores.depositos ? d.valores.depositos[dep] : '';
+      const valorFmt = valor && !isNaN(parseFloat(valor)) ? "R$ " + parseFloat(valor).toLocaleString('pt-BR', {minimumFractionDigits:2}) : '';
+      linhasDepApt.push([i === 0 ? apt : '', i === 0 ? (CLIENTES[apt]||'') : '', dep, valorFmt]);
+    });
+  });
+  doc.autoTable({
+    head: [["Apto", "Cliente", "Depósito", "Valor extra"]],
+    body: linhasDepApt,
+    startY: yLinha4 + 6,
+    styles: { fontSize: 8, cellPadding: 2 },
     headStyles: { fillColor: [28,58,94], textColor: 255 },
     margin: { left: 14, right: 14 }
   });
