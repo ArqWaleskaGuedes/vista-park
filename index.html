@@ -1183,6 +1183,7 @@
       <button class="tab-btn" id="tabVagasOrganizacao" onclick="switchVagasSubTab('organizacao')">Organização</button>
     </div>
     <div id="revestimentosNav">
+      <button class="btn btn-ghost" id="finResumoBtn" style="display:none; width:100%; margin-bottom:12px;" onclick="voltarResumoFinanceiro()">📊 Resumo geral</button>
       <h1 id="sidebarLabel"><span id="sidebarLabelTitle">Projetos</span><span id="sidebarLabelSub">Alvenarias, Elétrica, Hidráulica e AC</span></h1>
       <ul class="unit-list" id="unitList"></ul>
     </div>
@@ -1839,6 +1840,7 @@ async function switchTopSection(section){
     vagasSwitch.style.display = 'none';
     nav.style.display = 'none';
     unitsLabel.style.display = 'none';
+    document.getElementById("finResumoBtn").style.display = 'none';
     document.getElementById("tabPersonalize").classList.toggle("active", topSection === 'personalize');
     document.getElementById("tabCronograma").classList.toggle("active", topSection === 'cronograma');
     document.getElementById("tabVagasTop").classList.toggle("active", topSection === 'vagas');
@@ -1848,6 +1850,7 @@ async function switchTopSection(section){
 
   topSection = section;
   document.getElementById("topSwitch").style.display = 'none';
+  document.getElementById("finResumoBtn").style.display = (section === 'financeiro') ? '' : 'none';
 
   if(section === 'cronograma'){
     mainSwitch.style.display = 'none';
@@ -4949,6 +4952,26 @@ function finFmt(v){
   return "R$ " + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+// Formata número puro (sem "R$") no padrão 37.432,98 — usado dentro do campo editável.
+function finFmtPlain(n){
+  if(isNaN(n)) return "";
+  return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Máscara de moeda: a cada tecla digitada, pega só os dígitos e monta o valor
+// já formatado (ponto de milhar, vírgula decimal), tipo campo de banco.
+function finMaskInput(el, apt, etapaKey){
+  const digits = el.value.replace(/\D/g, "");
+  if(digits === ""){
+    el.value = "";
+    updateFinValor(apt, etapaKey, "");
+    return;
+  }
+  const valor = parseInt(digits, 10) / 100;
+  el.value = finFmtPlain(valor);
+  updateFinValor(apt, etapaKey, valor);
+}
+
 function finBadgeHtml(apt, etapaKey, status){
   const map = {
     pago: { cls: "fin-badge-pago", label: "✓ Pago" },
@@ -5010,7 +5033,7 @@ async function renderFinanceiro(apt){
     return `<tr>
       <td class="fin-etapa-label">${e.label}</td>
       <td style="width:170px;">
-        <input type="number" step="0.01" placeholder="0,00" value="${item.valor === "" ? "" : item.valor}" oninput="updateFinValor(${apt}, '${e.key}', this.value)">
+        <input type="text" inputmode="numeric" placeholder="0,00" value="${item.valor === "" ? "" : finFmtPlain(parseFloat(item.valor))}" oninput="finMaskInput(this, ${apt}, '${e.key}')">
       </td>
       <td style="width:150px;">${finBadgeHtml(apt, e.key, item.status)}</td>
       <td>
@@ -5037,7 +5060,54 @@ async function renderFinanceiro(apt){
       <tbody>${rows}</tbody>
     </table>
     </div>
+    <div class="toolbar">
+      <button class="btn btn-ghost" onclick="exportarFinanceiroPDF(${apt})">📄 Exportar relatório (PDF)</button>
+    </div>
   `;
+}
+
+function exportarFinanceiroPDF(apt){
+  const d = financeiroState[apt];
+  const cliente = CLIENTES[apt] || "";
+  const head = ["Etapa", "Valor", "Status", "Observação"];
+  const statusLabel = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
+  const body = FIN_ETAPAS.map(e => {
+    const item = d[e.key];
+    return [
+      e.label,
+      item.valor === "" ? "—" : finFmt(item.valor),
+      statusLabel[item.status] || "—",
+      item.obs || ""
+    ];
+  });
+
+  let totalPago = 0, totalPendente = 0;
+  FIN_ETAPAS.forEach(e => {
+    const v = parseFloat(d[e.key].valor);
+    if(!isNaN(v)){
+      if(d[e.key].status === "pago") totalPago += v; else totalPendente += v;
+    }
+  });
+  body.push(["", "", "", ""]);
+  body.push(["TOTAL PAGO", finFmt(totalPago), "", ""]);
+  body.push(["TOTAL PENDENTE", finFmt(totalPendente), "", ""]);
+
+  let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
+  if(d._obs) subtitulo += "\n" + d._obs;
+
+  exportarTabelaPDF(
+    "Controle Financeiro — Apartamento " + apt,
+    subtitulo,
+    head, body,
+    { filename: "financeiro_apto_" + apt + ".pdf" }
+  );
+}
+
+function voltarResumoFinanceiro(){
+  currentApt = null;
+  renderSidebar();
+  renderFinanceiroResumo();
+  if(window.innerWidth <= 860) closeSidebar();
 }
 
 function renderFinanceiroResumo(){
