@@ -141,6 +141,24 @@
   .dot-partial{ background: var(--warn); }
   .dot-complete{ background: var(--ok); }
 
+  /* Controle Financeiro */
+  .fin-summary-cards{ display:flex; gap:12px; flex-wrap:wrap; margin-bottom:20px; }
+  .fin-summary-card{ flex:1; min-width:160px; background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:14px 16px; }
+  .fin-summary-card .fin-card-label{ font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:6px; }
+  .fin-summary-card .fin-card-value{ font-size:20px; font-weight:700; }
+  .fin-summary-card.ok .fin-card-value{ color: var(--ok); }
+  .fin-summary-card.warn .fin-card-value{ color: var(--warn); }
+  .fin-summary-card.partial .fin-card-value{ color:#8a6d1c; }
+  .fin-badge{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; cursor:pointer; border:1px solid transparent; white-space:nowrap; }
+  .fin-badge-pago{ background:rgba(63,122,83,0.15); color: var(--ok); border-color: rgba(63,122,83,0.35); }
+  .fin-badge-pendente{ background:rgba(178,59,59,0.12); color: var(--danger); border-color: rgba(178,59,59,0.3); }
+  .fin-badge-parcial{ background:rgba(168,120,26,0.15); color:#8a6d1c; border-color: rgba(168,120,26,0.3); }
+  .fin-badge-vazio{ background: var(--surface-2); color: var(--text-dim); border-color: var(--border); }
+  .fin-table td{ vertical-align:middle; }
+  .fin-etapa-label{ font-weight:600; }
+  .fin-obs-input{ width:100%; font-size:12px; color:var(--text-dim); }
+  .fin-apt-row-total{ font-weight:700; }
+
   /* Main content */
   .main{ flex:1; padding: 28px 36px; overflow-y:auto; }
   .main-header{
@@ -1108,6 +1126,12 @@
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
+      <button class="hub-item" onclick="entrarSubcamada('financeiro')">
+        <div class="hub-item-text">
+          <div class="hub-item-title">Controle Financeiro</div>
+        </div>
+        <div class="hub-item-lock">🔒</div>
+      </button>
     </div>
   </div>
 </div>
@@ -1598,9 +1622,10 @@ const SENHAS_SUBCAMADA = {
   personalize: "26354",
   cronograma: "72635",
   vagas: "240928",
-  suprimentos: "1357"
+  suprimentos: "1357",
+  financeiro: "812814"
 };
-let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false };
+let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false, financeiro: false };
 
 function attemptAccess(){
   document.getElementById("coverScreen").style.display = "none";
@@ -1610,7 +1635,7 @@ function attemptAccess(){
 
 async function pedirSenhaSubcamada(section){
   if(subcamadaLiberada[section]) return true;
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : 'Suprimentos';
   let erro = '';
   while(true){
     const senha = await askPassword("Senha para acessar " + nomeAmigavel, erro);
@@ -1779,7 +1804,7 @@ async function renderAtividade(){
 }
 
 function renderSubcamadaBloqueada(section){
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : 'Suprimentos';
   document.getElementById("unitTitle").textContent = nomeAmigavel;
   document.getElementById("unitSubtitle").textContent = "Acesso restrito";
   document.getElementById("summaryPill").textContent = "";
@@ -1848,6 +1873,17 @@ async function switchTopSection(section){
     nav.style.display = 'none';
     unitsLabel.style.display = 'none';
     renderSuprimentos();
+  } else if(section === 'financeiro'){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    vagasSwitch.style.display = 'none';
+    nav.style.display = '';
+    unitsLabel.style.display = '';
+    setSidebarLabel('Controle Financeiro', 'Pagamentos por apartamento');
+    currentApt = null;
+    await renderSidebar();
+    renderFinanceiroResumo();
   } else {
     mainSwitch.style.display = '';
     vagasSwitch.style.display = 'none';
@@ -2003,7 +2039,10 @@ async function renderSidebar(){
   ul.innerHTML = "";
   for(const apt of APTS){
     let st;
-    if(topSection === 'vagas'){
+    if(topSection === 'financeiro'){
+      if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
+      st = financeiroStatusApt(apt);
+    } else if(topSection === 'vagas'){
       if(!(apt in vagasState)) await loadVagasUnit(apt);
       const d = vagasState[apt] || { vagas: [], depositos: [] };
       const total = d.vagas.length + d.depositos.length;
@@ -3917,7 +3956,9 @@ async function selectUnit(apt){
   currentApt = apt;
   await renderSidebar();
 
-  if(topSection === 'vagas'){
+  if(topSection === 'financeiro'){
+    await renderFinanceiro(apt);
+  } else if(topSection === 'vagas'){
     await renderVagas(apt);
   } else if(mainSection === 'projetos'){
     await renderProjetos(apt);
@@ -4818,6 +4859,247 @@ async function entrarSubcamada(section){
 function voltarAoHub(){
   document.getElementById("mainAppUI").style.display = 'none';
   document.getElementById("hubScreen").style.display = '';
+}
+
+// ---------- Controle Financeiro ----------
+const FIN_ETAPAS = [
+  { key: "revestimentos", label: "Revestimentos" },
+  { key: "vinilico", label: "Vinílico" },
+  { key: "marmoraria", label: "Marmoraria" },
+  { key: "eletrica", label: "Alterações Elétricas" },
+  { key: "hidraulica", label: "Alterações Hidráulicas" },
+  { key: "alvenaria", label: "Bases de Alvenaria" },
+  { key: "extras", label: "Instalação de Revestimentos Extras" }
+];
+
+function finItem(valor, status, obs){
+  return { valor: (valor === null || valor === undefined) ? "" : valor, status: status || "", obs: obs || "" };
+}
+function finVazio(obs){ return finItem(null, "", obs || ""); }
+
+// Dados de partida (informados por Waleska em 18/08/2026). Servem só pra pré-popular
+// o Firebase na primeira vez que cada apê é aberto — depois disso, quem manda é o banco.
+const FIN_SEED = {
+  11: { revestimentos: finItem(37432.98, "pendente"), vinilico: finItem(7176.00, "pendente"), marmoraria: finItem(23580.00, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  12: { _obs: "Não vendido", revestimentos: finVazio(), vinilico: finVazio(), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  21: { revestimentos: finVazio("Cobrado no valor da venda (já estava revestido)"), vinilico: finVazio(), marmoraria: finItem(58440.00, "pendente"), eletrica: finVazio(), hidraulica: finItem(6250.00, "pendente"), alvenaria: finItem(6250.00, "pendente"), extras: finVazio() },
+  22: { revestimentos: finItem(62795.89, "pago"), vinilico: finItem(7176.00, "pago"), marmoraria: finItem(7920.00, "pago"), eletrica: finItem(1750.00, "pago"), hidraulica: finItem(6650.00, "pago"), alvenaria: finItem(500.00, "pendente"), extras: finItem(8150.00, "pendente") },
+  31: { _obs: "Isento de tudo", revestimentos: finVazio(), vinilico: finVazio(), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  32: { revestimentos: finItem(39096.21, "pago"), vinilico: finItem(6844.80, "pendente"), marmoraria: finItem(34800.00, "pendente"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finItem(500.00, "pendente"), extras: finVazio() },
+  41: { revestimentos: finItem(12648.72, "pago"), vinilico: finItem(6072.00, "pago"), marmoraria: finItem(5720.00, "pago"), eletrica: finItem(250.00, "pendente"), hidraulica: finItem(4347.00, "pendente"), alvenaria: finItem(500.00, "pendente"), extras: finVazio() },
+  42: { revestimentos: finItem(49289.76, "pago"), vinilico: finVazio(), marmoraria: finItem(7000.00, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  51: { revestimentos: finItem(29939.38, "pago"), vinilico: finVazio(), marmoraria: finItem(5651.23, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finItem(500.00, "pendente"), extras: finVazio() },
+  52: { revestimentos: finItem(37959.36, "pago"), vinilico: finItem(5980.00, "pendente"), marmoraria: finVazio(), eletrica: finItem(1050.00, "pendente"), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  61: { revestimentos: finItem(583.97, "pago"), vinilico: finVazio(), marmoraria: finItem(39951.08, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  62: { revestimentos: finItem(15000.00, "pago"), vinilico: finVazio(), marmoraria: finItem(37489.89, "pendente"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  71: { revestimentos: finItem(20608.20, ""), vinilico: finItem(5520.00, "pago"), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finItem(500.00, "pendente", "Cobrança e pagamento pendentes"), extras: finVazio("Cobrança e pagamento pendentes") },
+  72: { revestimentos: finItem(36780.36, "pago"), vinilico: finItem(5152.00, "pago"), marmoraria: finItem(49723.82, "pago"), eletrica: finVazio(), hidraulica: finItem(1500.00, "pago"), alvenaria: finVazio(), extras: finItem(1850.00, "pendente") },
+  81: { revestimentos: finItem(14076.02, "pago"), vinilico: finItem(14904.00, "pendente"), marmoraria: finItem(18907.36, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  82: { revestimentos: finItem(49389.88, "pago"), vinilico: finVazio(), marmoraria: finItem(27964.45, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  91: { _obs: "Permutante", revestimentos: finItem(24333.12, "pago"), vinilico: finVazio(), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  92: { revestimentos: finItem(1500.00, "pago"), vinilico: finVazio(), marmoraria: finItem(37214.40, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  101: { revestimentos: finItem(25074.04, "pago"), vinilico: finVazio(), marmoraria: finItem(18010.40, "pago"), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  102: { _obs: "Permutante", revestimentos: finItem(24333.12, "pago"), vinilico: finVazio(), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  111: { _obs: "Permutante", revestimentos: finItem(24333.12, "pago"), vinilico: finVazio(), marmoraria: finVazio(), eletrica: finVazio(), hidraulica: finVazio(), alvenaria: finVazio(), extras: finVazio() },
+  112: { revestimentos: finItem(13477.50, "pago"), vinilico: finVazio(), marmoraria: finItem(17564.99, "pago"), eletrica: finItem(3000.00, "pago"), hidraulica: finVazio(), alvenaria: finVazio(), extras: finItem(950.00, "pago") },
+  121: { revestimentos: finItem(47238.50, "pago"), vinilico: finItem(5520.00, "pago"), marmoraria: finItem(1600.00, "pago"), eletrica: finVazio(), hidraulica: finItem(1600.00, "pago"), alvenaria: finVazio(), extras: finItem(4325.00, "parcial", "R$ 950,00 pago + R$ 3.375,00 pagamento pendente") },
+  122: { revestimentos: finItem(67210.15, "pendente"), vinilico: finItem(6844.80, "pendente"), marmoraria: finItem(114200.00, "pendente"), eletrica: finItem(550.00, "pendente"), hidraulica: finVazio(), alvenaria: finItem(2000.00, "pendente"), extras: finVazio() }
+};
+
+let financeiroState = {};
+
+function finKeyFor(apt){ return "financeiro:apt_" + apt; }
+
+async function loadFinanceiroUnit(apt){
+  try{
+    const res = await window.storage.get(finKeyFor(apt), true);
+    if(res){
+      financeiroState[apt] = JSON.parse(res.value);
+      return;
+    }
+  }catch(e){}
+  // Primeira vez que esse apê é aberto: pré-popula com os dados de partida, se existirem.
+  const seed = FIN_SEED[apt];
+  financeiroState[apt] = seed ? JSON.parse(JSON.stringify(seed)) : { _obs: "", ...Object.fromEntries(FIN_ETAPAS.map(e => [e.key, finVazio()])) };
+  await saveFinanceiroUnit(apt);
+}
+
+async function saveFinanceiroUnit(apt){
+  try{
+    await window.storage.set(finKeyFor(apt), JSON.stringify(financeiroState[apt]), true);
+    flashSaved();
+    registrarAtividade("Controle Financeiro", "Apto " + apt + " atualizado");
+  }catch(e){
+    console.error("Erro ao salvar financeiro", e);
+  }
+}
+
+function financeiroStatusApt(apt){
+  const d = financeiroState[apt];
+  if(!d) return "empty";
+  const preenchidos = FIN_ETAPAS.filter(e => d[e.key] && (d[e.key].valor !== "" || d[e.key].obs));
+  if(preenchidos.length === 0) return "empty";
+  const pendentes = preenchidos.filter(e => d[e.key].status === "pendente" || d[e.key].status === "parcial");
+  return pendentes.length === 0 ? "complete" : "partial";
+}
+
+function finFmt(v){
+  const n = parseFloat(v);
+  if(isNaN(n)) return "R$ 0,00";
+  return "R$ " + n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+function finBadgeHtml(apt, etapaKey, status){
+  const map = {
+    pago: { cls: "fin-badge-pago", label: "✓ Pago" },
+    pendente: { cls: "fin-badge-pendente", label: "✕ Pendente" },
+    parcial: { cls: "fin-badge-parcial", label: "◐ Parcial" },
+    "": { cls: "fin-badge-vazio", label: "— Definir" }
+  };
+  const s = map[status] || map[""];
+  return `<span class="fin-badge ${s.cls}" onclick="cicleFinStatus(${apt}, '${etapaKey}')" title="Clique para alternar o status">${s.label}</span>`;
+}
+
+function cicleFinStatus(apt, etapaKey){
+  const ordem = ["", "pendente", "parcial", "pago"];
+  const atual = financeiroState[apt][etapaKey].status || "";
+  const idx = ordem.indexOf(atual);
+  financeiroState[apt][etapaKey].status = ordem[(idx + 1) % ordem.length];
+  saveFinanceiroUnit(apt).then(renderSidebar);
+  renderFinanceiro(apt);
+}
+
+function updateFinValor(apt, etapaKey, valor){
+  financeiroState[apt][etapaKey].valor = valor;
+  saveFinanceiroUnit(apt).then(renderSidebar);
+}
+
+function updateFinObs(apt, etapaKey, obs){
+  financeiroState[apt][etapaKey].obs = obs;
+  saveFinanceiroUnit(apt);
+}
+
+function updateFinAptObs(apt, obs){
+  financeiroState[apt]._obs = obs;
+  saveFinanceiroUnit(apt).then(renderSidebar);
+}
+
+async function renderFinanceiro(apt){
+  if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
+  const d = financeiroState[apt];
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Controle Financeiro";
+  const content = document.getElementById("content");
+
+  let totalPago = 0, totalPendente = 0, totalParcial = 0;
+  FIN_ETAPAS.forEach(e => {
+    const item = d[e.key];
+    const v = parseFloat(item.valor);
+    if(!isNaN(v)){
+      if(item.status === "pago") totalPago += v;
+      else if(item.status === "pendente") totalPendente += v;
+      else if(item.status === "parcial") totalParcial += v;
+    }
+  });
+  const totalGeral = totalPago + totalPendente + totalParcial;
+  document.getElementById("summaryPill").innerHTML = `Total <b>${finFmt(totalGeral)}</b> · Pago <b>${finFmt(totalPago)}</b> · Pendente <b>${finFmt(totalPendente + totalParcial)}</b>`;
+
+  const rows = FIN_ETAPAS.map(e => {
+    const item = d[e.key];
+    return `<tr>
+      <td class="fin-etapa-label">${e.label}</td>
+      <td style="width:170px;">
+        <input type="number" step="0.01" placeholder="0,00" value="${item.valor === "" ? "" : item.valor}" oninput="updateFinValor(${apt}, '${e.key}', this.value)">
+      </td>
+      <td style="width:150px;">${finBadgeHtml(apt, e.key, item.status)}</td>
+      <td>
+        <input type="text" class="fin-obs-input" placeholder="Observação (opcional)" value="${escapeHtml(item.obs || "")}" oninput="updateFinObs(${apt}, '${e.key}', this.value)">
+      </td>
+    </tr>`;
+  }).join('');
+
+  content.innerHTML = `
+    <div style="margin-bottom:16px;">
+      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Observação geral do apê (ex.: Não vendido, Isento de tudo, Permutante...)</label>
+      <input type="text" style="width:100%; max-width:420px;" placeholder="Sem observação" value="${escapeHtml(d._obs || "")}" oninput="updateFinAptObs(${apt}, this.value)">
+    </div>
+    <div style="overflow-x:auto;">
+    <table class="fin-table">
+      <thead>
+        <tr>
+          <th>Etapa</th>
+          <th>Valor (R$)</th>
+          <th>Status</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    </div>
+  `;
+}
+
+function renderFinanceiroResumo(){
+  document.getElementById("unitTitle").textContent = "Controle Financeiro";
+  document.getElementById("unitSubtitle").textContent = "Visão geral · selecione um apê ao lado para editar";
+  document.getElementById("summaryPill").textContent = "";
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="empty-state">Carregando resumo geral…</div>`;
+
+  (async () => {
+    let totalGeral = 0, totalPago = 0, totalPendente = 0;
+    const linhasApt = [];
+    for(const apt of APTS){
+      if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
+      const d = financeiroState[apt];
+      let subtotal = 0, subtotalPago = 0, subtotalPendente = 0;
+      FIN_ETAPAS.forEach(e => {
+        const v = parseFloat(d[e.key].valor);
+        if(!isNaN(v)){
+          subtotal += v;
+          if(d[e.key].status === "pago") subtotalPago += v;
+          else subtotalPendente += v;
+        }
+      });
+      totalGeral += subtotal; totalPago += subtotalPago; totalPendente += subtotalPendente;
+      linhasApt.push({ apt, cliente: CLIENTES[apt] || "", obs: d._obs || "", subtotal, subtotalPago, subtotalPendente });
+    }
+
+    const linhasHtml = linhasApt.map(l => `
+      <tr onclick="selectUnit(${l.apt})" style="cursor:pointer;">
+        <td><b>Apto ${l.apt}</b></td>
+        <td>${escapeHtml(l.cliente)}${l.obs ? `<div style="font-size:11px; color:var(--text-dim);">${escapeHtml(l.obs)}</div>` : ''}</td>
+        <td class="fin-apt-row-total">${finFmt(l.subtotal)}</td>
+        <td style="color:var(--ok);">${finFmt(l.subtotalPago)}</td>
+        <td style="color:var(--danger);">${finFmt(l.subtotalPendente)}</td>
+      </tr>`).join('');
+
+    content.innerHTML = `
+      <div class="fin-summary-cards">
+        <div class="fin-summary-card">
+          <div class="fin-card-label">Total geral (24 unidades)</div>
+          <div class="fin-card-value">${finFmt(totalGeral)}</div>
+        </div>
+        <div class="fin-summary-card ok">
+          <div class="fin-card-label">Total pago</div>
+          <div class="fin-card-value">${finFmt(totalPago)}</div>
+        </div>
+        <div class="fin-summary-card warn">
+          <div class="fin-card-label">Total pendente</div>
+          <div class="fin-card-value">${finFmt(totalPendente)}</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th>Apê</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Pendente</th></tr>
+        </thead>
+        <tbody>${linhasHtml}</tbody>
+      </table>
+      </div>
+    `;
+  })();
 }
 
 // ---------- Suprimentos ----------
