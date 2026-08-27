@@ -4888,6 +4888,7 @@ const FIN_ETAPAS = [
   { key: "alvenaria", label: "Bases de Alvenaria", color: "#8a5a44" },
   { key: "extras", label: "Instalação de Revestimentos Extras", color: "#6b5b95" }
 ];
+const FIN_STATUS_LABEL = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
 
 function finItem(valor, status, obs){
   return { valor: (valor === null || valor === undefined) ? "" : valor, status: status || "", obs: obs || "" };
@@ -5116,13 +5117,12 @@ function exportarFinanceiroPDF(apt){
   const d = financeiroState[apt];
   const cliente = CLIENTES[apt] || "";
   const head = ["Etapa", "Valor", "Status", "Observação"];
-  const statusLabel = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
   const body = FIN_ETAPAS.map(e => {
     const item = d[e.key];
     return [
       e.label,
       item.valor === "" ? "—" : finFmt(item.valor),
-      statusLabel[item.status] || "—",
+      FIN_STATUS_LABEL[item.status] || "—",
       item.obs || ""
     ];
   });
@@ -5147,6 +5147,97 @@ function exportarFinanceiroPDF(apt){
     head, body,
     { filename: "financeiro_apto_" + apt + ".pdf" }
   );
+}
+
+// Exporta o PDF de uma categoria específica (ex.: Marmoraria) com todos os apês que têm valor lançado ali.
+async function exportarFinanceiroCategoriaPDF(key){
+  const etapa = FIN_ETAPAS.find(e => e.key === key);
+  for(const apt of APTS){
+    if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
+  }
+  const head = ["Apê", "Cliente", "Valor", "Status", "Observação"];
+  let totalPago = 0, totalPendente = 0;
+  const linhas = [];
+  APTS.forEach(apt => {
+    const item = financeiroState[apt][key];
+    const v = parseFloat(item.valor);
+    if(isNaN(v)) return;
+    if(item.status === "pago") totalPago += v; else totalPendente += v;
+    linhas.push([
+      "Apto " + apt,
+      CLIENTES[apt] || "",
+      finFmt(v),
+      FIN_STATUS_LABEL[item.status] || "—",
+      item.obs || ""
+    ]);
+  });
+  linhas.sort((a, b) => parseFloat(b[2].replace(/\D/g,'')) - parseFloat(a[2].replace(/\D/g,'')));
+  linhas.push(["", "", "", "", ""]);
+  linhas.push(["TOTAL PAGO", "", finFmt(totalPago), "", ""]);
+  linhas.push(["TOTAL PENDENTE", "", finFmt(totalPendente), "", ""]);
+  linhas.push(["TOTAL GERAL", "", finFmt(totalPago + totalPendente), "", ""]);
+
+  exportarTabelaPDF(
+    "Controle Financeiro — " + etapa.label,
+    "Todos os apês · Vista Park Residencial 166",
+    head, linhas,
+    { filename: "financeiro_categoria_" + key + ".pdf" }
+  );
+}
+
+// Exporta o resumo geral em PDF — por apartamento (24 linhas) ou por categoria (7 linhas), conforme a aba aberta.
+async function exportarFinanceiroResumoPDF(modo){
+  for(const apt of APTS){
+    if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
+  }
+  if(modo === 'categoria'){
+    const head = ["Categoria", "Total", "Pago", "Pendente", "% Pago"];
+    let totalGeral = 0, totalPago = 0, totalPendente = 0;
+    const linhas = FIN_ETAPAS.map(e => {
+      let total = 0, pago = 0, pendente = 0;
+      APTS.forEach(apt => {
+        const item = financeiroState[apt][e.key];
+        const v = parseFloat(item.valor);
+        if(isNaN(v)) return;
+        total += v;
+        if(item.status === "pago") pago += v; else pendente += v;
+      });
+      totalGeral += total; totalPago += pago; totalPendente += pendente;
+      const pct = total > 0 ? Math.round(pago / total * 100) + "%" : "—";
+      return [e.label, finFmt(total), finFmt(pago), finFmt(pendente), pct];
+    });
+    linhas.push(["", "", "", "", ""]);
+    linhas.push(["TOTAL GERAL", finFmt(totalGeral), finFmt(totalPago), finFmt(totalPendente), totalGeral > 0 ? Math.round(totalPago/totalGeral*100)+"%" : "—"]);
+    exportarTabelaPDF(
+      "Controle Financeiro — Resumo por Categoria",
+      "Vista Park Residencial 166 · Todos os apês",
+      head, linhas,
+      { filename: "financeiro_resumo_categoria.pdf" }
+    );
+  } else {
+    const head = ["Apê", "Cliente", "Total", "Pago", "Pendente"];
+    let totalGeral = 0, totalPago = 0, totalPendente = 0;
+    const linhas = APTS.map(apt => {
+      const d = financeiroState[apt];
+      let subtotal = 0, subtotalPago = 0, subtotalPendente = 0;
+      FIN_ETAPAS.forEach(e => {
+        const v = parseFloat(d[e.key].valor);
+        if(isNaN(v)) return;
+        subtotal += v;
+        if(d[e.key].status === "pago") subtotalPago += v; else subtotalPendente += v;
+      });
+      totalGeral += subtotal; totalPago += subtotalPago; totalPendente += subtotalPendente;
+      return ["Apto " + apt, CLIENTES[apt] || "", finFmt(subtotal), finFmt(subtotalPago), finFmt(subtotalPendente)];
+    });
+    linhas.push(["", "", "", "", ""]);
+    linhas.push(["TOTAL GERAL", "", finFmt(totalGeral), finFmt(totalPago), finFmt(totalPendente)]);
+    exportarTabelaPDF(
+      "Controle Financeiro — Resumo por Apartamento",
+      "Vista Park Residencial 166 · 24 unidades",
+      head, linhas,
+      { filename: "financeiro_resumo_apartamentos.pdf" }
+    );
+  }
 }
 
 function voltarResumoFinanceiro(){
@@ -5239,9 +5330,12 @@ function renderFinanceiroResumo(modo){
         </div>
       </div>
       ${chartsHtml}
-      <div class="tab-switch" style="margin-bottom:16px;">
-        <button class="tab-btn ${modo === 'apartamento' ? 'active' : ''}" onclick="renderFinanceiroResumo('apartamento')">Por Apartamento</button>
-        <button class="tab-btn ${modo === 'categoria' ? 'active' : ''}" onclick="renderFinanceiroResumo('categoria')">Por Categoria</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+        <div class="tab-switch" style="margin-bottom:0;">
+          <button class="tab-btn ${modo === 'apartamento' ? 'active' : ''}" onclick="renderFinanceiroResumo('apartamento')">Por Apartamento</button>
+          <button class="tab-btn ${modo === 'categoria' ? 'active' : ''}" onclick="renderFinanceiroResumo('categoria')">Por Categoria</button>
+        </div>
+        <button class="btn btn-ghost" onclick="exportarFinanceiroResumoPDF('${modo}')">📄 Exportar resumo (PDF)</button>
       </div>
     `;
 
@@ -5278,6 +5372,7 @@ function renderFinanceiroResumo(modo){
                   <div style="font-size:11px; color:var(--danger);">Pendente</div>
                   <div style="font-weight:700; color:var(--danger);">${finFmt(cat.pendente)}</div>
                 </div>
+                <button class="btn btn-ghost" style="padding:6px 10px; font-size:12px;" onclick="event.stopPropagation(); exportarFinanceiroCategoriaPDF('${e.key}')">📄 PDF</button>
                 <div id="fin-cat-arrow-${e.key}" style="font-size:14px; color:var(--text-dim);">▾</div>
               </div>
             </div>
