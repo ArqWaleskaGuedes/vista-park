@@ -159,6 +159,20 @@
   .fin-obs-input{ width:100%; font-size:12px; color:var(--text-dim); }
   .fin-apt-row-total{ font-weight:700; }
 
+  /* Controle Financeiro — gráficos */
+  .fin-charts-row{ display:flex; gap:16px; flex-wrap:wrap; margin-bottom:20px; align-items:stretch; }
+  .fin-chart-card{ background: var(--surface); border:1px solid var(--border); border-radius: var(--radius); padding:18px; }
+  .fin-donut-card{ flex:0 0 220px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:4px; }
+  .fin-bars-card{ flex:1; min-width:280px; }
+  .fin-bars-card .fin-card-title{ font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--text-dim); margin-bottom:14px; }
+  .fin-bar-row{ margin-bottom:12px; }
+  .fin-bar-row:last-child{ margin-bottom:0; }
+  .fin-bar-row-top{ display:flex; justify-content:space-between; align-items:baseline; font-size:12px; margin-bottom:4px; }
+  .fin-bar-row-top .fin-bar-label{ font-weight:600; color:var(--text); display:flex; align-items:center; gap:6px; }
+  .fin-bar-row-top .fin-bar-value{ color:var(--text-dim); }
+  .fin-bar-track{ height:10px; border-radius:6px; background: var(--surface-2); overflow:hidden; display:flex; }
+  .fin-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; flex-shrink:0; }
+
   /* Main content */
   .main{ flex:1; padding: 28px 36px; overflow-y:auto; }
   .main-header{
@@ -4866,13 +4880,13 @@ function voltarAoHub(){
 
 // ---------- Controle Financeiro ----------
 const FIN_ETAPAS = [
-  { key: "revestimentos", label: "Revestimentos" },
-  { key: "vinilico", label: "Vinílico" },
-  { key: "marmoraria", label: "Marmoraria" },
-  { key: "eletrica", label: "Alterações Elétricas" },
-  { key: "hidraulica", label: "Alterações Hidráulicas" },
-  { key: "alvenaria", label: "Bases de Alvenaria" },
-  { key: "extras", label: "Instalação de Revestimentos Extras" }
+  { key: "revestimentos", label: "Revestimentos", color: "#1c3a5e" },
+  { key: "vinilico", label: "Vinílico", color: "#35597f" },
+  { key: "marmoraria", label: "Marmoraria", color: "#3f7a53" },
+  { key: "eletrica", label: "Alterações Elétricas", color: "#a8781a" },
+  { key: "hidraulica", label: "Alterações Hidráulicas", color: "#2f8f8f" },
+  { key: "alvenaria", label: "Bases de Alvenaria", color: "#8a5a44" },
+  { key: "extras", label: "Instalação de Revestimentos Extras", color: "#6b5b95" }
 ];
 
 function finItem(valor, status, obs){
@@ -4957,6 +4971,37 @@ function finFmt(v){
 function finFmtPlain(n){
   if(isNaN(n)) return "";
   return n.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Donut SVG simples: percentual pago (verde) vs pendente (âmbar/vermelho), sem libs externas.
+function finDonutSVG(pagoPct){
+  const r = 52, stroke = 16, c = 2 * Math.PI * r;
+  const pago = Math.max(0, Math.min(100, pagoPct));
+  const dashPago = (pago / 100) * c;
+  return `
+    <svg width="140" height="140" viewBox="0 0 140 140">
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--surface-2)" stroke-width="${stroke}"/>
+      <circle cx="70" cy="70" r="${r}" fill="none" stroke="var(--ok)" stroke-width="${stroke}"
+        stroke-dasharray="${dashPago} ${c - dashPago}" stroke-linecap="round"
+        transform="rotate(-90 70 70)"/>
+      <text x="70" y="65" text-anchor="middle" font-size="24" font-weight="700" fill="var(--text)">${Math.round(pago)}%</text>
+      <text x="70" y="84" text-anchor="middle" font-size="10" fill="var(--text-dim)">pago</text>
+    </svg>
+  `;
+}
+
+// Barra horizontal proporcional ao maior total, com trecho pago (cor sólida) e pendente (cor clara).
+function finBarTrackHtml(color, pago, pendente, maxTotal){
+  const total = pago + pendente;
+  const widthPct = maxTotal > 0 ? Math.max(total / maxTotal * 100, total > 0 ? 3 : 0) : 0;
+  const pagoPct = total > 0 ? (pago / total * 100) : 0;
+  const pendPct = 100 - pagoPct;
+  return `
+    <div class="fin-bar-track" style="width:${widthPct}%;">
+      <div style="width:${pagoPct}%; background:${color};"></div>
+      <div style="width:${pendPct}%; background:${color}44;"></div>
+    </div>
+  `;
 }
 
 // Máscara de moeda: a cada tecla digitada, pega só os dígitos e monta o valor
@@ -5146,6 +5191,38 @@ function renderFinanceiroResumo(modo){
       linhasApt.push({ apt, cliente: CLIENTES[apt] || "", obs: d._obs || "", subtotal, subtotalPago, subtotalPendente });
     }
 
+    const pagoPct = totalGeral > 0 ? (totalPago / totalGeral * 100) : 0;
+    const maxCatTotal = Math.max(1, ...FIN_ETAPAS.map(e => porCategoria[e.key].total));
+    const barsHtml = FIN_ETAPAS.map(e => {
+      const cat = porCategoria[e.key];
+      if(cat.total === 0) return '';
+      return `
+        <div class="fin-bar-row">
+          <div class="fin-bar-row-top">
+            <span class="fin-bar-label"><span class="fin-dot" style="background:${e.color};"></span>${e.label}</span>
+            <span class="fin-bar-value">${finFmt(cat.total)}</span>
+          </div>
+          ${finBarTrackHtml(e.color, cat.pago, cat.pendente, maxCatTotal)}
+        </div>
+      `;
+    }).join('');
+
+    const chartsHtml = `
+      <div class="fin-charts-row">
+        <div class="fin-chart-card fin-donut-card">
+          ${finDonutSVG(pagoPct)}
+          <div style="font-size:12px; color:var(--text-dim); margin-top:6px;">
+            <span style="color:var(--ok); font-weight:700;">${finFmt(totalPago)}</span> pago de
+            <span style="font-weight:700;">${finFmt(totalGeral)}</span>
+          </div>
+        </div>
+        <div class="fin-chart-card fin-bars-card">
+          <div class="fin-card-title">Total por categoria (pago x pendente)</div>
+          ${barsHtml || '<div class="empty-state">Nenhum valor lançado ainda.</div>'}
+        </div>
+      </div>
+    `;
+
     const cardsHtml = `
       <div class="fin-summary-cards">
         <div class="fin-summary-card">
@@ -5161,6 +5238,7 @@ function renderFinanceiroResumo(modo){
           <div class="fin-card-value">${finFmt(totalPendente)}</div>
         </div>
       </div>
+      ${chartsHtml}
       <div class="tab-switch" style="margin-bottom:16px;">
         <button class="tab-btn ${modo === 'apartamento' ? 'active' : ''}" onclick="renderFinanceiroResumo('apartamento')">Por Apartamento</button>
         <button class="tab-btn ${modo === 'categoria' ? 'active' : ''}" onclick="renderFinanceiroResumo('categoria')">Por Categoria</button>
@@ -5181,11 +5259,11 @@ function renderFinanceiroResumo(modo){
           </tr>`).join('');
         const pctPago = cat.total > 0 ? Math.round((cat.pago / cat.total) * 100) : 0;
         return `
-          <div class="card" style="margin-bottom:14px;">
+          <div class="card" style="margin-bottom:14px; border-left:4px solid ${e.color};">
             <div class="fin-cat-header" onclick="toggleFinCat('${e.key}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
               <div>
-                <div style="font-weight:700; font-size:15px;">${e.label}</div>
-                <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">${itensOrdenados.length} apê(s) com valor lançado · ${pctPago}% pago</div>
+                <div style="font-weight:700; font-size:15px; display:flex; align-items:center; gap:7px;"><span class="fin-dot" style="background:${e.color};"></span>${e.label}</div>
+                <div style="font-size:12px; color:var(--text-dim); margin-top:2px; margin-left:16px;">${itensOrdenados.length} apê(s) com valor lançado · ${pctPago}% pago</div>
               </div>
               <div style="display:flex; gap:18px; align-items:center;">
                 <div style="text-align:right;">
