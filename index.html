@@ -4910,6 +4910,7 @@ const FIN_SEED = {
 };
 
 let financeiroState = {};
+let finResumoModo = 'apartamento';
 
 function finKeyFor(apt){ return "financeiro:apt_" + apt; }
 
@@ -5110,7 +5111,9 @@ function voltarResumoFinanceiro(){
   if(window.innerWidth <= 860) closeSidebar();
 }
 
-function renderFinanceiroResumo(){
+function renderFinanceiroResumo(modo){
+  modo = modo || finResumoModo || 'apartamento';
+  finResumoModo = modo;
   document.getElementById("unitTitle").textContent = "Controle Financeiro";
   document.getElementById("unitSubtitle").textContent = "Visão geral · selecione um apê ao lado para editar";
   document.getElementById("summaryPill").textContent = "";
@@ -5120,32 +5123,30 @@ function renderFinanceiroResumo(){
   (async () => {
     let totalGeral = 0, totalPago = 0, totalPendente = 0;
     const linhasApt = [];
+    const porCategoria = {};
+    FIN_ETAPAS.forEach(e => porCategoria[e.key] = { total: 0, pago: 0, pendente: 0, itens: [] });
+
     for(const apt of APTS){
       if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
       const d = financeiroState[apt];
       let subtotal = 0, subtotalPago = 0, subtotalPendente = 0;
       FIN_ETAPAS.forEach(e => {
-        const v = parseFloat(d[e.key].valor);
+        const item = d[e.key];
+        const v = parseFloat(item.valor);
         if(!isNaN(v)){
           subtotal += v;
-          if(d[e.key].status === "pago") subtotalPago += v;
-          else subtotalPendente += v;
+          const cat = porCategoria[e.key];
+          cat.total += v;
+          if(item.status === "pago") { subtotalPago += v; cat.pago += v; }
+          else { subtotalPendente += v; cat.pendente += v; }
+          cat.itens.push({ apt, cliente: CLIENTES[apt] || "", valor: v, status: item.status, obs: item.obs || "" });
         }
       });
       totalGeral += subtotal; totalPago += subtotalPago; totalPendente += subtotalPendente;
       linhasApt.push({ apt, cliente: CLIENTES[apt] || "", obs: d._obs || "", subtotal, subtotalPago, subtotalPendente });
     }
 
-    const linhasHtml = linhasApt.map(l => `
-      <tr onclick="selectUnit(${l.apt})" style="cursor:pointer;">
-        <td><b>Apto ${l.apt}</b></td>
-        <td>${escapeHtml(l.cliente)}${l.obs ? `<div style="font-size:11px; color:var(--text-dim);">${escapeHtml(l.obs)}</div>` : ''}</td>
-        <td class="fin-apt-row-total">${finFmt(l.subtotal)}</td>
-        <td style="color:var(--ok);">${finFmt(l.subtotalPago)}</td>
-        <td style="color:var(--danger);">${finFmt(l.subtotalPendente)}</td>
-      </tr>`).join('');
-
-    content.innerHTML = `
+    const cardsHtml = `
       <div class="fin-summary-cards">
         <div class="fin-summary-card">
           <div class="fin-card-label">Total geral (24 unidades)</div>
@@ -5160,16 +5161,89 @@ function renderFinanceiroResumo(){
           <div class="fin-card-value">${finFmt(totalPendente)}</div>
         </div>
       </div>
-      <div style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr><th>Apê</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Pendente</th></tr>
-        </thead>
-        <tbody>${linhasHtml}</tbody>
-      </table>
+      <div class="tab-switch" style="margin-bottom:16px;">
+        <button class="tab-btn ${modo === 'apartamento' ? 'active' : ''}" onclick="renderFinanceiroResumo('apartamento')">Por Apartamento</button>
+        <button class="tab-btn ${modo === 'categoria' ? 'active' : ''}" onclick="renderFinanceiroResumo('categoria')">Por Categoria</button>
       </div>
     `;
+
+    if(modo === 'categoria'){
+      const statusLabel = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
+      const catCardsHtml = FIN_ETAPAS.map(e => {
+        const cat = porCategoria[e.key];
+        const itensOrdenados = cat.itens.slice().sort((a,b) => b.valor - a.valor);
+        const linhasCat = itensOrdenados.map(it => `
+          <tr onclick="selectUnit(${it.apt})" style="cursor:pointer;">
+            <td><b>Apto ${it.apt}</b></td>
+            <td>${escapeHtml(it.cliente)}</td>
+            <td>${finFmt(it.valor)}</td>
+            <td>${finBadgeHtml(it.apt, e.key, it.status)}</td>
+          </tr>`).join('');
+        const pctPago = cat.total > 0 ? Math.round((cat.pago / cat.total) * 100) : 0;
+        return `
+          <div class="card" style="margin-bottom:14px;">
+            <div class="fin-cat-header" onclick="toggleFinCat('${e.key}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;">
+              <div>
+                <div style="font-weight:700; font-size:15px;">${e.label}</div>
+                <div style="font-size:12px; color:var(--text-dim); margin-top:2px;">${itensOrdenados.length} apê(s) com valor lançado · ${pctPago}% pago</div>
+              </div>
+              <div style="display:flex; gap:18px; align-items:center;">
+                <div style="text-align:right;">
+                  <div style="font-size:11px; color:var(--text-dim);">Total</div>
+                  <div style="font-weight:700;">${finFmt(cat.total)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:11px; color:var(--ok);">Pago</div>
+                  <div style="font-weight:700; color:var(--ok);">${finFmt(cat.pago)}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:11px; color:var(--danger);">Pendente</div>
+                  <div style="font-weight:700; color:var(--danger);">${finFmt(cat.pendente)}</div>
+                </div>
+                <div id="fin-cat-arrow-${e.key}" style="font-size:14px; color:var(--text-dim);">▾</div>
+              </div>
+            </div>
+            <div id="fin-cat-body-${e.key}" style="display:none; margin-top:12px; overflow-x:auto;">
+              ${itensOrdenados.length ? `
+              <table>
+                <thead><tr><th>Apê</th><th>Cliente</th><th>Valor</th><th>Status</th></tr></thead>
+                <tbody>${linhasCat}</tbody>
+              </table>` : `<div class="empty-state">Nenhum valor lançado ainda nessa categoria.</div>`}
+            </div>
+          </div>
+        `;
+      }).join('');
+      content.innerHTML = cardsHtml + catCardsHtml;
+    } else {
+      const linhasHtml = linhasApt.map(l => `
+        <tr onclick="selectUnit(${l.apt})" style="cursor:pointer;">
+          <td><b>Apto ${l.apt}</b></td>
+          <td>${escapeHtml(l.cliente)}${l.obs ? `<div style="font-size:11px; color:var(--text-dim);">${escapeHtml(l.obs)}</div>` : ''}</td>
+          <td class="fin-apt-row-total">${finFmt(l.subtotal)}</td>
+          <td style="color:var(--ok);">${finFmt(l.subtotalPago)}</td>
+          <td style="color:var(--danger);">${finFmt(l.subtotalPendente)}</td>
+        </tr>`).join('');
+
+      content.innerHTML = cardsHtml + `
+        <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th>Apê</th><th>Cliente</th><th>Total</th><th>Pago</th><th>Pendente</th></tr>
+          </thead>
+          <tbody>${linhasHtml}</tbody>
+        </table>
+        </div>
+      `;
+    }
   })();
+}
+
+function toggleFinCat(key){
+  const body = document.getElementById("fin-cat-body-" + key);
+  const arrow = document.getElementById("fin-cat-arrow-" + key);
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▾' : '▴';
 }
 
 // ---------- Suprimentos ----------
