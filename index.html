@@ -1146,6 +1146,12 @@
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
+      <button class="hub-item" onclick="entrarSubcamada('vistoria')">
+        <div class="hub-item-text">
+          <div class="hub-item-title">Vistoria de Entrega</div>
+        </div>
+        <div class="hub-item-lock">🔒</div>
+      </button>
     </div>
   </div>
 </div>
@@ -1638,9 +1644,10 @@ const SENHAS_SUBCAMADA = {
   cronograma: "72635",
   vagas: "240928",
   suprimentos: "1357",
-  financeiro: "812814"
+  financeiro: "812814",
+  vistoria: "2026"
 };
-let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false, financeiro: false };
+let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false, financeiro: false, vistoria: false };
 
 function attemptAccess(){
   document.getElementById("coverScreen").style.display = "none";
@@ -1650,7 +1657,7 @@ function attemptAccess(){
 
 async function pedirSenhaSubcamada(section){
   if(subcamadaLiberada[section]) return true;
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'vistoria' ? 'Vistoria de Entrega' : 'Suprimentos';
   let erro = '';
   while(true){
     const senha = await askPassword("Senha para acessar " + nomeAmigavel, erro);
@@ -1819,7 +1826,7 @@ async function renderAtividade(){
 }
 
 function renderSubcamadaBloqueada(section){
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'vistoria' ? 'Vistoria de Entrega' : 'Suprimentos';
   document.getElementById("unitTitle").textContent = nomeAmigavel;
   document.getElementById("unitSubtitle").textContent = "Acesso restrito";
   document.getElementById("summaryPill").textContent = "";
@@ -1858,6 +1865,7 @@ async function switchTopSection(section){
     document.getElementById("tabPersonalize").classList.toggle("active", topSection === 'personalize');
     document.getElementById("tabCronograma").classList.toggle("active", topSection === 'cronograma');
     document.getElementById("tabVagasTop").classList.toggle("active", topSection === 'vagas');
+    document.getElementById("tabVistoriaTop").classList.toggle("active", topSection === 'vistoria');
     renderSubcamadaBloqueada(section);
     return;
   }
@@ -1882,6 +1890,17 @@ async function switchTopSection(section){
     unitsLabel.style.display = '';
     setSidebarLabel('Vagas e Depósitos', 'Destinação de vagas e depósitos');
     switchVagasSubTab(vagasSubTab);
+  } else if(section === 'vistoria'){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    vagasSwitch.style.display = 'none';
+    nav.style.display = '';
+    unitsLabel.style.display = '';
+    setSidebarLabel('Vistoria de Entrega', 'Checklist de vistoria por unidade');
+    currentApt = null;
+    await renderSidebar();
+    renderVistoriaEmpty();
   } else if(section === 'suprimentos'){
     mainSwitch.style.display = 'none';
     subSwitch.style.display = 'none';
@@ -2051,6 +2070,219 @@ function statusFor(rows){
   return "complete";
 }
 
+// ---------- Vistoria de Entrega ----------
+const ACAB_VISTORIA = [
+  "Piso – nivelamento, assentamento e rejunte",
+  "Rodapé – fixação e alinhamento",
+  "Paredes – pintura, acabamento e esquadro",
+  "Teto/forro – pintura e alinhamento",
+  "Portas e batentes – fechamento, alinhamento e ferragens",
+  "Janelas/esquadrias – funcionamento e vedação",
+  "Instalações elétricas – tomadas, interruptores e iluminação",
+  "Instalações hidráulicas – registros e ausência de vazamentos",
+];
+const GERAIS_VISTORIA_PADRAO = [
+  "Porta de entrada – fechadura, dobradiças e chaves entregues",
+  "Quadro de disjuntores – identificação dos circuitos",
+  "Hidrômetro e registro geral de água",
+  "Interfone / campainha",
+  "Pontos de ar-condicionado (dutos/dreno)",
+  "Limpeza geral do imóvel na entrega",
+];
+function vistoriaRoomTemplate(prefix){
+  return [
+    { room: prefix + "Sala de estar / jantar", items: [...ACAB_VISTORIA] },
+    { room: prefix + "Cozinha", items: [...ACAB_VISTORIA, "Bancada – nivelamento e acabamento", "Ponto para exaustor/coifa e gás"] },
+    { room: prefix + "Área de serviço", items: [...ACAB_VISTORIA, "Tanque e ponto de máquina de lavar"] },
+    { room: prefix + "Suíte / Dormitório 1", items: [...ACAB_VISTORIA] },
+    { room: prefix + "Dormitório 2", items: [...ACAB_VISTORIA] },
+    { room: prefix + "Banheiro(s) / Lavabo", items: [...ACAB_VISTORIA, "Louças e metais – fixação e funcionamento", "Box/vidros – vedação e fixação", "Impermeabilização – ausência de infiltração"] },
+    { room: prefix + "Varanda / Sacada", items: ["Piso – nivelamento e caimento para o ralo", "Guarda-corpo – fixação e segurança", "Vedação de esquadrias", "Pintura e acabamento geral"] },
+  ];
+}
+function vistoriaIsDuplex(apt){ return apt === 121 || apt === 122; }
+function buildVistoriaRooms(apt){
+  if(!vistoriaIsDuplex(apt)){
+    const rooms = vistoriaRoomTemplate("");
+    rooms.push({ room: "Itens gerais do apartamento", items: [...GERAIS_VISTORIA_PADRAO] });
+    return rooms;
+  }
+  const rooms = [...vistoriaRoomTemplate("Pav. Inferior – "), ...vistoriaRoomTemplate("Pav. Superior – ")];
+  rooms.push({ room: "Itens gerais do apartamento", items: [
+    "Porta de entrada – fechadura, dobradiças e chaves entregues",
+    "Quadro de disjuntores – identificação dos circuitos",
+    "Hidrômetro e registro geral de água",
+    "Interfone / campainha",
+    "Pontos de ar-condicionado (dutos/dreno)",
+    "Escada interna – acabamento e guarda-corpo",
+    "Limpeza geral do imóvel na entrega",
+  ]});
+  return rooms;
+}
+function vistoriaEmptyUnit(apt){
+  return {
+    meta: { data: "", horario: "", vistoriador: "", cliente: "" },
+    rooms: buildVistoriaRooms(apt).map(r => ({ room: r.room, items: r.items.map(label => ({ label, status: "", obs: "" })) })),
+    pendencias: [],
+  };
+}
+let vistoriaState = {};
+function vistoriaKeyFor(apt){ return "vistoria:apt_" + apt; }
+
+async function loadVistoriaUnit(apt){
+  try{
+    const res = await window.storage.get(vistoriaKeyFor(apt), true);
+    vistoriaState[apt] = res ? JSON.parse(res.value) : vistoriaEmptyUnit(apt);
+  }catch(e){
+    vistoriaState[apt] = vistoriaEmptyUnit(apt);
+  }
+}
+
+async function saveVistoriaUnit(apt){
+  try{
+    await window.storage.set(vistoriaKeyFor(apt), JSON.stringify(vistoriaState[apt]), true);
+    flashSaved();
+    registrarAtividade("Vistoria", "Apto " + apt);
+  }catch(e){
+    console.error("Erro ao salvar vistoria", e);
+  }
+}
+
+function vistoriaStats(apt){
+  const s = vistoriaState[apt];
+  let total = 0, filled = 0, bad = 0;
+  (s.rooms || []).forEach(r => r.items.forEach(it => { total++; if(it.status) filled++; if(it.status === "bad") bad++; }));
+  return { total, filled, bad, pend: (s.pendencias || []).length };
+}
+function vistoriaStatusFor(apt){
+  const st = vistoriaStats(apt);
+  if(st.filled === 0 && st.pend === 0) return "empty";
+  if(st.filled === st.total && st.bad === 0 && st.pend === 0) return "complete";
+  return "partial";
+}
+
+function renderVistoriaEmpty(){
+  document.getElementById("unitTitle").textContent = "Vistoria de Entrega";
+  document.getElementById("unitSubtitle").textContent = "Selecione uma unidade para iniciar a vistoria";
+  document.getElementById("summaryPill").textContent = "";
+  document.getElementById("content").innerHTML = `<div class="empty-state">Selecione uma unidade ao lado para iniciar a vistoria de entrega.</div>`;
+}
+
+async function renderVistoria(apt){
+  if(!(apt in vistoriaState)) await loadVistoriaUnit(apt);
+  const s = vistoriaState[apt];
+  const cliente = CLIENTES[apt] || "";
+  const isDuplex = vistoriaIsDuplex(apt);
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt + (isDuplex ? " (duplex)" : "");
+  document.getElementById("unitSubtitle").textContent = cliente + " · Ficha de vistoria de entrega";
+
+  const stKey = vistoriaStatusFor(apt);
+  const pillMap = { empty: "Não iniciada", partial: "Em andamento", complete: "Concluída" };
+  document.getElementById("summaryPill").textContent = pillMap[stKey];
+
+  let html = `<div style="overflow-x:auto; margin-bottom:22px;">
+    <table style="min-width:640px;">
+      <tbody>
+        <tr>
+          <td style="width:25%;"><b>Data da vistoria</b></td>
+          <td><input type="date" value="${escapeHtml(s.meta.data || '')}" onchange="updateVistoriaMeta(${apt}, 'data', this.value)"></td>
+          <td style="width:25%;"><b>Horário</b></td>
+          <td><input type="text" placeholder="ex: 14h30" value="${escapeHtml(s.meta.horario || '')}" oninput="updateVistoriaMeta(${apt}, 'horario', this.value)"></td>
+        </tr>
+        <tr>
+          <td><b>Vistoriador(a)</b></td>
+          <td><input type="text" placeholder="nome" value="${escapeHtml(s.meta.vistoriador || '')}" oninput="updateVistoriaMeta(${apt}, 'vistoriador', this.value)"></td>
+          <td><b>Cliente/Proprietário</b></td>
+          <td><input type="text" placeholder="nome" value="${escapeHtml(s.meta.cliente || '')}" oninput="updateVistoriaMeta(${apt}, 'cliente', this.value)"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>`;
+
+  s.rooms.forEach((r, ri) => {
+    const okCount = r.items.filter(it => it.status === "ok").length;
+    html += `<div style="margin-bottom:20px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2, #f2f2f2); padding:9px 14px; border-radius:6px 6px 0 0; font-weight:600; font-size:13px;">
+        <span>${escapeHtml(r.room)}</span><span style="font-weight:400; color:var(--text-dim); font-size:11.5px;">${okCount}/${r.items.length} conforme</span>
+      </div>
+      <table style="min-width:680px;">
+        <thead><tr><th>Item verificado</th><th style="width:230px;">Status</th><th style="width:220px;">Observações</th></tr></thead>
+        <tbody>`;
+    r.items.forEach((it, ii) => {
+      html += `<tr>
+        <td>${escapeHtml(it.label)}</td>
+        <td>
+          <div style="display:flex; gap:4px;">
+            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='ok' ? 'background:#dcefda; border-color:#8fc084; color:#3d7233; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'ok')">Conforme</button>
+            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='bad' ? 'background:#f4dcd8; border-color:#d99486; color:#8f3826; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'bad')">Não conf.</button>
+            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='na' ? 'background:#e4e6e1; border-color:#c7cac2; color:#5c6157; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'na')">N/A</button>
+          </div>
+        </td>
+        <td><input type="text" placeholder="Observações..." value="${escapeHtml(it.obs || '')}" oninput="updateVistoriaObs(${apt},${ri},${ii},this.value)"></td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  });
+
+  html += `<div style="margin-bottom:20px;">
+    <div style="background:var(--surface-2, #f2f2f2); padding:9px 14px; border-radius:6px 6px 0 0; font-weight:600; font-size:13px;">Pendências identificadas</div>
+    <table style="min-width:680px;">
+      <thead><tr><th style="width:40px;">Nº</th><th>Ambiente</th><th>Descrição da pendência</th><th style="width:160px;">Prazo/Responsável</th><th class="col-actions"></th></tr></thead>
+      <tbody>`;
+  (s.pendencias || []).forEach((p, pi) => {
+    html += `<tr>
+      <td style="text-align:center;">${pi + 1}</td>
+      <td><input type="text" value="${escapeHtml(p.ambiente || '')}" oninput="updateVistoriaPend(${apt},${pi},'ambiente',this.value)"></td>
+      <td><input type="text" value="${escapeHtml(p.desc || '')}" oninput="updateVistoriaPend(${apt},${pi},'desc',this.value)"></td>
+      <td><input type="text" value="${escapeHtml(p.prazo || '')}" oninput="updateVistoriaPend(${apt},${pi},'prazo',this.value)"></td>
+      <td class="col-actions"><button class="btn btn-ghost" onclick="removeVistoriaPend(${apt},${pi})" title="Remover">✕</button></td>
+    </tr>`;
+  });
+  html += `</tbody></table>
+    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost" onclick="addVistoriaPend(${apt})">+ Adicionar pendência</button></div>
+  </div>`;
+
+  html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:36px;">
+    <div style="border-top:1px solid var(--text); padding-top:8px; font-size:12px; color:var(--text-dim);">Vistoriador(a) responsável — Absoluta</div>
+    <div style="border-top:1px solid var(--text); padding-top:8px; font-size:12px; color:var(--text-dim);">Cliente/Proprietário</div>
+  </div>`;
+
+  document.getElementById("content").innerHTML = html;
+}
+
+function setVistoriaStatus(apt, ri, ii, val){
+  const s = vistoriaState[apt];
+  const cur = s.rooms[ri].items[ii].status;
+  s.rooms[ri].items[ii].status = (cur === val) ? "" : val;
+  saveVistoriaUnit(apt);
+  renderVistoria(apt);
+  renderSidebar();
+}
+function updateVistoriaObs(apt, ri, ii, val){
+  vistoriaState[apt].rooms[ri].items[ii].obs = val;
+  saveVistoriaUnit(apt);
+}
+function updateVistoriaMeta(apt, field, val){
+  vistoriaState[apt].meta[field] = val;
+  saveVistoriaUnit(apt);
+}
+function addVistoriaPend(apt){
+  vistoriaState[apt].pendencias.push({ ambiente: "", desc: "", prazo: "" });
+  saveVistoriaUnit(apt);
+  renderVistoria(apt);
+  renderSidebar();
+}
+function removeVistoriaPend(apt, pi){
+  vistoriaState[apt].pendencias.splice(pi, 1);
+  saveVistoriaUnit(apt);
+  renderVistoria(apt);
+  renderSidebar();
+}
+function updateVistoriaPend(apt, pi, field, val){
+  vistoriaState[apt].pendencias[pi][field] = val;
+  saveVistoriaUnit(apt);
+}
+
 async function renderSidebar(){
   const ul = document.getElementById("unitList");
   ul.innerHTML = "";
@@ -2064,6 +2296,9 @@ async function renderSidebar(){
       const d = vagasState[apt] || { vagas: [], depositos: [] };
       const total = d.vagas.length + d.depositos.length;
       st = total === 0 ? 'empty' : (d.vagas.length === 0 || d.depositos.length === 0 ? 'partial' : 'complete');
+    } else if(topSection === 'vistoria'){
+      if(!(apt in vistoriaState)) await loadVistoriaUnit(apt);
+      st = vistoriaStatusFor(apt);
     } else if(mainSection === 'projetos'){
       if(!(apt in projetosData)) await loadProjetosUnit(apt);
       const d = projetosData[apt] || {};
@@ -3977,6 +4212,8 @@ async function selectUnit(apt){
     await renderFinanceiro(apt);
   } else if(topSection === 'vagas'){
     await renderVagas(apt);
+  } else if(topSection === 'vistoria'){
+    await renderVistoria(apt);
   } else if(mainSection === 'projetos'){
     await renderProjetos(apt);
   } else if(subSection === 'marmoraria'){
