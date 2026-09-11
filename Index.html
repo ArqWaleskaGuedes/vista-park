@@ -5471,10 +5471,7 @@ const CHECKLIST_VISTORIA = [
   { key: "revestimentos", label: "Revestimentos (piso, parede, rejunte)" },
   { key: "pintura", label: "Pintura e acabamento" },
   { key: "loucas_metais", label: "Louças e metais" },
-  { key: "marcenaria", label: "Marcenaria / bancadas" },
-  { key: "ar_condicionado", label: "Ar condicionado" },
-  { key: "automacao", label: "Automação / interfone" },
-  { key: "vidros_sacada", label: "Vidros e envidraçamento de sacada" },
+  { key: "marmoraria", label: "Marmoraria" },
   { key: "limpeza", label: "Limpeza final" }
 ];
 
@@ -5505,7 +5502,15 @@ async function loadEntregaUnit(apt){
   try{
     const res = await window.storage.get(entregaKeyFor(apt), true);
     if(res){
-      entregaState[apt] = JSON.parse(res.value);
+      const dados = JSON.parse(res.value);
+      // Garante que unidades com checklist salvo antes de mudanças no CHECKLIST_VISTORIA
+      // tenham todas as chaves atuais (evita erro em itens novos/renomeados).
+      const checklistCompleto = {};
+      CHECKLIST_VISTORIA.forEach(c => {
+        checklistCompleto[c.key] = (dados.checklist && dados.checklist[c.key]) || { status: "", obs: "" };
+      });
+      dados.checklist = checklistCompleto;
+      entregaState[apt] = dados;
       return;
     }
   }catch(e){}
