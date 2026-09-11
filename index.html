@@ -1122,21 +1122,9 @@
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
-      <button class="hub-item" onclick="entrarSubcamada('cronograma')">
-        <div class="hub-item-text">
-          <div class="hub-item-title">Cronograma</div>
-        </div>
-        <div class="hub-item-lock">🔒</div>
-      </button>
       <button class="hub-item" onclick="entrarSubcamada('vagas')">
         <div class="hub-item-text">
           <div class="hub-item-title">Vagas e Depósitos</div>
-        </div>
-        <div class="hub-item-lock">🔒</div>
-      </button>
-      <button class="hub-item" onclick="entrarSubcamada('suprimentos')">
-        <div class="hub-item-text">
-          <div class="hub-item-title">Suprimentos</div>
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
@@ -1146,7 +1134,7 @@
         </div>
         <div class="hub-item-lock">🔒</div>
       </button>
-      <button class="hub-item" onclick="entrarSubcamada('vistoria')">
+      <button class="hub-item" onclick="entrarSubcamada('entrega')">
         <div class="hub-item-text">
           <div class="hub-item-title">Vistoria de Entrega</div>
         </div>
@@ -1178,8 +1166,8 @@
     <div id="usuarioLogadoInfo" style="font-size:11px; color:var(--text-dim); margin-bottom:14px;"></div>
     <div class="tab-switch" id="topSwitch" style="margin-bottom:20px;">
       <button class="tab-btn active" id="tabPersonalize" onclick="switchTopSection('personalize')">Personalize</button>
-      <button class="tab-btn" id="tabCronograma" onclick="switchTopSection('cronograma')">Cronograma</button>
       <button class="tab-btn" id="tabVagasTop" onclick="switchTopSection('vagas')">Vagas/Depósitos</button>
+      <button class="tab-btn" id="tabEntregaTop" onclick="switchTopSection('entrega')">Entrega</button>
     </div>
     <div class="section-title" id="unitsCountLabel">24 unidades</div>
     <div class="tab-switch" id="mainSwitch">
@@ -1202,8 +1190,13 @@
       <button class="tab-btn" id="tabVagasMapa" onclick="switchVagasSubTab('mapa')">Mapa</button>
       <button class="tab-btn" id="tabVagasOrganizacao" onclick="switchVagasSubTab('organizacao')">Organização</button>
     </div>
+    <div class="tab-switch" id="entregaSubSwitch" style="display:none;">
+      <button class="tab-btn active" id="tabEntregaUnidade" onclick="switchEntregaSubTab('unidade')">Vistoria por Unidade</button>
+      <button class="tab-btn" id="tabEntregaLevas" onclick="switchEntregaSubTab('levas')">Entregas - Vista Park</button>
+    </div>
     <div id="revestimentosNav">
       <button class="btn btn-ghost" id="finResumoBtn" style="display:none; width:100%; margin-bottom:12px;" onclick="voltarResumoFinanceiro()">📊 Resumo geral</button>
+      <button class="btn btn-ghost" id="entregaResumoBtn" style="display:none; width:100%; margin-bottom:12px;" onclick="voltarResumoEntrega()">📊 Resumo geral</button>
       <h1 id="sidebarLabel"><span id="sidebarLabelTitle">Projetos</span><span id="sidebarLabelSub">Alvenarias, Elétrica, Hidráulica e AC</span></h1>
       <ul class="unit-list" id="unitList"></ul>
     </div>
@@ -1524,7 +1517,7 @@ const CLIENTES = {
   42: "Marco e Maristela",
   51: "Regina e Ricardo",
   52: "Carlos e Sônia",
-  61: "Adriana e Rafael",
+  61: "Não vendido",
   62: "Priscila e Giuliano",
   71: "Antônio e Renata",
   72: "Maria Cláudia e Ruy",
@@ -1536,7 +1529,7 @@ const CLIENTES = {
   102: "Permutante | Personalizado",
   111: "Permutante | Personalizado",
   112: "Miriam e Derisson",
-  121: "Tio Léo",
+  121: "Kaue",
   122: "Cláudio e Ana"
 };
 function setSidebarLabel(titulo, subtitulo){
@@ -1640,14 +1633,14 @@ function textModalCancel(){
 // Senhas provisórias do protótipo — trocar antes de usar em produção.
 // Na versão final (Firebase + login da equipe), isso vira login de verdade por usuário.
 const SENHAS_SUBCAMADA = {
-  personalize: "26354",
+  personalize: "166126",
   cronograma: "72635",
-  vagas: "240928",
+  vagas: "166226",
   suprimentos: "1357",
-  financeiro: "812814",
-  vistoria: "2026"
+  financeiro: "166326",
+  entrega: "166426"
 };
-let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false, financeiro: false, vistoria: false };
+let subcamadaLiberada = { personalize: false, cronograma: false, vagas: false, suprimentos: false, financeiro: false, entrega: false };
 
 function attemptAccess(){
   document.getElementById("coverScreen").style.display = "none";
@@ -1657,7 +1650,7 @@ function attemptAccess(){
 
 async function pedirSenhaSubcamada(section){
   if(subcamadaLiberada[section]) return true;
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'vistoria' ? 'Vistoria de Entrega' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'entrega' ? 'Entrega' : 'Suprimentos';
   let erro = '';
   while(true){
     const senha = await askPassword("Senha para acessar " + nomeAmigavel, erro);
@@ -1826,7 +1819,7 @@ async function renderAtividade(){
 }
 
 function renderSubcamadaBloqueada(section){
-  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'vistoria' ? 'Vistoria de Entrega' : 'Suprimentos';
+  const nomeAmigavel = section === 'personalize' ? 'Personalize' : section === 'cronograma' ? 'Cronograma' : section === 'vagas' ? 'Vagas e Depósitos' : section === 'financeiro' ? 'Controle Financeiro' : section === 'entrega' ? 'Entrega' : 'Suprimentos';
   document.getElementById("unitTitle").textContent = nomeAmigavel;
   document.getElementById("unitSubtitle").textContent = "Acesso restrito";
   document.getElementById("summaryPill").textContent = "";
@@ -1843,13 +1836,14 @@ let topSection = 'personalize';
 
 async function switchTopSection(section){
   document.getElementById("tabPersonalize").classList.toggle("active", section === 'personalize');
-  document.getElementById("tabCronograma").classList.toggle("active", section === 'cronograma');
   document.getElementById("tabVagasTop").classList.toggle("active", section === 'vagas');
+  document.getElementById("tabEntregaTop").classList.toggle("active", section === 'entrega');
 
   const mainSwitch = document.getElementById("mainSwitch");
   const subSwitch = document.getElementById("subSwitch");
   const loucasSwitch = document.getElementById("loucasSubSwitch");
   const vagasSwitch = document.getElementById("vagasSubSwitch");
+  const entregaSwitch = document.getElementById("entregaSubSwitch");
   const nav = document.getElementById("revestimentosNav");
   const unitsLabel = document.getElementById("unitsCountLabel");
 
@@ -1859,13 +1853,14 @@ async function switchTopSection(section){
     subSwitch.style.display = 'none';
     loucasSwitch.style.display = 'none';
     vagasSwitch.style.display = 'none';
+    entregaSwitch.style.display = 'none';
     nav.style.display = 'none';
     unitsLabel.style.display = 'none';
     document.getElementById("finResumoBtn").style.display = 'none';
+    document.getElementById("entregaResumoBtn").style.display = 'none';
     document.getElementById("tabPersonalize").classList.toggle("active", topSection === 'personalize');
-    document.getElementById("tabCronograma").classList.toggle("active", topSection === 'cronograma');
     document.getElementById("tabVagasTop").classList.toggle("active", topSection === 'vagas');
-    document.getElementById("tabVistoriaTop").classList.toggle("active", topSection === 'vistoria');
+    document.getElementById("tabEntregaTop").classList.toggle("active", topSection === 'entrega');
     renderSubcamadaBloqueada(section);
     return;
   }
@@ -1873,6 +1868,8 @@ async function switchTopSection(section){
   topSection = section;
   document.getElementById("topSwitch").style.display = 'none';
   document.getElementById("finResumoBtn").style.display = (section === 'financeiro') ? '' : 'none';
+  document.getElementById("entregaResumoBtn").style.display = 'none';
+  entregaSwitch.style.display = 'none';
 
   if(section === 'cronograma'){
     mainSwitch.style.display = 'none';
@@ -1890,17 +1887,6 @@ async function switchTopSection(section){
     unitsLabel.style.display = '';
     setSidebarLabel('Vagas e Depósitos', 'Destinação de vagas e depósitos');
     switchVagasSubTab(vagasSubTab);
-  } else if(section === 'vistoria'){
-    mainSwitch.style.display = 'none';
-    subSwitch.style.display = 'none';
-    loucasSwitch.style.display = 'none';
-    vagasSwitch.style.display = 'none';
-    nav.style.display = '';
-    unitsLabel.style.display = '';
-    setSidebarLabel('Vistoria de Entrega', 'Checklist de vistoria por unidade');
-    currentApt = null;
-    await renderSidebar();
-    renderVistoriaEmpty();
   } else if(section === 'suprimentos'){
     mainSwitch.style.display = 'none';
     subSwitch.style.display = 'none';
@@ -1920,11 +1906,44 @@ async function switchTopSection(section){
     currentApt = null;
     await renderSidebar();
     renderFinanceiroResumo();
+  } else if(section === 'entrega'){
+    mainSwitch.style.display = 'none';
+    subSwitch.style.display = 'none';
+    loucasSwitch.style.display = 'none';
+    vagasSwitch.style.display = 'none';
+    entregaSwitch.style.display = '';
+    await switchEntregaSubTab(entregaSubTab);
   } else {
     mainSwitch.style.display = '';
     vagasSwitch.style.display = 'none';
     unitsLabel.style.display = '';
     switchMainSection(mainSection);
+  }
+}
+
+// ---------- Entrega: sub-abas (Vistoria por Unidade / Entregas - Vista Park) ----------
+let entregaSubTab = 'unidade';
+
+async function switchEntregaSubTab(tab){
+  entregaSubTab = tab;
+  document.getElementById("tabEntregaUnidade").classList.toggle("active", tab === 'unidade');
+  document.getElementById("tabEntregaLevas").classList.toggle("active", tab === 'levas');
+  const nav = document.getElementById("revestimentosNav");
+  const unitsLabel = document.getElementById("unitsCountLabel");
+
+  if(tab === 'levas'){
+    nav.style.display = 'none';
+    unitsLabel.style.display = 'none';
+    document.getElementById("entregaResumoBtn").style.display = 'none';
+    renderLevasEntrega();
+  } else {
+    nav.style.display = '';
+    unitsLabel.style.display = '';
+    setSidebarLabel('Entrega', 'Vistoria, documentos e chaves por apartamento');
+    currentApt = null;
+    await renderSidebar();
+    renderEntregaResumo();
+    document.getElementById("entregaResumoBtn").style.display = '';
   }
 }
 
@@ -1936,6 +1955,7 @@ let unlockedValues = {};
 
 function rerenderCurrentView(){
   if(topSection === 'cronograma'){ renderCronograma(); return; }
+  if(topSection === 'entrega'){ if(currentApt) renderEntrega(currentApt); else renderEntregaResumo(); return; }
   if(topSection === 'vagas' && vagasSubTab === 'destinacao'){ renderVagas(currentApt); }
   else if(mainSection === 'projetos'){ renderProjetos(currentApt); }
   else if(subSection === 'revestimentos'){ renderTable(); }
@@ -2070,219 +2090,6 @@ function statusFor(rows){
   return "complete";
 }
 
-// ---------- Vistoria de Entrega ----------
-const ACAB_VISTORIA = [
-  "Piso – nivelamento, assentamento e rejunte",
-  "Rodapé – fixação e alinhamento",
-  "Paredes – pintura, acabamento e esquadro",
-  "Teto/forro – pintura e alinhamento",
-  "Portas e batentes – fechamento, alinhamento e ferragens",
-  "Janelas/esquadrias – funcionamento e vedação",
-  "Instalações elétricas – tomadas, interruptores e iluminação",
-  "Instalações hidráulicas – registros e ausência de vazamentos",
-];
-const GERAIS_VISTORIA_PADRAO = [
-  "Porta de entrada – fechadura, dobradiças e chaves entregues",
-  "Quadro de disjuntores – identificação dos circuitos",
-  "Hidrômetro e registro geral de água",
-  "Interfone / campainha",
-  "Pontos de ar-condicionado (dutos/dreno)",
-  "Limpeza geral do imóvel na entrega",
-];
-function vistoriaRoomTemplate(prefix){
-  return [
-    { room: prefix + "Sala de estar / jantar", items: [...ACAB_VISTORIA] },
-    { room: prefix + "Cozinha", items: [...ACAB_VISTORIA, "Bancada – nivelamento e acabamento", "Ponto para exaustor/coifa e gás"] },
-    { room: prefix + "Área de serviço", items: [...ACAB_VISTORIA, "Tanque e ponto de máquina de lavar"] },
-    { room: prefix + "Suíte / Dormitório 1", items: [...ACAB_VISTORIA] },
-    { room: prefix + "Dormitório 2", items: [...ACAB_VISTORIA] },
-    { room: prefix + "Banheiro(s) / Lavabo", items: [...ACAB_VISTORIA, "Louças e metais – fixação e funcionamento", "Box/vidros – vedação e fixação", "Impermeabilização – ausência de infiltração"] },
-    { room: prefix + "Varanda / Sacada", items: ["Piso – nivelamento e caimento para o ralo", "Guarda-corpo – fixação e segurança", "Vedação de esquadrias", "Pintura e acabamento geral"] },
-  ];
-}
-function vistoriaIsDuplex(apt){ return apt === 121 || apt === 122; }
-function buildVistoriaRooms(apt){
-  if(!vistoriaIsDuplex(apt)){
-    const rooms = vistoriaRoomTemplate("");
-    rooms.push({ room: "Itens gerais do apartamento", items: [...GERAIS_VISTORIA_PADRAO] });
-    return rooms;
-  }
-  const rooms = [...vistoriaRoomTemplate("Pav. Inferior – "), ...vistoriaRoomTemplate("Pav. Superior – ")];
-  rooms.push({ room: "Itens gerais do apartamento", items: [
-    "Porta de entrada – fechadura, dobradiças e chaves entregues",
-    "Quadro de disjuntores – identificação dos circuitos",
-    "Hidrômetro e registro geral de água",
-    "Interfone / campainha",
-    "Pontos de ar-condicionado (dutos/dreno)",
-    "Escada interna – acabamento e guarda-corpo",
-    "Limpeza geral do imóvel na entrega",
-  ]});
-  return rooms;
-}
-function vistoriaEmptyUnit(apt){
-  return {
-    meta: { data: "", horario: "", vistoriador: "", cliente: "" },
-    rooms: buildVistoriaRooms(apt).map(r => ({ room: r.room, items: r.items.map(label => ({ label, status: "", obs: "" })) })),
-    pendencias: [],
-  };
-}
-let vistoriaState = {};
-function vistoriaKeyFor(apt){ return "vistoria:apt_" + apt; }
-
-async function loadVistoriaUnit(apt){
-  try{
-    const res = await window.storage.get(vistoriaKeyFor(apt), true);
-    vistoriaState[apt] = res ? JSON.parse(res.value) : vistoriaEmptyUnit(apt);
-  }catch(e){
-    vistoriaState[apt] = vistoriaEmptyUnit(apt);
-  }
-}
-
-async function saveVistoriaUnit(apt){
-  try{
-    await window.storage.set(vistoriaKeyFor(apt), JSON.stringify(vistoriaState[apt]), true);
-    flashSaved();
-    registrarAtividade("Vistoria", "Apto " + apt);
-  }catch(e){
-    console.error("Erro ao salvar vistoria", e);
-  }
-}
-
-function vistoriaStats(apt){
-  const s = vistoriaState[apt];
-  let total = 0, filled = 0, bad = 0;
-  (s.rooms || []).forEach(r => r.items.forEach(it => { total++; if(it.status) filled++; if(it.status === "bad") bad++; }));
-  return { total, filled, bad, pend: (s.pendencias || []).length };
-}
-function vistoriaStatusFor(apt){
-  const st = vistoriaStats(apt);
-  if(st.filled === 0 && st.pend === 0) return "empty";
-  if(st.filled === st.total && st.bad === 0 && st.pend === 0) return "complete";
-  return "partial";
-}
-
-function renderVistoriaEmpty(){
-  document.getElementById("unitTitle").textContent = "Vistoria de Entrega";
-  document.getElementById("unitSubtitle").textContent = "Selecione uma unidade para iniciar a vistoria";
-  document.getElementById("summaryPill").textContent = "";
-  document.getElementById("content").innerHTML = `<div class="empty-state">Selecione uma unidade ao lado para iniciar a vistoria de entrega.</div>`;
-}
-
-async function renderVistoria(apt){
-  if(!(apt in vistoriaState)) await loadVistoriaUnit(apt);
-  const s = vistoriaState[apt];
-  const cliente = CLIENTES[apt] || "";
-  const isDuplex = vistoriaIsDuplex(apt);
-  document.getElementById("unitTitle").textContent = "Apartamento " + apt + (isDuplex ? " (duplex)" : "");
-  document.getElementById("unitSubtitle").textContent = cliente + " · Ficha de vistoria de entrega";
-
-  const stKey = vistoriaStatusFor(apt);
-  const pillMap = { empty: "Não iniciada", partial: "Em andamento", complete: "Concluída" };
-  document.getElementById("summaryPill").textContent = pillMap[stKey];
-
-  let html = `<div style="overflow-x:auto; margin-bottom:22px;">
-    <table style="min-width:640px;">
-      <tbody>
-        <tr>
-          <td style="width:25%;"><b>Data da vistoria</b></td>
-          <td><input type="date" value="${escapeHtml(s.meta.data || '')}" onchange="updateVistoriaMeta(${apt}, 'data', this.value)"></td>
-          <td style="width:25%;"><b>Horário</b></td>
-          <td><input type="text" placeholder="ex: 14h30" value="${escapeHtml(s.meta.horario || '')}" oninput="updateVistoriaMeta(${apt}, 'horario', this.value)"></td>
-        </tr>
-        <tr>
-          <td><b>Vistoriador(a)</b></td>
-          <td><input type="text" placeholder="nome" value="${escapeHtml(s.meta.vistoriador || '')}" oninput="updateVistoriaMeta(${apt}, 'vistoriador', this.value)"></td>
-          <td><b>Cliente/Proprietário</b></td>
-          <td><input type="text" placeholder="nome" value="${escapeHtml(s.meta.cliente || '')}" oninput="updateVistoriaMeta(${apt}, 'cliente', this.value)"></td>
-        </tr>
-      </tbody>
-    </table>
-  </div>`;
-
-  s.rooms.forEach((r, ri) => {
-    const okCount = r.items.filter(it => it.status === "ok").length;
-    html += `<div style="margin-bottom:20px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; background:var(--surface-2, #f2f2f2); padding:9px 14px; border-radius:6px 6px 0 0; font-weight:600; font-size:13px;">
-        <span>${escapeHtml(r.room)}</span><span style="font-weight:400; color:var(--text-dim); font-size:11.5px;">${okCount}/${r.items.length} conforme</span>
-      </div>
-      <table style="min-width:680px;">
-        <thead><tr><th>Item verificado</th><th style="width:230px;">Status</th><th style="width:220px;">Observações</th></tr></thead>
-        <tbody>`;
-    r.items.forEach((it, ii) => {
-      html += `<tr>
-        <td>${escapeHtml(it.label)}</td>
-        <td>
-          <div style="display:flex; gap:4px;">
-            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='ok' ? 'background:#dcefda; border-color:#8fc084; color:#3d7233; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'ok')">Conforme</button>
-            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='bad' ? 'background:#f4dcd8; border-color:#d99486; color:#8f3826; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'bad')">Não conf.</button>
-            <button class="btn" style="flex:1; font-size:10.5px; padding:5px 4px; ${it.status==='na' ? 'background:#e4e6e1; border-color:#c7cac2; color:#5c6157; font-weight:700;' : ''}" onclick="setVistoriaStatus(${apt},${ri},${ii},'na')">N/A</button>
-          </div>
-        </td>
-        <td><input type="text" placeholder="Observações..." value="${escapeHtml(it.obs || '')}" oninput="updateVistoriaObs(${apt},${ri},${ii},this.value)"></td>
-      </tr>`;
-    });
-    html += `</tbody></table></div>`;
-  });
-
-  html += `<div style="margin-bottom:20px;">
-    <div style="background:var(--surface-2, #f2f2f2); padding:9px 14px; border-radius:6px 6px 0 0; font-weight:600; font-size:13px;">Pendências identificadas</div>
-    <table style="min-width:680px;">
-      <thead><tr><th style="width:40px;">Nº</th><th>Ambiente</th><th>Descrição da pendência</th><th style="width:160px;">Prazo/Responsável</th><th class="col-actions"></th></tr></thead>
-      <tbody>`;
-  (s.pendencias || []).forEach((p, pi) => {
-    html += `<tr>
-      <td style="text-align:center;">${pi + 1}</td>
-      <td><input type="text" value="${escapeHtml(p.ambiente || '')}" oninput="updateVistoriaPend(${apt},${pi},'ambiente',this.value)"></td>
-      <td><input type="text" value="${escapeHtml(p.desc || '')}" oninput="updateVistoriaPend(${apt},${pi},'desc',this.value)"></td>
-      <td><input type="text" value="${escapeHtml(p.prazo || '')}" oninput="updateVistoriaPend(${apt},${pi},'prazo',this.value)"></td>
-      <td class="col-actions"><button class="btn btn-ghost" onclick="removeVistoriaPend(${apt},${pi})" title="Remover">✕</button></td>
-    </tr>`;
-  });
-  html += `</tbody></table>
-    <div class="toolbar" style="margin-top:10px;"><button class="btn btn-ghost" onclick="addVistoriaPend(${apt})">+ Adicionar pendência</button></div>
-  </div>`;
-
-  html += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:36px;">
-    <div style="border-top:1px solid var(--text); padding-top:8px; font-size:12px; color:var(--text-dim);">Vistoriador(a) responsável — Absoluta</div>
-    <div style="border-top:1px solid var(--text); padding-top:8px; font-size:12px; color:var(--text-dim);">Cliente/Proprietário</div>
-  </div>`;
-
-  document.getElementById("content").innerHTML = html;
-}
-
-function setVistoriaStatus(apt, ri, ii, val){
-  const s = vistoriaState[apt];
-  const cur = s.rooms[ri].items[ii].status;
-  s.rooms[ri].items[ii].status = (cur === val) ? "" : val;
-  saveVistoriaUnit(apt);
-  renderVistoria(apt);
-  renderSidebar();
-}
-function updateVistoriaObs(apt, ri, ii, val){
-  vistoriaState[apt].rooms[ri].items[ii].obs = val;
-  saveVistoriaUnit(apt);
-}
-function updateVistoriaMeta(apt, field, val){
-  vistoriaState[apt].meta[field] = val;
-  saveVistoriaUnit(apt);
-}
-function addVistoriaPend(apt){
-  vistoriaState[apt].pendencias.push({ ambiente: "", desc: "", prazo: "" });
-  saveVistoriaUnit(apt);
-  renderVistoria(apt);
-  renderSidebar();
-}
-function removeVistoriaPend(apt, pi){
-  vistoriaState[apt].pendencias.splice(pi, 1);
-  saveVistoriaUnit(apt);
-  renderVistoria(apt);
-  renderSidebar();
-}
-function updateVistoriaPend(apt, pi, field, val){
-  vistoriaState[apt].pendencias[pi][field] = val;
-  saveVistoriaUnit(apt);
-}
-
 async function renderSidebar(){
   const ul = document.getElementById("unitList");
   ul.innerHTML = "";
@@ -2291,14 +2098,14 @@ async function renderSidebar(){
     if(topSection === 'financeiro'){
       if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
       st = financeiroStatusApt(apt);
+    } else if(topSection === 'entrega'){
+      if(!(apt in entregaState)) await loadEntregaUnit(apt);
+      st = entregaStatusApt(apt);
     } else if(topSection === 'vagas'){
       if(!(apt in vagasState)) await loadVagasUnit(apt);
       const d = vagasState[apt] || { vagas: [], depositos: [] };
       const total = d.vagas.length + d.depositos.length;
       st = total === 0 ? 'empty' : (d.vagas.length === 0 || d.depositos.length === 0 ? 'partial' : 'complete');
-    } else if(topSection === 'vistoria'){
-      if(!(apt in vistoriaState)) await loadVistoriaUnit(apt);
-      st = vistoriaStatusFor(apt);
     } else if(mainSection === 'projetos'){
       if(!(apt in projetosData)) await loadProjetosUnit(apt);
       const d = projetosData[apt] || {};
@@ -4210,10 +4017,10 @@ async function selectUnit(apt){
 
   if(topSection === 'financeiro'){
     await renderFinanceiro(apt);
+  } else if(topSection === 'entrega'){
+    await renderEntrega(apt);
   } else if(topSection === 'vagas'){
     await renderVagas(apt);
-  } else if(topSection === 'vistoria'){
-    await renderVistoria(apt);
   } else if(mainSection === 'projetos'){
     await renderProjetos(apt);
   } else if(subSection === 'marmoraria'){
@@ -5654,6 +5461,389 @@ function toggleFinCat(key){
   const open = body.style.display !== 'none';
   body.style.display = open ? 'none' : 'block';
   arrow.textContent = open ? '▾' : '▴';
+}
+
+// ---------- Entrega (vistoria, documentos e chaves por apartamento) ----------
+const CHECKLIST_VISTORIA = [
+  { key: "eletrica", label: "Elétrica (tomadas, disjuntores, interruptores)" },
+  { key: "hidraulica", label: "Hidráulica (registros, torneiras, ralos, vazamentos)" },
+  { key: "esquadrias", label: "Esquadrias (portas, janelas, fechaduras)" },
+  { key: "revestimentos", label: "Revestimentos (piso, parede, rejunte)" },
+  { key: "pintura", label: "Pintura e acabamento" },
+  { key: "loucas_metais", label: "Louças e metais" },
+  { key: "marcenaria", label: "Marcenaria / bancadas" },
+  { key: "ar_condicionado", label: "Ar condicionado" },
+  { key: "automacao", label: "Automação / interfone" },
+  { key: "vidros_sacada", label: "Vidros e envidraçamento de sacada" },
+  { key: "limpeza", label: "Limpeza final" }
+];
+
+const DOCUMENTOS_ENTREGA = [
+  { key: "habite_se", label: "Habite-se (cópia)" },
+  { key: "manual_proprietario", label: "Manual do Proprietário" },
+  { key: "termo_chaves", label: "Termo de Entrega de Chaves" },
+  { key: "termo_vistoria", label: "Termo de Vistoria (assinado)" },
+  { key: "certificado_garantia", label: "Certificado de Garantia" },
+  { key: "convencao_regimento", label: "Convenção de Condomínio / Regimento Interno" }
+];
+
+let entregaState = {};
+
+function entregaKeyFor(apt){ return "entrega:apt_" + apt; }
+
+function entregaVazio(){
+  return {
+    dataEntrega: "",
+    dataVistoria: "",
+    obs: "",
+    checklist: Object.fromEntries(CHECKLIST_VISTORIA.map(c => [c.key, { status: "", obs: "" }])),
+    documentos: Object.fromEntries(DOCUMENTOS_ENTREGA.map(d => [d.key, { entregue: false, data: "" }]))
+  };
+}
+
+async function loadEntregaUnit(apt){
+  try{
+    const res = await window.storage.get(entregaKeyFor(apt), true);
+    if(res){
+      entregaState[apt] = JSON.parse(res.value);
+      return;
+    }
+  }catch(e){}
+  entregaState[apt] = entregaVazio();
+}
+
+async function saveEntregaUnit(apt){
+  try{
+    await window.storage.set(entregaKeyFor(apt), JSON.stringify(entregaState[apt]), true);
+    flashSaved();
+    registrarAtividade("Entrega", "Apto " + apt + " atualizado");
+  }catch(e){
+    console.error("Erro ao salvar entrega", e);
+  }
+}
+
+function entregaStatusApt(apt){
+  const d = entregaState[apt];
+  if(!d) return "empty";
+  const checklistPreenchido = CHECKLIST_VISTORIA.filter(c => d.checklist[c.key].status !== "");
+  const docsEntregues = DOCUMENTOS_ENTREGA.filter(doc => d.documentos[doc.key].entregue);
+  if(checklistPreenchido.length === 0 && docsEntregues.length === 0 && !d.dataEntrega) return "empty";
+  const checklistOk = CHECKLIST_VISTORIA.every(c => d.checklist[c.key].status === "ok");
+  const docsOk = DOCUMENTOS_ENTREGA.every(doc => d.documentos[doc.key].entregue);
+  if(d.dataEntrega && checklistOk && docsOk) return "complete";
+  return "partial";
+}
+
+const ENTREGA_STATUS_LABEL = { ok: "✓ OK", pendente: "✕ Pendente", na: "◐ N/A", "": "— Verificar" };
+
+function entregaBadgeHtml(apt, key, status){
+  const map = {
+    ok: "fin-badge-pago",
+    pendente: "fin-badge-pendente",
+    na: "fin-badge-parcial",
+    "": "fin-badge-vazio"
+  };
+  const cls = map[status] || map[""];
+  return `<span class="fin-badge ${cls}" onclick="cicleEntregaChecklist(${apt}, '${key}')" title="Clique para alternar o status">${ENTREGA_STATUS_LABEL[status] || ENTREGA_STATUS_LABEL[""]}</span>`;
+}
+
+function cicleEntregaChecklist(apt, key){
+  const ordem = ["", "ok", "pendente", "na"];
+  const atual = entregaState[apt].checklist[key].status || "";
+  const idx = ordem.indexOf(atual);
+  entregaState[apt].checklist[key].status = ordem[(idx + 1) % ordem.length];
+  saveEntregaUnit(apt).then(renderSidebar);
+  renderEntrega(apt);
+}
+
+function updateEntregaChecklistObs(apt, key, obs){
+  entregaState[apt].checklist[key].obs = obs;
+  saveEntregaUnit(apt);
+}
+
+function toggleEntregaDoc(apt, key){
+  const doc = entregaState[apt].documentos[key];
+  doc.entregue = !doc.entregue;
+  if(doc.entregue && !doc.data) doc.data = new Date().toISOString().slice(0,10);
+  saveEntregaUnit(apt).then(renderSidebar);
+  renderEntrega(apt);
+}
+
+function updateEntregaDocData(apt, key, data){
+  entregaState[apt].documentos[key].data = data;
+  saveEntregaUnit(apt);
+}
+
+function updateEntregaCampo(apt, campo, valor){
+  entregaState[apt][campo] = valor;
+  saveEntregaUnit(apt).then(renderSidebar);
+}
+
+async function renderEntrega(apt){
+  if(!(apt in entregaState)) await loadEntregaUnit(apt);
+  const d = entregaState[apt];
+  const cliente = CLIENTES[apt] || "";
+  document.getElementById("unitTitle").textContent = "Apartamento " + apt;
+  document.getElementById("unitSubtitle").textContent = cliente + " · Entrega — vistoria, documentos e chaves";
+
+  const checklistOk = CHECKLIST_VISTORIA.filter(c => d.checklist[c.key].status === "ok").length;
+  const docsOk = DOCUMENTOS_ENTREGA.filter(doc => d.documentos[doc.key].entregue).length;
+  document.getElementById("summaryPill").innerHTML = `Vistoria <b>${checklistOk}/${CHECKLIST_VISTORIA.length}</b> OK · Documentos <b>${docsOk}/${DOCUMENTOS_ENTREGA.length}</b> entregues`;
+
+  const checklistRows = CHECKLIST_VISTORIA.map(c => {
+    const item = d.checklist[c.key];
+    return `<tr>
+      <td class="fin-etapa-label">${c.label}</td>
+      <td style="width:150px;">${entregaBadgeHtml(apt, c.key, item.status)}</td>
+      <td>
+        <input type="text" class="fin-obs-input" placeholder="Observação (opcional)" value="${escapeHtml(item.obs || "")}" oninput="updateEntregaChecklistObs(${apt}, '${c.key}', this.value)">
+      </td>
+    </tr>`;
+  }).join('');
+
+  const docsRows = DOCUMENTOS_ENTREGA.map(doc => {
+    const item = d.documentos[doc.key];
+    return `<tr>
+      <td class="fin-etapa-label">${doc.label}</td>
+      <td style="width:150px;">
+        <span class="fin-badge ${item.entregue ? 'fin-badge-pago' : 'fin-badge-vazio'}" onclick="toggleEntregaDoc(${apt}, '${doc.key}')" title="Clique para alternar">${item.entregue ? '✓ Entregue' : '— Pendente'}</span>
+      </td>
+      <td style="width:170px;">
+        <input type="date" value="${item.data || ''}" onchange="updateEntregaDocData(${apt}, '${doc.key}', this.value)" ${item.entregue ? '' : 'disabled'}>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById("content").innerHTML = `
+    <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
+      <div>
+        <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Data da vistoria</label>
+        <input type="date" value="${d.dataVistoria || ''}" onchange="updateEntregaCampo(${apt}, 'dataVistoria', this.value)">
+      </div>
+      <div>
+        <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Data de entrega das chaves</label>
+        <input type="date" value="${d.dataEntrega || ''}" onchange="updateEntregaCampo(${apt}, 'dataEntrega', this.value)">
+      </div>
+    </div>
+
+    <h3 style="margin:0 0 10px;">Checklist de vistoria</h3>
+    <div style="overflow-x:auto;">
+    <table class="fin-table">
+      <thead><tr><th>Item</th><th>Status</th><th>Observação</th></tr></thead>
+      <tbody>${checklistRows}</tbody>
+    </table>
+    </div>
+
+    <h3 style="margin:22px 0 10px;">Documentos de entrega</h3>
+    <div style="overflow-x:auto;">
+    <table class="fin-table">
+      <thead><tr><th>Documento</th><th>Status</th><th>Data</th></tr></thead>
+      <tbody>${docsRows}</tbody>
+    </table>
+    </div>
+
+    <div style="margin:18px 0;">
+      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Observação geral</label>
+      <input type="text" style="width:100%; max-width:420px;" placeholder="Sem observação" value="${escapeHtml(d.obs || "")}" oninput="updateEntregaCampo(${apt}, 'obs', this.value)">
+    </div>
+
+    <div class="toolbar">
+      <button class="btn btn-ghost" onclick="exportarEntregaPDF(${apt})">📄 Exportar ficha (PDF)</button>
+    </div>
+  `;
+}
+
+function exportarEntregaPDF(apt){
+  const d = entregaState[apt];
+  const cliente = CLIENTES[apt] || "";
+  const head1 = ["Item de vistoria", "Status", "Observação"];
+  const body1 = CHECKLIST_VISTORIA.map(c => {
+    const item = d.checklist[c.key];
+    return [c.label, ENTREGA_STATUS_LABEL[item.status] || "—", item.obs || ""];
+  });
+  const head2 = ["Documento", "Status", "Data"];
+  const body2 = DOCUMENTOS_ENTREGA.map(doc => {
+    const item = d.documentos[doc.key];
+    return [doc.label, item.entregue ? "Entregue" : "Pendente", item.data || "—"];
+  });
+
+  let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
+  subtitulo += "\nVistoria: " + (d.dataVistoria || "—") + " · Entrega das chaves: " + (d.dataEntrega || "—");
+  if(d.obs) subtitulo += "\n" + d.obs;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const yLinha = cabecalhoPDF(doc, "Entrega — Apartamento " + apt, subtitulo);
+  doc.autoTable({ head: [head1], body: body1, startY: yLinha + 4, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [28,58,94], textColor: 255 }, margin: { left: 14, right: 14 } });
+  const y2 = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(11); doc.setTextColor(20,20,20);
+  doc.text("Documentos de entrega", 14, y2);
+  doc.autoTable({ head: [head2], body: body2, startY: y2 + 4, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [28,58,94], textColor: 255 }, margin: { left: 14, right: 14 } });
+  rodapePDF(doc);
+  doc.save("entrega_apto_" + apt + ".pdf");
+}
+
+function voltarResumoEntrega(){
+  currentApt = null;
+  renderSidebar();
+  renderEntregaResumo();
+  if(window.innerWidth <= 860) closeSidebar();
+}
+
+// ---------- Entregas - Vista Park (levas de entrega) ----------
+const LEVA_1_ENTREGA = [92, 72, 82, 51, 71, 52, 112, 101, 22, 42, 31];
+const LEVA_2_ENTREGA = [41, 21, 62, 81, 11, 121, 32, 122, 61, 12, 91, 102, 111];
+const PRAZO_VISTORIA_ENTREGA = "03/11/2026";
+
+function levaTableHtml(unidades, tituloLeva){
+  const linhas = unidades.map((u, i) => `
+    <tr>
+      <td style="width:40px;"><b style="color:var(--ok);">${i + 1}.</b></td>
+      <td><b>Unidade ${u}</b></td>
+      <td>${escapeHtml(CLIENTES[u] || '')}</td>
+    </tr>
+  `).join('');
+  return `
+    <h3 style="margin:22px 0 8px;">${tituloLeva}</h3>
+    <div class="subtitle" style="margin-bottom:10px;">${unidades.length} unidades</div>
+    <table class="fin-table">
+      <tbody>${linhas}</tbody>
+    </table>
+  `;
+}
+
+function renderLevasEntrega(){
+  document.getElementById("unitTitle").textContent = "Entregas - Vista Park";
+  document.getElementById("unitSubtitle").textContent = "Levas de entrega por unidade";
+  document.getElementById("summaryPill").innerHTML = `Prazo final para Vistorias: <b>${PRAZO_VISTORIA_ENTREGA}</b>`;
+  const content = document.getElementById("content");
+  content.innerHTML = `
+    <div class="toolbar" style="justify-content:flex-end; margin-bottom:10px;">
+      <button class="btn btn-ghost" onclick="exportarLevasEntregaPDF()">📄 Exportar PDF</button>
+    </div>
+    ${levaTableHtml(LEVA_1_ENTREGA, "1ª Leva de Entrega")}
+    ${levaTableHtml(LEVA_2_ENTREGA, "2ª Leva de Entrega")}
+    <div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border); font-weight:600;">
+      Total geral: ${LEVA_1_ENTREGA.length + LEVA_2_ENTREGA.length} unidades
+    </div>
+  `;
+}
+
+function exportarLevasEntregaPDF(){
+  const head = ["#", "Unidade", "Cliente"];
+  const bodyLeva1 = LEVA_1_ENTREGA.map((u, i) => [String(i + 1), "Unidade " + u, CLIENTES[u] || ""]);
+  const bodyLeva2 = LEVA_2_ENTREGA.map((u, i) => [String(i + 1), "Unidade " + u, CLIENTES[u] || ""]);
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const yLinha = cabecalhoPDF(doc, "Entregas - Vista Park", "Prazo final para Vistorias de Entregas: " + PRAZO_VISTORIA_ENTREGA);
+  doc.setFontSize(11);
+  doc.setTextColor(20,20,20);
+  doc.text("1ª Leva de Entrega (" + LEVA_1_ENTREGA.length + " unidades)", 14, yLinha + 10);
+  doc.autoTable({
+    head: [head],
+    body: bodyLeva1,
+    startY: yLinha + 14,
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [28,58,94], textColor: 255 },
+    margin: { left: 14, right: 14 }
+  });
+  let y2 = doc.lastAutoTable.finalY + 12;
+  if(y2 > doc.internal.pageSize.getHeight() - 40){ doc.addPage(); y2 = 20; }
+  doc.setFontSize(11);
+  doc.text("2ª Leva de Entrega (" + LEVA_2_ENTREGA.length + " unidades)", 14, y2);
+  doc.autoTable({
+    head: [head],
+    body: bodyLeva2,
+    startY: y2 + 4,
+    styles: { fontSize: 9, cellPadding: 2 },
+    headStyles: { fillColor: [28,58,94], textColor: 255 },
+    margin: { left: 14, right: 14 }
+  });
+  rodapePDF(doc);
+  doc.save("entregas_vista_park.pdf");
+}
+
+function renderEntregaResumo(){
+  document.getElementById("unitTitle").textContent = "Entrega";
+  document.getElementById("unitSubtitle").textContent = "Visão geral · selecione um apê ao lado para editar";
+  document.getElementById("summaryPill").textContent = "";
+  const content = document.getElementById("content");
+  content.innerHTML = `<div class="empty-state">Carregando resumo geral…</div>`;
+
+  (async () => {
+    for(const apt of APTS){
+      if(!(apt in entregaState)) await loadEntregaUnit(apt);
+    }
+
+    let entregues = 0, emAndamento = 0, naoIniciados = 0;
+    const linhas = APTS.map(apt => {
+      const st = entregaStatusApt(apt);
+      if(st === 'complete') entregues++;
+      else if(st === 'partial') emAndamento++;
+      else naoIniciados++;
+      const d = entregaState[apt];
+      const checklistOk = CHECKLIST_VISTORIA.filter(c => d.checklist[c.key].status === "ok").length;
+      const docsOk = DOCUMENTOS_ENTREGA.filter(doc => d.documentos[doc.key].entregue).length;
+      return { apt, cliente: CLIENTES[apt] || "", st, checklistOk, docsOk, dataEntrega: d.dataEntrega };
+    });
+
+    const cardsHtml = `
+      <div class="fin-summary-cards">
+        <div class="fin-summary-card ok">
+          <div class="fin-card-label">Entregues</div>
+          <div class="fin-card-value">${entregues}</div>
+        </div>
+        <div class="fin-summary-card warn">
+          <div class="fin-card-label">Em andamento</div>
+          <div class="fin-card-value">${emAndamento}</div>
+        </div>
+        <div class="fin-summary-card">
+          <div class="fin-card-label">Não iniciados</div>
+          <div class="fin-card-value">${naoIniciados}</div>
+        </div>
+      </div>
+      <div class="toolbar" style="justify-content:flex-end; margin-bottom:10px;">
+        <button class="btn btn-ghost" onclick="exportarEntregaResumoPDF()">📄 Exportar resumo (PDF)</button>
+      </div>
+    `;
+
+    const linhasHtml = linhas.map(l => `
+      <tr onclick="selectUnit(${l.apt})" style="cursor:pointer;">
+        <td><b>Apto ${l.apt}</b></td>
+        <td>${escapeHtml(l.cliente)}</td>
+        <td><span class="unit-dot dot-${l.st}" style="display:inline-block;"></span> ${l.st === 'complete' ? 'Entregue' : l.st === 'partial' ? 'Em andamento' : 'Não iniciado'}</td>
+        <td>${l.checklistOk}/${CHECKLIST_VISTORIA.length}</td>
+        <td>${l.docsOk}/${DOCUMENTOS_ENTREGA.length}</td>
+        <td>${l.dataEntrega || '—'}</td>
+      </tr>`).join('');
+
+    content.innerHTML = cardsHtml + `
+      <div style="overflow-x:auto;">
+      <table>
+        <thead><tr><th>Apê</th><th>Cliente</th><th>Status</th><th>Vistoria</th><th>Documentos</th><th>Data de entrega</th></tr></thead>
+        <tbody>${linhasHtml}</tbody>
+      </table>
+      </div>
+    `;
+  })();
+}
+
+function exportarEntregaResumoPDF(){
+  const head = ["Apê", "Cliente", "Status", "Vistoria", "Documentos", "Data de entrega"];
+  const linhas = APTS.map(apt => {
+    const d = entregaState[apt] || entregaVazio();
+    const st = entregaStatusApt(apt);
+    const checklistOk = CHECKLIST_VISTORIA.filter(c => d.checklist[c.key].status === "ok").length;
+    const docsOk = DOCUMENTOS_ENTREGA.filter(doc => d.documentos[doc.key].entregue).length;
+    const stLabel = st === 'complete' ? 'Entregue' : st === 'partial' ? 'Em andamento' : 'Não iniciado';
+    return ["Apto " + apt, CLIENTES[apt] || "", stLabel, checklistOk + "/" + CHECKLIST_VISTORIA.length, docsOk + "/" + DOCUMENTOS_ENTREGA.length, d.dataEntrega || "—"];
+  });
+  exportarTabelaPDF(
+    "Entrega — Resumo por Apartamento",
+    "Vista Park Residencial 166 · 24 unidades",
+    head, linhas,
+    { filename: "entrega_resumo_apartamentos.pdf" }
+  );
 }
 
 // ---------- Suprimentos ----------
