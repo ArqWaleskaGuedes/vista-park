@@ -1606,14 +1606,14 @@ function confirmModalResponder(valor){
 
 let _textResolve = null;
 
-function askText(title){
+function askText(title, valorInicial){
   return new Promise(resolve => {
     _textResolve = resolve;
     document.getElementById("textModalTitle").textContent = title;
     const input = document.getElementById("textModalInput");
-    input.value = "";
+    input.value = valorInicial || "";
     document.getElementById("textModal").style.display = 'flex';
-    setTimeout(() => input.focus(), 50);
+    setTimeout(() => { input.focus(); input.select(); }, 50);
   });
 }
 
@@ -5464,7 +5464,7 @@ function toggleFinCat(key){
 }
 
 // ---------- Entrega (vistoria, documentos e chaves por apartamento) ----------
-const CHECKLIST_VISTORIA = [
+let CHECKLIST_VISTORIA = [
   { key: "eletrica", label: "Elétrica (tomadas, disjuntores, interruptores)" },
   { key: "hidraulica", label: "Hidráulica (registros, torneiras, ralos, vazamentos)" },
   { key: "esquadrias", label: "Esquadrias (portas, janelas, fechaduras)" },
@@ -5474,6 +5474,94 @@ const CHECKLIST_VISTORIA = [
   { key: "marmoraria", label: "Marmoraria" },
   { key: "limpeza", label: "Limpeza final" }
 ];
+let checklistVistoriaCarregado = false;
+
+function slugChecklistKey(label){
+  let base = label.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  if(!base) base = "item";
+  let key = base, n = 2;
+  while(CHECKLIST_VISTORIA.some(c => c.key === key)){ key = base + "_" + n; n++; }
+  return key;
+}
+
+async function loadChecklistVistoria(){
+  if(checklistVistoriaCarregado) return;
+  try{
+    const res = await window.storage.get("entrega:checklist_categorias", true);
+    if(res){
+      const lista = JSON.parse(res.value);
+      if(Array.isArray(lista) && lista.length){
+        CHECKLIST_VISTORIA.length = 0;
+        CHECKLIST_VISTORIA.push(...lista);
+      }
+    }
+  }catch(e){}
+  checklistVistoriaCarregado = true;
+}
+
+async function saveChecklistVistoria(){
+  try{
+    await window.storage.set("entrega:checklist_categorias", JSON.stringify(CHECKLIST_VISTORIA), true);
+    flashSaved();
+    registrarAtividade("Entrega", "Categorias de vistoria atualizadas");
+  }catch(e){
+    console.error("Erro ao salvar categorias de vistoria", e);
+  }
+  // Reconcilia checklists de unidades já carregadas nesta sessão
+  Object.keys(entregaState).forEach(apt => {
+    const atual = entregaState[apt].checklist || {};
+    const completo = {};
+    CHECKLIST_VISTORIA.forEach(c => {
+      completo[c.key] = atual[c.key] || { status: "", obs: "" };
+    });
+    entregaState[apt].checklist = completo;
+  });
+}
+
+let categoriasVistoriaVisiveis = false;
+function toggleGerenciarCategoriasVistoria(){
+  categoriasVistoriaVisiveis = !categoriasVistoriaVisiveis;
+  renderEntregaResumo();
+}
+
+async function adicionarCategoriaVistoria(){
+  const label = await askText("Nome da nova categoria de vistoria");
+  if(!label) return;
+  const key = slugChecklistKey(label);
+  CHECKLIST_VISTORIA.push({ key, label });
+  await saveChecklistVistoria();
+  renderEntregaResumo();
+}
+
+async function removerCategoriaVistoria(key){
+  CHECKLIST_VISTORIA = CHECKLIST_VISTORIA.filter(c => c.key !== key);
+  await saveChecklistVistoria();
+  renderEntregaResumo();
+}
+
+async function renomearCategoriaVistoria(key){
+  const atual = CHECKLIST_VISTORIA.find(c => c.key === key);
+  if(!atual) return;
+  const novoLabel = await askText("Novo nome da categoria", atual.label);
+  if(!novoLabel) return;
+  atual.label = novoLabel;
+  await saveChecklistVistoria();
+  renderEntregaResumo();
+}
+
+function categoriaManagerVistoriaHtml(){
+  return `
+    <div class="categoria-manager-toggle" onclick="toggleGerenciarCategoriasVistoria()">${categoriasVistoriaVisiveis ? '▾' : '▸'} Gerenciar categorias da vistoria</div>
+    <div class="categoria-manager" style="${categoriasVistoriaVisiveis ? '' : 'display:none;'}">
+      <span class="categoria-manager-label">Categorias:</span>
+      ${CHECKLIST_VISTORIA.map(c => `
+        <span class="categoria-chip" onclick="renomearCategoriaVistoria('${c.key}')" title="Clique para renomear">${escapeHtml(c.label)}<button onclick="event.stopPropagation(); removerCategoriaVistoria('${c.key}')" title="Remover categoria">✕</button></span>
+      `).join('')}
+      <button class="btn btn-ghost" style="padding:5px 12px; font-size:12px;" onclick="adicionarCategoriaVistoria()">+ Nova categoria</button>
+    </div>
+  `;
+}
 
 const DOCUMENTOS_ENTREGA = [
   { key: "habite_se", label: "Habite-se (cópia)" },
@@ -5499,12 +5587,13 @@ function entregaVazio(){
 }
 
 async function loadEntregaUnit(apt){
+  await loadChecklistVistoria();
   try{
     const res = await window.storage.get(entregaKeyFor(apt), true);
     if(res){
       const dados = JSON.parse(res.value);
       // Garante que unidades com checklist salvo antes de mudanças no CHECKLIST_VISTORIA
-      // tenham todas as chaves atuais (evita erro em itens novos/renomeados).
+      // tenham todas as chaves atuais (evita erro em itens novos/renomeados/removidos).
       const checklistCompleto = {};
       CHECKLIST_VISTORIA.forEach(c => {
         checklistCompleto[c.key] = (dados.checklist && dados.checklist[c.key]) || { status: "", obs: "" };
@@ -5776,6 +5865,7 @@ function renderEntregaResumo(){
   content.innerHTML = `<div class="empty-state">Carregando resumo geral…</div>`;
 
   (async () => {
+    await loadChecklistVistoria();
     for(const apt of APTS){
       if(!(apt in entregaState)) await loadEntregaUnit(apt);
     }
@@ -5807,6 +5897,7 @@ function renderEntregaResumo(){
           <div class="fin-card-value">${naoIniciados}</div>
         </div>
       </div>
+      ${categoriaManagerVistoriaHtml()}
       <div class="toolbar" style="justify-content:flex-end; margin-bottom:10px;">
         <button class="btn btn-ghost" onclick="exportarEntregaResumoPDF()">📄 Exportar resumo (PDF)</button>
       </div>
