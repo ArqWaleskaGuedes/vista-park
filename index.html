@@ -1497,15 +1497,42 @@ window.storage = {
 };
 
 // ---------- Vistoria do cliente (link público, sem login) ----------
-// Acesso via ?vistoria_cliente=<numero do apto> — tela isolada, sem senha,
-// pensada para o cliente preencher pelo celular dele no dia da vistoria.
+// Acesso via ?vistoria_cliente=<numero do apto>&t=<token> — tela isolada, sem senha de equipe,
+// mas protegida por um token único por unidade (gerado no painel da equipe),
+// pra um cliente não conseguir ver/editar a vistoria de outro apartamento.
 (function(){
   const params = new URLSearchParams(window.location.search);
   const aptCliente = params.get("vistoria_cliente");
+  const tokenCliente = params.get("t");
   if(!aptCliente) return;
+
+  function mostrarErroAcesso(msg){
+    document.getElementById("coverScreen").style.display = "none";
+    document.getElementById("appScreen").style.display = "none";
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "max-width:480px;margin:15vh auto 0;padding:0 20px;text-align:center;font-family:inherit;";
+    wrap.innerHTML = `
+      <div style="font-size:11px; letter-spacing:.05em; color:var(--text-dim); text-transform:uppercase; margin-bottom:10px;">Absoluta · Vista Park Residencial 166</div>
+      <h2 style="margin:0 0 10px;">Link inválido</h2>
+      <p style="color:var(--text-dim); font-size:14px;">${msg}</p>
+      <p style="color:var(--text-dim); font-size:14px;">Peça o link correto para a equipe da Absoluta.</p>
+    `;
+    document.body.appendChild(wrap);
+  }
 
   async function boot(){
     try{ await firebase.auth().signInAnonymously(); }catch(e){ console.error("Login anônimo falhou", e); }
+
+    let tokenValido;
+    try{
+      const res = await window.storage.get("entrega_cliente_token:apt_" + aptCliente, true);
+      tokenValido = res ? res.value : null;
+    }catch(e){ tokenValido = null; }
+
+    if(!tokenValido || !tokenCliente || tokenCliente !== tokenValido){
+      mostrarErroAcesso("Este link não é válido para esta unidade — ele pode ter expirado ou sido gerado novamente.");
+      return;
+    }
 
     document.getElementById("coverScreen").style.display = "none";
     document.getElementById("appScreen").style.display = "none";
@@ -1518,6 +1545,7 @@ window.storage = {
         <div style="font-size:11px; letter-spacing:.05em; color:var(--text-dim); text-transform:uppercase;">Absoluta · Vista Park Residencial 166</div>
         <h1 style="margin:6px 0 2px; font-size:22px;">Vistoria de Entrega — Apto ${escapeHtml(aptCliente)}</h1>
         <div style="font-size:13px; color:var(--text-dim);">Preenchido pelo cliente</div>
+
       </div>
       <div id="cvContent">Carregando...</div>
     `;
@@ -5856,6 +5884,7 @@ async function renderEntrega(apt){
     <div class="toolbar">
       <button class="btn btn-ghost" onclick="exportarEntregaPDF(${apt})">📄 Exportar ficha (PDF)</button>
       <button class="btn btn-ghost" onclick="copiarLinkClienteVistoria(${apt})">🔗 Copiar link para o cliente</button>
+      <button class="btn btn-ghost" onclick="gerarNovoLinkCliente(${apt})" title="Use se o link antigo vazou ou foi parar com a pessoa errada">🔄 Gerar novo link</button>
     </div>
 
     <h3 style="margin:26px 0 10px;">Vistoria do cliente</h3>
@@ -5865,12 +5894,44 @@ async function renderEntrega(apt){
   renderResumoClienteVistoria(apt);
 }
 
-function copiarLinkClienteVistoria(apt){
-  const link = window.location.origin + window.location.pathname + "?vistoria_cliente=" + apt;
+function gerarTokenAcesso(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // sem 0/O/1/I pra evitar confusão
+  let t = "";
+  for(let i=0;i<8;i++) t += chars[Math.floor(Math.random()*chars.length)];
+  return t;
+}
+
+async function obterOuCriarTokenCliente(apt, forcarNovo){
+  const key = "entrega_cliente_token:apt_" + apt;
+  if(!forcarNovo){
+    try{
+      const res = await window.storage.get(key, true);
+      if(res && res.value) return res.value;
+    }catch(e){}
+  }
+  const novo = gerarTokenAcesso();
+  await window.storage.set(key, novo, true);
+  return novo;
+}
+
+async function copiarLinkClienteVistoria(apt){
+  const token = await obterOuCriarTokenCliente(apt, false);
+  const link = window.location.origin + window.location.pathname + "?vistoria_cliente=" + apt + "&t=" + token;
   navigator.clipboard.writeText(link).then(() => {
     flashSaved();
   }).catch(() => {
     prompt("Copie o link abaixo:", link);
+  });
+}
+
+async function gerarNovoLinkCliente(apt){
+  if(!confirm("Isso invalida o link antigo enviado ao cliente (ele para de funcionar). Gerar um novo?")) return;
+  const token = await obterOuCriarTokenCliente(apt, true);
+  const link = window.location.origin + window.location.pathname + "?vistoria_cliente=" + apt + "&t=" + token;
+  navigator.clipboard.writeText(link).then(() => {
+    flashSaved();
+  }).catch(() => {
+    prompt("Novo link (o antigo não funciona mais):", link);
   });
 }
 
