@@ -1254,6 +1254,11 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="lightboxModal" style="display:none; background:rgba(0,0,0,0.88); padding:16px;" onclick="fecharLightbox(event)">
+  <img id="lightboxImg" src="" style="max-width:100%; max-height:100%; border-radius:6px; box-shadow:0 4px 24px rgba(0,0,0,0.5);">
+  <button onclick="fecharLightbox(event)" title="Fechar" style="position:fixed; top:16px; right:20px; background:none; border:none; color:#fff; font-size:28px; line-height:1; cursor:pointer;">✕</button>
+</div>
+
 <div class="modal-overlay" id="revisaoModal" style="display:none;">
   <div class="modal-box" style="max-width:480px;">
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
@@ -1615,7 +1620,7 @@ window.storage = {
         const btn = (val, label) => `<button type="button" style="flex:1; padding:9px 4px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:${item.status===val ? (val==='ok'?'#dcefda':val==='pendente'?'#f4dcd8':'#e4e6e1') : 'var(--surface)'}; color:${item.status===val ? (val==='ok'?'#3d7233':val==='pendente'?'#8f3826':'#5c6157') : 'var(--text)'}; font-weight:${item.status===val?'700':'400'};" onclick="window.__cvSet('${c.key}','${val}')">${label}</button>`;
         const fotosHtml = (item.fotos || []).map((foto, idx) => `
           <div style="position:relative; width:64px; height:64px; flex-shrink:0;">
-            <img src="${foto}" style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--border); cursor:pointer;" onclick="window.open('${foto}', '_blank')">
+            <img src="${foto}" style="width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--border); cursor:pointer;" onclick="abrirLightbox('${foto}')">
             <button type="button" title="Remover foto" onclick="window.__cvFotoRemove('${c.key}', ${idx})" style="position:absolute; top:-6px; right:-6px; width:18px; height:18px; border-radius:50%; border:none; background:var(--danger); color:#fff; font-size:11px; line-height:1; cursor:pointer;">✕</button>
           </div>`).join('');
         return `<div style="margin-bottom:14px; padding:12px; border:1px solid var(--border); border-radius:8px;">
@@ -1795,6 +1800,17 @@ function pwModalSubmit(){
 function pwModalCancel(){
   document.getElementById("passwordModal").style.display = 'none';
   if(_pwResolve){ _pwResolve(null); _pwResolve = null; }
+}
+
+function abrirLightbox(src){
+  document.getElementById("lightboxImg").src = src;
+  document.getElementById("lightboxModal").style.display = 'flex';
+}
+
+function fecharLightbox(event){
+  if(event && event.target && event.target.id === 'lightboxImg') return;
+  document.getElementById("lightboxModal").style.display = 'none';
+  document.getElementById("lightboxImg").src = '';
 }
 
 function showAlert(msg, title){
@@ -5951,6 +5967,8 @@ function entregaStatusApt(apt){
 }
 
 const ENTREGA_STATUS_LABEL = { ok: "✓ OK", pendente: "✕ Pendente", na: "◐ N/A", "": "— Verificar" };
+// Versão sem símbolos Unicode — a fonte padrão do jsPDF não renderiza ✓/✕/◐ corretamente nos PDFs exportados
+const ENTREGA_STATUS_LABEL_PDF = { ok: "OK", pendente: "Pendente", na: "N/A", "": "A verificar" };
 
 function entregaBadgeHtml(apt, key, status){
   const map = {
@@ -6069,6 +6087,7 @@ async function renderEntrega(apt){
       <button class="btn btn-ghost" onclick="gerarNovoLinkCliente(${apt})" title="Use se o link antigo vazou ou foi parar com a pessoa errada">🔄 Gerar novo link</button>
       <button class="btn btn-ghost" onclick="excluirVistoriaCliente(${apt})" title="Apaga o que o cliente já preencheu, incluindo fotos" style="color:var(--danger);">🗑️ Excluir vistoria do cliente</button>
       <button class="btn btn-ghost" onclick="gerarTermoRecebimentoParcialPDFEquipe(${apt})" title="Gera o termo com o nome já cadastrado — útil pra imprimir e assinar na hora, se o cliente não usar o formulário digital">📄 Termo de Recebimento Parcial (PDF)</button>
+      <button class="btn btn-ghost" onclick="exportarVistoriaClientePDF(${apt})" title="Exporta o checklist, observações e fotos que o próprio cliente preencheu">📄 Exportar vistoria do cliente (PDF)</button>
     </div>
 
     <h3 style="margin:26px 0 10px;">Vistoria do cliente</h3>
@@ -6154,6 +6173,118 @@ async function gerarTermoRecebimentoParcialPDFEquipe(apt){
   gerarTermoRecebimentoParcialPDF(apt, nomeCliente, cpfCliente);
 }
 
+// Exporta a vistoria que o cliente preencheu (checklist + observações + fotos anexadas)
+async function exportarVistoriaClientePDF(apt){
+  let d;
+  try{
+    const res = await window.storage.get("entrega_cliente:apt_" + apt, true);
+    d = res ? JSON.parse(res.value) : null;
+  }catch(e){ d = null; }
+  const vazio = !d || (!d.enviadoEm && Object.values(d.checklist || {}).every(i => !i.status && !i.obs && !(i.fotos && i.fotos.length)));
+  if(vazio){
+    showAlert("O cliente ainda não preencheu a vistoria dele. Use o botão \"Copiar link para o cliente\" pra enviar.");
+    return;
+  }
+  await loadChecklistVistoria();
+  const cliente = CLIENTES[apt] || "";
+  const nomeCliente = d.nomeCliente || cliente;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginL = 14, marginR = 14;
+  const contentW = pageW - marginL - marginR;
+
+  let subtitulo = "Apartamento " + apt + (nomeCliente ? " · " + nomeCliente : "");
+  subtitulo += "\n" + (d.enviadoEm ? "Enviada pelo cliente em " + new Date(d.enviadoEm).toLocaleString('pt-BR') : "Em preenchimento — ainda não enviada");
+  let y = cabecalhoPDF(doc, "Vistoria do Cliente — Apartamento " + apt, subtitulo) + 8;
+
+  const quebrarSeNecessario = (alturaMin) => {
+    if(y > pageH - alturaMin){ doc.addPage(); y = 20; }
+  };
+
+  CHECKLIST_VISTORIA.forEach(c => {
+    const item = (d.checklist && d.checklist[c.key]) || { status: "", obs: "", fotos: [] };
+    quebrarSeNecessario(40);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(20, 20, 20);
+    doc.text(c.label, marginL, y);
+    y += 6;
+
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    doc.text("Status: " + (ENTREGA_STATUS_LABEL_PDF[item.status] || ENTREGA_STATUS_LABEL_PDF[""]), marginL, y);
+    y += 5.5;
+
+    if(item.obs){
+      const linhas = doc.splitTextToSize("Observação: " + item.obs, contentW);
+      linhas.forEach(linha => {
+        quebrarSeNecessario(20);
+        doc.text(linha, marginL, y);
+        y += 5.2;
+      });
+    }
+
+    const fotos = Array.isArray(item.fotos) ? item.fotos : [];
+    if(fotos.length){
+      y += 2;
+      const thumbW = 42, gap = 4;
+      let x = marginL, rowMaxH = 0;
+      fotos.forEach(foto => {
+        let ratio = 0.75;
+        try{
+          const props = doc.getImageProperties(foto);
+          if(props && props.width) ratio = props.height / props.width;
+        }catch(e){}
+        const thumbH = thumbW * ratio;
+        if(x + thumbW > pageW - marginR){
+          x = marginL;
+          y += rowMaxH + gap;
+          rowMaxH = 0;
+        }
+        if(y + thumbH > pageH - 20){
+          doc.addPage();
+          y = 20;
+          x = marginL;
+          rowMaxH = 0;
+        }
+        try{
+          doc.addImage(foto, 'JPEG', x, y, thumbW, thumbH);
+        }catch(e){ console.error("Erro ao inserir foto no PDF da vistoria do cliente", e); }
+        x += thumbW + gap;
+        rowMaxH = Math.max(rowMaxH, thumbH);
+      });
+      y += rowMaxH + 6;
+    } else {
+      y += 4;
+    }
+  });
+
+  if(d.obs){
+    quebrarSeNecessario(30);
+    doc.setFontSize(11);
+    doc.setFont(undefined, 'bold');
+    doc.setTextColor(20, 20, 20);
+    doc.text("Observação geral do cliente", marginL, y);
+    y += 6;
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(60);
+    const linhas = doc.splitTextToSize(d.obs, contentW);
+    linhas.forEach(linha => {
+      quebrarSeNecessario(20);
+      doc.text(linha, marginL, y);
+      y += 5.2;
+    });
+  }
+
+  rodapePDF(doc);
+  doc.save("vistoria_cliente_apto_" + apt + ".pdf");
+}
+
 function entregaBadgeReadOnlyHtml(status){
   const map = { ok: "fin-badge-pago", pendente: "fin-badge-pendente", na: "fin-badge-parcial", "": "fin-badge-vazio" };
   const cls = map[status] || map[""];
@@ -6177,7 +6308,7 @@ async function renderResumoClienteVistoria(apt){
     const item = (d.checklist && d.checklist[c.key]) || { status: "", obs: "", fotos: [] };
     const fotos = Array.isArray(item.fotos) ? item.fotos : [];
     const fotosHtml = fotos.length ? `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;">
-      ${fotos.map(f => `<img src="${f}" style="width:48px; height:48px; object-fit:cover; border-radius:5px; border:1px solid var(--border); cursor:pointer;" onclick="window.open('${f}', '_blank')">`).join('')}
+      ${fotos.map(f => `<img src="${f}" style="width:48px; height:48px; object-fit:cover; border-radius:5px; border:1px solid var(--border); cursor:pointer;" onclick="abrirLightbox('${f}')">`).join('')}
     </div>` : '';
     return `<tr>
       <td class="fin-etapa-label">${c.label}</td>
@@ -6206,7 +6337,7 @@ function exportarEntregaPDF(apt){
   const head1 = ["Item de vistoria", "Status", "Observação"];
   const body1 = CHECKLIST_VISTORIA.map(c => {
     const item = d.checklist[c.key];
-    return [c.label, ENTREGA_STATUS_LABEL[item.status] || "—", item.obs || ""];
+    return [c.label, ENTREGA_STATUS_LABEL_PDF[item.status] || ENTREGA_STATUS_LABEL_PDF[""], item.obs || ""];
   });
 
   let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
