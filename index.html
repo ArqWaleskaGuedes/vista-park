@@ -1573,14 +1573,20 @@ window.storage = {
       }
     }catch(e){}
     const cats = window.__CV_CATS || [
-      { key: "eletrica", label: "Elétrica (tomadas, disjuntores, interruptores)" },
-      { key: "hidraulica", label: "Hidráulica (registros, torneiras, ralos, vazamentos)" },
-      { key: "esquadrias", label: "Esquadrias (portas, janelas, fechaduras)" },
-      { key: "revestimentos", label: "Revestimentos (piso, parede, rejunte)" },
-      { key: "pintura", label: "Pintura e acabamento" },
-      { key: "loucas_metais", label: "Louças e metais" },
-      { key: "marmoraria", label: "Marmoraria" },
-      { key: "limpeza", label: "Limpeza final" }
+      { key: "area_servico", label: "Área de Serviço" },
+      { key: "despensa", label: "Despensa" },
+      { key: "banheiro_servico", label: "Banheiro de Serviço (quando há)" },
+      { key: "living", label: "Living" },
+      { key: "lavabo", label: "Lavabo" },
+      { key: "hall_social", label: "Hall Social" },
+      { key: "circulacao", label: "Circulação" },
+      { key: "suite_01", label: "Suíte 01" },
+      { key: "suite_02", label: "Suíte 02" },
+      { key: "suite_03", label: "Suíte 03 (quando há)" },
+      { key: "suite_master", label: "Suíte Master" },
+      { key: "banho_01", label: "Banho 01" },
+      { key: "banho_02", label: "Banho 02" },
+      { key: "banho_master", label: "Banho Master" }
     ];
     cats.forEach(c => { if(!d.checklist[c.key]) d.checklist[c.key] = { status: "", obs: "", fotos: [] }; });
     cats.forEach(c => { if(!Array.isArray(d.checklist[c.key].fotos)) d.checklist[c.key].fotos = []; });
@@ -5803,14 +5809,20 @@ function toggleFinCat(key){
 
 // ---------- Entrega (vistoria, documentos e chaves por apartamento) ----------
 let CHECKLIST_VISTORIA = [
-  { key: "eletrica", label: "Elétrica (tomadas, disjuntores, interruptores)" },
-  { key: "hidraulica", label: "Hidráulica (registros, torneiras, ralos, vazamentos)" },
-  { key: "esquadrias", label: "Esquadrias (portas, janelas, fechaduras)" },
-  { key: "revestimentos", label: "Revestimentos (piso, parede, rejunte)" },
-  { key: "pintura", label: "Pintura e acabamento" },
-  { key: "loucas_metais", label: "Louças e metais" },
-  { key: "marmoraria", label: "Marmoraria" },
-  { key: "limpeza", label: "Limpeza final" }
+  { key: "area_servico", label: "Área de Serviço" },
+  { key: "despensa", label: "Despensa" },
+  { key: "banheiro_servico", label: "Banheiro de Serviço (quando há)" },
+  { key: "living", label: "Living" },
+  { key: "lavabo", label: "Lavabo" },
+  { key: "hall_social", label: "Hall Social" },
+  { key: "circulacao", label: "Circulação" },
+  { key: "suite_01", label: "Suíte 01" },
+  { key: "suite_02", label: "Suíte 02" },
+  { key: "suite_03", label: "Suíte 03 (quando há)" },
+  { key: "suite_master", label: "Suíte Master" },
+  { key: "banho_01", label: "Banho 01" },
+  { key: "banho_02", label: "Banho 02" },
+  { key: "banho_master", label: "Banho Master" }
 ];
 let checklistVistoriaCarregado = false;
 
