@@ -5646,7 +5646,8 @@ function toggleFinCat(key){
 }
 
 // ---------- Entrega (vistoria, documentos e chaves por apartamento) ----------
-// Vistoria organizada por ambiente: cada ambiente é avaliado nas mesmas 8 categorias.
+// Vistoria organizada por ambiente. A maioria dos ambientes usa as mesmas
+// categorias padrão, mas alguns têm exceções (categoria removida ou extra).
 const CATEGORIAS_VISTORIA = [
   { key: "forro", label: "Forro" },
   { key: "gesso_pintura", label: "Gesso e Pintura" },
@@ -5655,31 +5656,60 @@ const CATEGORIAS_VISTORIA = [
   { key: "hidraulica", label: "Hidráulica" },
   { key: "esquadrias_aluminio", label: "Esquadrias de Alumínio" },
   { key: "revestimentos", label: "Revestimentos" },
+  { key: "marmoraria", label: "Marmoraria" },
   { key: "limpeza", label: "Limpeza" }
 ];
+// Categorias aplicadas por padrão em todo ambiente (marmoraria fica de fora
+// do padrão — só entra onde for adicionada explicitamente abaixo).
+const CATEGORIAS_PADRAO_KEYS = ["forro", "gesso_pintura", "portas", "eletrica", "hidraulica", "esquadrias_aluminio", "revestimentos", "limpeza"];
+// Exceções por ambiente em relação ao padrão.
+const VISTORIA_EXCECOES_AMBIENTE = {
+  "Demi Suíte 01": { remover: ["hidraulica"] },
+  "Demi Suíte 02": { remover: ["hidraulica"] },
+  "Suíte 03": { remover: ["hidraulica"] },
+  "Suíte Master": { remover: ["hidraulica"] },
+  "Hall Banho Demi": { remover: ["esquadrias_aluminio"] },
+  "Hall Social": { remover: ["esquadrias_aluminio"] },
+  "Área de Serviço": { adicionar: ["marmoraria"] },
+  "Banho de Serviço": { adicionar: ["marmoraria"] },
+  "Banho Demi": { adicionar: ["marmoraria"] },
+  "Banho Suíte 03": { adicionar: ["marmoraria"] },
+  "Banho Suíte Master": { adicionar: ["marmoraria"] },
+  "Lavabo": { adicionar: ["marmoraria"] }
+};
 const AMBIENTES_VISTORIA = AMBIENTES_PADRAO;
+
+// Retorna a lista de categorias (na ordem de exibição) que valem para um ambiente específico.
+function categoriasParaAmbiente(amb){
+  const exc = VISTORIA_EXCECOES_AMBIENTE[amb] || {};
+  const remover = new Set(exc.remover || []);
+  const keys = new Set(CATEGORIAS_PADRAO_KEYS.filter(k => !remover.has(k)));
+  (exc.adicionar || []).forEach(k => keys.add(k));
+  return CATEGORIAS_VISTORIA.filter(c => keys.has(c.key));
+}
 
 function novaVistoriaItemVazio(){ return { status: "", obs: "", fotos: [] }; }
 
-function novaVistoriaAmbienteVazio(){
+function novaVistoriaAmbienteVazio(amb){
   const o = {};
-  CATEGORIAS_VISTORIA.forEach(c => { o[c.key] = novaVistoriaItemVazio(); });
+  categoriasParaAmbiente(amb).forEach(c => { o[c.key] = novaVistoriaItemVazio(); });
   return o;
 }
 
 function novaVistoriaVazia(){
   const ambientes = {};
-  AMBIENTES_VISTORIA.forEach(a => { ambientes[a] = novaVistoriaAmbienteVazio(); });
+  AMBIENTES_VISTORIA.forEach(a => { ambientes[a] = novaVistoriaAmbienteVazio(a); });
   return { nomeCliente: "", obs: "", enviadoEm: "", ambientes };
 }
 
 // Garante que dados salvos antes de mudanças na lista de ambientes/categorias
-// continuem funcionando (preenche o que faltar, sem apagar o que já existe).
+// continuem funcionando (preenche o que faltar, sem apagar o que já existe;
+// categorias que não valem mais pro ambiente simplesmente deixam de aparecer).
 function garantirEstruturaVistoria(d){
   if(!d.ambientes || typeof d.ambientes !== "object") d.ambientes = {};
   AMBIENTES_VISTORIA.forEach(a => {
-    if(!d.ambientes[a]) d.ambientes[a] = novaVistoriaAmbienteVazio();
-    CATEGORIAS_VISTORIA.forEach(c => {
+    if(!d.ambientes[a]) d.ambientes[a] = novaVistoriaAmbienteVazio(a);
+    categoriasParaAmbiente(a).forEach(c => {
       if(!d.ambientes[a][c.key]) d.ambientes[a][c.key] = novaVistoriaItemVazio();
       if(!Array.isArray(d.ambientes[a][c.key].fotos)) d.ambientes[a][c.key].fotos = [];
     });
@@ -5693,7 +5723,7 @@ function garantirEstruturaVistoria(d){
 function progressoVistoria(d){
   let total = 0, preenchidos = 0, pendencias = 0;
   AMBIENTES_VISTORIA.forEach(a => {
-    CATEGORIAS_VISTORIA.forEach(c => {
+    categoriasParaAmbiente(a).forEach(c => {
       total++;
       const it = d.ambientes[a][c.key];
       if(it.status) preenchidos++;
@@ -5720,11 +5750,12 @@ function construirVistoriaAccordionHtml(d, expandedSet, apt){
   const ambientesHtml = AMBIENTES_VISTORIA.map(amb => {
     const ambJs = esc1(amb);
     const dadosAmb = d.ambientes[amb];
-    const preenchidos = CATEGORIAS_VISTORIA.filter(c => dadosAmb[c.key].status).length;
-    const pendencias = CATEGORIAS_VISTORIA.filter(c => dadosAmb[c.key].status === "pendente").length;
+    const catsAmb = categoriasParaAmbiente(amb);
+    const preenchidos = catsAmb.filter(c => dadosAmb[c.key].status).length;
+    const pendencias = catsAmb.filter(c => dadosAmb[c.key].status === "pendente").length;
     const isOpen = expandedSet.has(amb);
 
-    const catsHtml = CATEGORIAS_VISTORIA.map(c => {
+    const catsHtml = catsAmb.map(c => {
       const item = dadosAmb[c.key];
       const fotos = item.fotos || [];
       const btn = (val, label) => {
@@ -5753,7 +5784,7 @@ function construirVistoriaAccordionHtml(d, expandedSet, apt){
       <div class="vist-ambiente-header" onclick="${fnToggle}(${argPrefix}'${ambJs}')">
         <span><span class="vist-chev">▸</span>&nbsp; ${escapeHtml(amb)}</span>
         <span class="vist-ambiente-header-right">
-          <span class="vist-ambiente-badge${pendencias > 0 ? ' warn' : ''}">${preenchidos}/${CATEGORIAS_VISTORIA.length}${pendencias > 0 ? ' · ' + pendencias + ' não conf.' : ''}</span>
+          <span class="vist-ambiente-badge${pendencias > 0 ? ' warn' : ''}">${preenchidos}/${catsAmb.length}${pendencias > 0 ? ' · ' + pendencias + ' não conf.' : ''}</span>
         </span>
       </div>
       <div class="vist-ambiente-body">${catsHtml}</div>
@@ -5886,11 +5917,14 @@ async function renderEntrega(apt){
       <button class="btn btn-ghost" onclick="exportarEntregaPDF(${apt})">📄 Exportar ficha (PDF)</button>
       <button class="btn btn-ghost" onclick="copiarLinkClienteVistoria(${apt})">🔗 Copiar link para o cliente</button>
       <button class="btn btn-ghost" onclick="gerarNovoLinkCliente(${apt})" title="Use se o link antigo vazou ou foi parar com a pessoa errada">🔄 Gerar novo link</button>
+      <button class="btn btn-ghost" onclick="novaRodadaVistoria(${apt})" title="Arquiva a vistoria atual e começa um formulário novo, pro mesmo link">🆕 Novo formulário</button>
+      <button class="btn btn-ghost" style="color:var(--danger); border-color:rgba(178,59,59,0.35);" onclick="apagarVistoriaCliente(${apt})" title="Apaga o checklist preenchido (pede senha)">🗑️ Apagar formulário</button>
     </div>
 
     <h3 style="margin:0 0 4px;">Vistoria</h3>
     <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:10px;">Preencha aqui mesmo durante a visita (você ou o técnico), ou envie o link acima pro cliente preencher pelo celular dele. É o mesmo checklist.</div>
     <div id="vistoriaUnificada">Carregando...</div>
+    <div id="vistoriaHistorico"></div>
 
     <h3 style="margin:26px 0 10px;">Documentos de entrega</h3>
     <div style="overflow-x:auto;">
@@ -5907,6 +5941,7 @@ async function renderEntrega(apt){
   `;
 
   renderVistoriaUnificada(apt);
+  renderVistoriaHistorico(apt);
 }
 
 // ---------- Checklist de vistoria unificado (mesmo dado do link do cliente) ----------
@@ -6029,19 +6064,18 @@ async function gerarNovoLinkCliente(apt){
   });
 }
 
-async function exportarEntregaPDF(apt){
-  const d = entregaState[apt];
+// Monta e baixa o PDF de uma vistoria (atual ou de uma rodada arquivada).
+// tituloExtra aparece junto ao título (ex.: "— Rodada 1 (arquivada em 03/10/2026)").
+function gerarPdfVistoriaSnapshot(apt, vd, dEntrega, tituloExtra, nomeArquivo){
   const cliente = CLIENTES[apt] || "";
-  const st = await carregarVistoriaUnificada(apt);
-  const vd = st.d;
-
   const head1 = ["Ambiente", "Categoria", "Status", "Observação"];
   const body1 = [];
   AMBIENTES_VISTORIA.forEach(amb => {
     const ambData = vd.ambientes[amb];
-    const temAlgo = CATEGORIAS_VISTORIA.some(c => ambData[c.key].status || ambData[c.key].obs || (ambData[c.key].fotos && ambData[c.key].fotos.length));
+    const catsAmb = categoriasParaAmbiente(amb);
+    const temAlgo = catsAmb.some(c => ambData[c.key].status || ambData[c.key].obs || (ambData[c.key].fotos && ambData[c.key].fotos.length));
     if(!temAlgo) return;
-    CATEGORIAS_VISTORIA.forEach((c, i) => {
+    catsAmb.forEach((c, i) => {
       const item = ambData[c.key];
       const fotoNota = item.fotos && item.fotos.length ? ` (${item.fotos.length} foto${item.fotos.length > 1 ? 's' : ''} anexada${item.fotos.length > 1 ? 's' : ''})` : '';
       body1.push([i === 0 ? amb : '', c.label, ENTREGA_STATUS_LABEL[item.status] || "—", (item.obs || "") + fotoNota]);
@@ -6050,18 +6084,107 @@ async function exportarEntregaPDF(apt){
   if(body1.length === 0) body1.push(["—", "Nenhum ambiente avaliado ainda", "", ""]);
 
   let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
-  subtitulo += "\nVistoria: " + (d.dataVistoria || "—") + " · Entrega das chaves: " + (d.dataEntrega || "—");
+  if(dEntrega) subtitulo += "\nVistoria: " + (dEntrega.dataVistoria || "—") + " · Entrega das chaves: " + (dEntrega.dataEntrega || "—");
   if(vd.nomeCliente) subtitulo += "\nPreenchido por: " + vd.nomeCliente;
   if(vd.obs) subtitulo += "\n" + vd.obs;
-  if(d.obs) subtitulo += "\nObs. da equipe: " + d.obs;
+  if(dEntrega && dEntrega.obs) subtitulo += "\nObs. da equipe: " + dEntrega.obs;
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-  const yLinha = cabecalhoPDF(doc, "Vistoria de Entrega — Apartamento " + apt, subtitulo);
+  const titulo = "Vistoria de Entrega — Apartamento " + apt + (tituloExtra ? " " + tituloExtra : "");
+  const yLinha = cabecalhoPDF(doc, titulo, subtitulo);
   doc.autoTable({ head: [head1], body: body1, startY: yLinha + 4, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [28,58,94], textColor: 255 }, columnStyles: { 0: { fontStyle: 'bold' } }, margin: { left: 14, right: 14 } });
   rodapePDF(doc);
-  doc.save("vistoria_apto_" + apt + ".pdf");
+  doc.save(nomeArquivo);
 }
+
+async function exportarEntregaPDF(apt){
+  const d = entregaState[apt];
+  const st = await carregarVistoriaUnificada(apt);
+  gerarPdfVistoriaSnapshot(apt, st.d, d, "", "vistoria_apto_" + apt + ".pdf");
+}
+
+// ---------- Apagar / iniciar nova rodada de vistoria ----------
+function historicoKeyFor(apt){ return "entrega_cliente_historico:apt_" + apt; }
+
+async function carregarHistoricoVistoria(apt){
+  try{
+    const res = await window.storage.get(historicoKeyFor(apt), true);
+    if(res) return JSON.parse(res.value);
+  }catch(e){}
+  return [];
+}
+
+async function apagarVistoriaCliente(apt){
+  const senha = await askPassword("Senha para apagar a vistoria do Apto " + apt);
+  if(senha === null) return;
+  if(senha !== SENHAS_SUBCAMADA.entrega){
+    showAlert("Senha incorreta.");
+    return;
+  }
+  const ok = await askConfirm(
+    "Apagar vistoria",
+    "Isso apaga todo o checklist preenchido do Apto " + apt + " (não mexe no histórico de rodadas já arquivadas). Não pode ser desfeito.",
+    "Cancelar", "Apagar"
+  );
+  if(!ok) return;
+  await carregarVistoriaUnificada(apt);
+  window.__EV_CACHE[apt].d = novaVistoriaVazia();
+  await salvarVistoriaUnificada(apt);
+  await renderVistoriaUnificada(apt);
+  renderVistoriaHistorico(apt);
+  flashSaved();
+  registrarAtividade("Entrega", "Vistoria do Apto " + apt + " apagada");
+}
+
+async function novaRodadaVistoria(apt){
+  const ok = await askConfirm(
+    "Nova rodada de vistoria",
+    "A vistoria preenchida agora do Apto " + apt + " vai ficar guardada no histórico, e um formulário novo e vazio começa pra essa unidade — o link do cliente continua o mesmo. Continuar?",
+    "Cancelar", "Começar nova rodada"
+  );
+  if(!ok) return;
+  await carregarVistoriaUnificada(apt);
+  const atual = window.__EV_CACHE[apt].d;
+  const historico = await carregarHistoricoVistoria(apt);
+  historico.push(JSON.parse(JSON.stringify(Object.assign({}, atual, { arquivadoEm: new Date().toISOString(), rodada: historico.length + 1 }))));
+  try{ await window.storage.set(historicoKeyFor(apt), JSON.stringify(historico), true); }catch(e){ console.error(e); }
+  window.__EV_CACHE[apt].d = novaVistoriaVazia();
+  await salvarVistoriaUnificada(apt);
+  await renderVistoriaUnificada(apt);
+  renderVistoriaHistorico(apt);
+  flashSaved();
+  registrarAtividade("Entrega", "Nova rodada de vistoria iniciada no Apto " + apt);
+}
+
+async function renderVistoriaHistorico(apt){
+  const el = document.getElementById("vistoriaHistorico");
+  if(!el) return;
+  const historico = await carregarHistoricoVistoria(apt);
+  if(!document.getElementById("vistoriaHistorico")) return;
+  if(!historico.length){ el.innerHTML = ""; return; }
+  const linhas = historico.map((h, i) => {
+    const prog = progressoVistoria(h);
+    const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : "—";
+    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
+      <span style="font-size:12.5px;">Rodada ${h.rodada || (i + 1)} · arquivada em ${data} · ${prog.preenchidos}/${prog.total} avaliados</span>
+      <button class="btn btn-ghost" style="padding:4px 10px; font-size:11.5px;" onclick="exportarHistoricoVistoriaPDF(${apt}, ${i})">📄 PDF</button>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <h3 style="margin:22px 0 8px;">Rodadas anteriores</h3>
+    ${linhas}
+  `;
+}
+
+async function exportarHistoricoVistoriaPDF(apt, indice){
+  const historico = await carregarHistoricoVistoria(apt);
+  const h = historico[indice];
+  if(!h) return;
+  const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : "";
+  gerarPdfVistoriaSnapshot(apt, h, null, "— Rodada " + (h.rodada || (indice + 1)) + (data ? " (arquivada em " + data + ")" : ""), "vistoria_apto_" + apt + "_rodada" + (h.rodada || (indice + 1)) + ".pdf");
+}
+
 
 function voltarResumoEntrega(){
   currentApt = null;
