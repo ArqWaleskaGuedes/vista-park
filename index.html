@@ -1594,12 +1594,12 @@ function processarFotoParaDataUrl(file, onOk, onErro){
     const wrap = document.createElement("div");
     wrap.id = "clienteVistoriaScreen";
     wrap.style.cssText = "max-width:640px;margin:0 auto;padding:20px 16px 60px;font-family:inherit;";
+    const nomeClienteApt = (typeof CLIENTES !== "undefined" && CLIENTES[aptCliente]) ? CLIENTES[aptCliente] : "";
     wrap.innerHTML = `
       <div style="text-align:center; margin-bottom:22px;">
-        <div style="font-size:11px; letter-spacing:.05em; color:var(--text-dim); text-transform:uppercase;">Absoluta · Vista Park Residencial 166</div>
-        <h1 style="margin:6px 0 2px; font-size:22px;">Vistoria de Entrega — Apto ${escapeHtml(aptCliente)}</h1>
-        <div style="font-size:13px; color:var(--text-dim);">Preenchido pelo cliente</div>
-
+        <div style="font-size:10.5px; letter-spacing:.03em; color:var(--text-dim);">Absoluta Construtora e Incorporadora</div>
+        <h1 style="margin:6px 0 2px; font-size:21px;">Vistoria de Entrega Parcial — Unidade ${escapeHtml(aptCliente)}</h1>
+        ${nomeClienteApt ? `<div style="font-size:13.5px; color:var(--text-dim);">Cliente: ${escapeHtml(nomeClienteApt)}</div>` : ''}
       </div>
       <div id="cvContent">Carregando...</div>
     `;
@@ -1623,8 +1623,8 @@ function processarFotoParaDataUrl(file, onOk, onErro){
     function render(){
       document.getElementById("cvContent").innerHTML = `
         <div style="margin-bottom:16px;">
-          <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Seu nome</label>
-          <input type="text" id="cvNome" placeholder="Nome do cliente" value="${escapeHtml(d.nomeCliente||'')}" style="width:100%;" oninput="window.__cvNome(this.value)">
+          <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; font-weight:600;">Responsável pela vistoria</label>
+          <input type="text" id="cvNome" placeholder="Nome de quem está preenchendo" value="${escapeHtml(d.nomeCliente||'')}" style="width:100%;" oninput="window.__cvNome(this.value)">
         </div>
         ${construirVistoriaAccordionHtml(d, expandedSet, null)}
         <div style="margin:18px 0; max-width:480px;">
@@ -5980,8 +5980,8 @@ async function renderVistoriaUnificada(apt){
 
   el.innerHTML = `
     <div style="margin-bottom:14px; max-width:420px;">
-      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Nome de quem preencheu</label>
-      <input type="text" placeholder="Nome do cliente ou técnico" value="${escapeHtml(d.nomeCliente||'')}" oninput="window.__evNome(${apt}, this.value)">
+      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; font-weight:600;">Responsável pela vistoria</label>
+      <input type="text" placeholder="Nome de quem está preenchendo" value="${escapeHtml(d.nomeCliente||'')}" oninput="window.__evNome(${apt}, this.value)">
     </div>
     ${construirVistoriaAccordionHtml(d, window.__EV_EXPANDED[apt], apt)}
     <div style="margin:16px 0; max-width:480px;">
