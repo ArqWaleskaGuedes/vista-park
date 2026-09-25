@@ -6387,16 +6387,28 @@ function gerarPdfVistoriaSnapshot(apt, vd, dEntrega, tituloExtra, nomeArquivo){
   const larguraUtil = pageW - margem * 2;
   const limiteY = pageH - 18;
 
-  let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
-  if(dEntrega){
-    subtitulo += "\nData da vistoria: " + dataBR(dEntrega.dataVistoria) + " · Entrega das chaves: " + dataBR(dEntrega.dataEntrega);
-    if(dEntrega.entregue) subtitulo += " · APARTAMENTO ENTREGUE em " + dataBR(dEntrega.entregueEm || dEntrega.dataEntrega);
-  }
-  if(vd.nomeCliente) subtitulo += "\nResponsável pela vistoria: " + vd.nomeCliente;
-  if(vd.enviadoEm) subtitulo += "\nVistoria concluída em " + new Date(vd.enviadoEm).toLocaleDateString('pt-BR');
-
-  const titulo = "Vistoria de Entrega — Apartamento " + apt + (tituloExtra ? " " + tituloExtra : "");
-  let y = cabecalhoPDF(doc, titulo, subtitulo) + 7;
+  // Cabeçalho da vistoria
+  const nVist = (tituloExtra && (String(tituloExtra).match(/(\d+)ª/) || [])[1]) || "1";
+  const dataVist = (dEntrega && dEntrega.dataVistoria) || vd.dataVistoria || "";
+  let yCab = 15;
+  doc.setTextColor(20,20,20);
+  doc.setFont(undefined, "bold"); doc.setFontSize(16);
+  doc.text("Vista Park", margem, yCab);
+  yCab += 7;
+  doc.setFontSize(11);
+  doc.text(nVist + "ª Vistoria - Unidade " + apt, margem, yCab);
+  yCab += 6;
+  doc.setFont(undefined, "normal"); doc.setFontSize(9.5);
+  doc.setTextColor(80,80,80);
+  [
+    "Clientes: " + (cliente || "—"),
+    "Data da vistoria: " + (dataVist ? dataBR(dataVist) : "—"),
+    "Responsável: " + (vd.nomeCliente || "—")
+  ].forEach(linha => { doc.text(linha, margem, yCab); yCab += 5; });
+  doc.setTextColor(20,20,20);
+  doc.setDrawColor(28,58,94);
+  doc.line(margem, yCab - 1, pageW - margem, yCab - 1);
+  let y = yCab - 1 + 7;
 
   // Resumo colorido
   const c = contagemStatusVistoria(vd);
