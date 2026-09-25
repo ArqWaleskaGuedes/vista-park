@@ -156,33 +156,84 @@
   .fin-badge-vazio{ background: var(--surface-2); color: var(--text-dim); border-color: var(--border); }
 
   /* ---------- Vistoria por ambiente (acordeão) ---------- */
-  .vist-ambiente{ border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; background:var(--surface); }
-  .vist-ambiente-header{ display:flex; align-items:center; justify-content:space-between; gap:8px; padding:12px 14px; cursor:pointer; background:var(--accent); color:var(--on-accent); font-weight:600; font-size:13.5px; user-select:none; }
-  .vist-ambiente-header .vist-chev{ transition:transform .15s; flex-shrink:0; }
+  .vist-ambiente{ border:1px solid var(--border); border-radius:10px; margin-bottom:8px; overflow:hidden; background:var(--surface); }
+  .vist-ambiente-header{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 14px; cursor:pointer; background:var(--accent); color:var(--on-accent); font-weight:600; font-size:13.5px; user-select:none; }
+  .vist-ambiente-header .vist-chev{ transition:transform .15s; flex-shrink:0; display:inline-block; }
   .vist-ambiente.open .vist-ambiente-header .vist-chev{ transform:rotate(90deg); }
-  .vist-ambiente-header-right{ display:flex; align-items:center; gap:6px; flex-shrink:0; }
+  .vist-ambiente-header-right{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .vist-dots{ display:inline-flex; gap:3px; }
+  .vist-dot{ width:9px; height:9px; border-radius:50%; display:inline-block; border:1.5px solid rgba(255,255,255,0.55); }
+  .vist-dot.d-ok{ background:#6fcf8f; border-color:#6fcf8f; }
+  .vist-dot.d-pendente{ background:#ff7a7a; border-color:#ff7a7a; }
+  .vist-dot.d-na{ background:rgba(255,255,255,0.45); border-color:transparent; }
   .vist-ambiente-badge{ font-size:11px; font-weight:600; background:rgba(255,255,255,0.18); padding:3px 9px; border-radius:12px; white-space:nowrap; }
-  .vist-ambiente-badge.warn{ background:rgba(178,59,59,0.55); }
-  .vist-ambiente-body{ padding:14px; display:none; }
+  .vist-ambiente-badge.warn{ background:rgba(178,59,59,0.85); }
+  .vist-ambiente-badge.done{ background:rgba(63,122,83,0.85); }
+  .vist-ambiente-body{ padding:8px 10px; display:none; }
   .vist-ambiente.open .vist-ambiente-body{ display:block; }
-  .vist-cat{ padding:12px 0; border-bottom:1px solid var(--border); }
-  .vist-cat:last-child{ border-bottom:none; padding-bottom:2px; }
-  .vist-cat-label{ font-size:13px; font-weight:600; margin-bottom:8px; }
-  .vist-btn-row{ display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap; }
-  .vist-btn{ flex:1; min-width:84px; padding:9px 4px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-weight:500; cursor:pointer; transition:background .1s; }
+  .vist-cat{ padding:10px 12px; margin:6px 0; border-radius:8px; border:1px solid var(--border); border-left:4px solid var(--border); background:var(--bg); }
+  .vist-cat.st-ok{ border-left-color:var(--ok); }
+  .vist-cat.st-pendente{ border-left-color:var(--danger); background:rgba(178,59,59,0.06); }
+  .vist-cat.st-na{ border-left-color:var(--text-dim); opacity:.8; }
+  .vist-cat-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .vist-cat-label{ font-size:13.5px; font-weight:600; }
+  .vist-btn-row{ display:flex; gap:4px; }
+  .vist-btn{ min-width:0; padding:7px 12px; font-size:12px; border-radius:6px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-weight:500; cursor:pointer; white-space:nowrap; }
   .vist-btn:active{ opacity:.8; }
-  .vist-btn.sel-ok{ background:rgba(63,122,83,0.16); color:var(--ok); border-color:rgba(63,122,83,0.4); font-weight:700; }
-  .vist-btn.sel-pendente{ background:rgba(178,59,59,0.13); color:var(--danger); border-color:rgba(178,59,59,0.4); font-weight:700; }
-  .vist-btn.sel-na{ background:rgba(91,107,133,0.15); color:var(--text-dim); border-color:var(--border); font-weight:700; }
-  .vist-obs-input{ width:100%; max-width:480px; }
-  .vist-foto-thumb{ position:relative; display:inline-block; margin:8px 6px 0 0; }
-  .vist-foto-thumb img{ width:54px; height:54px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block; }
-  .vist-foto-remove{ position:absolute; top:-6px; right:-6px; background:var(--danger); color:#fff; border-radius:50%; width:17px; height:17px; font-size:11px; line-height:17px; text-align:center; cursor:pointer; }
-  .vist-foto-add{ display:inline-block; margin-top:8px; font-size:11.5px; padding:6px 11px; border:1px dashed var(--border); border-radius:6px; cursor:pointer; color:var(--text-dim); }
-  .vist-topo-progresso{ display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
-  .vist-progresso-barra{ flex:1; min-width:140px; height:8px; background:var(--surface-2); border-radius:6px; overflow:hidden; }
-  .vist-progresso-barra-fill{ height:100%; background:var(--ok); border-radius:6px; transition:width .2s; }
-  .vist-expand-all{ font-size:11.5px; color:var(--accent-dim); cursor:pointer; text-decoration:underline; white-space:nowrap; }
+  .vist-btn.sel-ok{ background:var(--ok); color:#fff; border-color:var(--ok); font-weight:700; }
+  .vist-btn.sel-pendente{ background:var(--danger); color:#fff; border-color:var(--danger); font-weight:700; }
+  .vist-btn.sel-na{ background:var(--text-dim); color:#fff; border-color:var(--text-dim); font-weight:700; }
+  .vist-cat-extra{ display:flex; gap:8px; align-items:center; margin-top:8px; flex-wrap:wrap; }
+  .vist-obs-input{ flex:1; min-width:180px; }
+  .vist-anterior{ font-size:12px; color:var(--danger); margin-top:6px; font-weight:600; }
+  .vist-thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .vist-foto-thumb{ position:relative; display:inline-block; }
+  .vist-foto-thumb img{ width:64px; height:64px; object-fit:cover; border-radius:6px; border:1px solid var(--border); display:block; cursor:zoom-in; }
+  .vist-foto-remove{ position:absolute; top:-6px; right:-6px; background:var(--danger); color:#fff; border-radius:50%; width:18px; height:18px; font-size:12px; line-height:18px; text-align:center; cursor:pointer; }
+  .vist-foto-add{ display:inline-block; font-size:12px; padding:7px 11px; border:1px dashed var(--border); border-radius:6px; cursor:pointer; color:var(--text-dim); white-space:nowrap; }
+  .vist-resumo{ margin-bottom:12px; }
+  .vist-barra{ display:flex; height:10px; border-radius:6px; overflow:hidden; background:var(--surface-2); }
+  .vist-barra span{ display:block; height:100%; transition:width .2s; }
+  .vist-barra .b-ok{ background:var(--ok); } .vist-barra .b-pendente{ background:var(--danger); } .vist-barra .b-na{ background:var(--text-dim); }
+  .vist-resumo-nums{ display:flex; flex-wrap:wrap; gap:6px 14px; margin-top:8px; font-size:12.5px; }
+  .vist-resumo-nums b{ font-size:15px; margin-right:3px; }
+  .vist-resumo-nums .n-ok{ color:var(--ok); } .vist-resumo-nums .n-pendente{ color:var(--danger); } .vist-resumo-nums .n-na, .vist-resumo-nums .n-vazio{ color:var(--text-dim); }
+  .vist-filtros{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-bottom:12px; }
+  .vist-chip{ padding:6px 11px; border-radius:16px; border:1px solid var(--border); background:var(--surface); font-size:12px; cursor:pointer; color:var(--text); }
+  .vist-chip.ativo{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+  .vist-chip.chip-pendente.ativo{ background:var(--danger); border-color:var(--danger); color:#fff; }
+  .vist-expand-all{ font-size:11.5px; color:var(--accent-dim); cursor:pointer; text-decoration:underline; white-space:nowrap; margin-left:auto; }
+  .vist-vazio-filtro{ padding:18px; text-align:center; color:var(--text-dim); font-size:13px; border:1px dashed var(--border); border-radius:10px; }
+  .vist-obs-geral{ border:2px solid var(--danger); background:rgba(178,59,59,0.06); border-radius:10px; padding:14px 16px; margin:22px 0 8px; }
+  .vist-obs-geral-titulo{ color:var(--danger); font-weight:700; font-size:14px; margin-bottom:10px; }
+  .vist-obs-geral label{ font-size:12px; color:var(--danger); display:block; margin:8px 0 4px; font-weight:600; }
+  .vist-obs-geral textarea{ width:100%; min-height:64px; resize:vertical; color:var(--danger); font-weight:600; border:1px solid rgba(178,59,59,0.4); background:var(--bg); border-radius:6px; padding:8px 10px; font-family:inherit; font-size:13.5px; }
+  .vist-obs-geral .vist-obs-leitura{ color:var(--danger); font-weight:600; font-size:13.5px; white-space:pre-wrap; }
+  .vist-rodadas{ display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:4px 0 14px; }
+  .vist-rodada-tab{ padding:7px 13px; border-radius:18px; border:1px solid var(--border); background:var(--surface); font-size:12.5px; cursor:pointer; color:var(--text); }
+  .vist-rodada-tab.ativa{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); font-weight:600; }
+  .vist-rodada-nova{ margin-left:auto; }
+  .vist-leitura-amb{ border:1px solid var(--border); border-radius:10px; margin-bottom:10px; overflow:hidden; background:var(--surface); }
+  .vist-leitura-amb-titulo{ padding:9px 14px; background:var(--accent); color:var(--on-accent); font-weight:600; font-size:13.5px; }
+  .vist-leitura-linha{ padding:9px 14px; border-top:1px solid var(--border); border-left:4px solid var(--border); }
+  .vist-leitura-linha.st-ok{ border-left-color:var(--ok); } .vist-leitura-linha.st-pendente{ border-left-color:var(--danger); background:rgba(178,59,59,0.06); } .vist-leitura-linha.st-na{ border-left-color:var(--text-dim); }
+  .vist-pill{ display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; margin-right:8px; color:#fff; }
+  .vist-pill.p-ok{ background:var(--ok); } .vist-pill.p-pendente{ background:var(--danger); } .vist-pill.p-na{ background:var(--text-dim); } .vist-pill.p-vazio{ background:var(--surface-2); color:var(--text-dim); }
+  .vist-leitura-obs{ font-size:12.5px; color:var(--text-dim); margin-top:4px; }
+  .entrega-card{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:14px 16px; border-radius:10px; border:1px solid var(--border); background:var(--surface); margin-bottom:18px; }
+  .entrega-card.entregue{ background:rgba(63,122,83,0.12); border-color:rgba(63,122,83,0.5); }
+  .entrega-card-titulo{ font-weight:700; font-size:15px; }
+  .entrega-card.entregue .entrega-card-titulo{ color:var(--ok); }
+  .entrega-card-sub{ font-size:12.5px; color:var(--text-dim); margin-top:2px; }
+  .btn-entregue{ background:var(--ok); color:#fff; border:none; padding:11px 18px; border-radius:8px; font-weight:700; cursor:pointer; font-size:14px; }
+  .btn-entregue:hover{ filter:brightness(1.08); }
+  .vist-lightbox{ position:fixed; inset:0; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:9999; cursor:zoom-out; padding:20px; }
+  .vist-lightbox img{ max-width:100%; max-height:100%; border-radius:6px; }
+  @media (max-width: 560px){
+    .vist-btn-row{ flex:1 1 100%; }
+    .vist-btn{ flex:1; padding:9px 4px; }
+    .vist-rodada-nova{ margin-left:0; }
+  }
   .fin-table td{ vertical-align:middle; }
   .fin-etapa-label{ font-weight:600; }
   .fin-obs-input{ width:100%; font-size:12px; color:var(--text-dim); }
@@ -1614,7 +1665,16 @@ function processarFotoParaDataUrl(file, onOk, onErro){
     if(!d) d = novaVistoriaVazia();
     garantirEstruturaVistoria(d);
 
-    const expandedSet = new Set();
+    let expandedSet = new Set();
+    let filtroCv = "todos";
+
+    // Vistoria anterior (se houver) — pra marcar o que estava não conforme.
+    let anterior = null, nAnterior = 0;
+    try{
+      const resH = await window.storage.get("entrega_cliente_historico:apt_" + aptCliente, true);
+      const hist = resH ? JSON.parse(resH.value) : [];
+      if(hist.length){ anterior = hist[hist.length - 1]; nAnterior = hist.length; }
+    }catch(e){}
 
     async function salvar(){
       try{ await window.storage.set(key, JSON.stringify(d), true); }catch(e){ console.error(e); }
@@ -1622,15 +1682,13 @@ function processarFotoParaDataUrl(file, onOk, onErro){
 
     function render(){
       document.getElementById("cvContent").innerHTML = `
+        ${nAnterior ? `<div style="text-align:center; font-size:13px; font-weight:600; margin:-10px 0 16px;">${ordinalVistoria(nAnterior + 1)}</div>` : ''}
         <div style="margin-bottom:16px;">
           <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; font-weight:600;">RESPONSÁVEL PELA VISTORIA:</label>
           <input type="text" id="cvNome" placeholder="Nome de quem está preenchendo" value="${escapeHtml(d.nomeCliente||'')}" style="width:100%;" oninput="window.__cvNome(this.value)">
         </div>
-        ${construirVistoriaAccordionHtml(d, expandedSet, null)}
-        <div style="margin:18px 0; max-width:480px;">
-          <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Observação geral</label>
-          <input type="text" placeholder="Algo mais que queira registrar" value="${escapeHtml(d.obs||'')}" style="width:100%;" oninput="window.__cvGeral(this.value)">
-        </div>
+        ${construirVistoriaAccordionHtml(d, expandedSet, null, { filtro: filtroCv, anterior, nAnterior })}
+        ${obsGeralQuadroHtml({ labelVistoria: "Algo mais que queira registrar", vistoriaObs: d.obs, oninputVistoria: "window.__cvGeral(this.value)" })}
         <div style="text-align:center; margin-top:26px;">
           <button type="button" class="btn btn-accent" style="padding:12px 28px; font-size:14px;" onclick="window.__cvEnviar()">Enviar vistoria</button>
           ${d.enviadoEm ? `<div style="margin-top:10px; font-size:12px; color:var(--text-dim);">Enviada em ${new Date(d.enviadoEm).toLocaleString('pt-BR')} — pode continuar editando</div>` : ''}
@@ -1639,9 +1697,12 @@ function processarFotoParaDataUrl(file, onOk, onErro){
     }
 
     window.__cvToggleAmb = function(amb){
+      if(filtroCv !== "todos") return;
       if(expandedSet.has(amb)) expandedSet.delete(amb); else expandedSet.add(amb);
       render();
     };
+    window.__cvFiltro = function(f){ filtroCv = f; render(); };
+    window.__cvExpandAll = function(abrir){ expandedSet = abrir ? new Set(AMBIENTES_VISTORIA) : new Set(); render(); };
     window.__cvSet = function(amb, k, val){
       const item = d.ambientes[amb][k];
       item.status = (item.status === val) ? "" : val;
@@ -5733,29 +5794,109 @@ function progressoVistoria(d){
   return { total, preenchidos, pendencias };
 }
 
+// Contagem por status (usada no resumo visual, nos filtros e no PDF).
+function contagemStatusVistoria(d){
+  const c = { ok: 0, pendente: 0, na: 0, vazio: 0, itensComFoto: 0, fotos: 0, total: 0 };
+  AMBIENTES_VISTORIA.forEach(a => {
+    categoriasParaAmbiente(a).forEach(cat => {
+      const it = (d.ambientes[a] || {})[cat.key] || {};
+      if(it.status === "ok") c.ok++;
+      else if(it.status === "pendente") c.pendente++;
+      else if(it.status === "na") c.na++;
+      else c.vazio++;
+      const nf = (it.fotos || []).length;
+      if(nf){ c.itensComFoto++; c.fotos += nf; }
+      c.total++;
+    });
+  });
+  return c;
+}
+
+function ordinalVistoria(n){ return n + "ª vistoria"; }
+
+// Item da rodada anterior (pra mostrar o que estava não conforme na re-vistoria).
+function itemAnteriorVistoria(anterior, amb, key){
+  if(!anterior || !anterior.ambientes || !anterior.ambientes[amb]) return null;
+  return anterior.ambientes[amb][key] || null;
+}
+
+function resumoVistoriaHtml(d){
+  const c = contagemStatusVistoria(d);
+  const pct = n => c.total ? (n / c.total * 100) : 0;
+  return `
+    <div class="vist-resumo">
+      <div class="vist-barra">
+        <span class="b-ok" style="width:${pct(c.ok)}%;"></span>
+        <span class="b-pendente" style="width:${pct(c.pendente)}%;"></span>
+        <span class="b-na" style="width:${pct(c.na)}%;"></span>
+      </div>
+      <div class="vist-resumo-nums">
+        <span class="n-ok"><b>${c.ok}</b>conformes</span>
+        <span class="n-pendente"><b>${c.pendente}</b>não conformes</span>
+        <span class="n-na"><b>${c.na}</b>N/A</span>
+        <span class="n-vazio"><b>${c.vazio}</b>a avaliar</span>
+        ${c.fotos ? `<span class="n-vazio"><b>${c.fotos}</b>foto${c.fotos > 1 ? 's' : ''}</span>` : ''}
+      </div>
+    </div>`;
+}
+
+window.__vistVerFoto = function(src){
+  const box = document.createElement("div");
+  box.className = "vist-lightbox";
+  box.innerHTML = `<img src="${src}">`;
+  box.onclick = () => box.remove();
+  document.body.appendChild(box);
+};
+
 // Monta o HTML do acordeão de vistoria (ambiente > categorias). Usado tanto
 // pelo formulário do cliente (apt=null, funções window.__cv*) quanto pela
 // tela da equipe (apt=número, funções window.__ev*), pra manter os dois
 // visualmente idênticos sem duplicar todo o template.
-function construirVistoriaAccordionHtml(d, expandedSet, apt){
+// opts: { filtro: 'todos'|'pendente'|'vazio'|'foto'|'anterior', anterior: <rodada anterior>, nAnterior: número }
+function construirVistoriaAccordionHtml(d, expandedSet, apt, opts){
+  opts = opts || {};
+  const filtro = opts.filtro || "todos";
+  const anterior = opts.anterior || null;
+  const nAnterior = opts.nAnterior || 0;
   const comApt = (apt !== null && apt !== undefined);
   const argPrefix = comApt ? (apt + ", ") : "";
-  const fnSet = comApt ? "window.__evSet" : "window.__cvSet";
-  const fnObs = comApt ? "window.__evObs" : "window.__cvObs";
-  const fnFoto = comApt ? "window.__evFoto" : "window.__cvFoto";
-  const fnRemoveFoto = comApt ? "window.__evRemoveFoto" : "window.__cvRemoveFoto";
-  const fnToggle = comApt ? "window.__evToggleAmb" : "window.__cvToggleAmb";
+  const pre = comApt ? "window.__ev" : "window.__cv";
+  const fnSet = pre + "Set", fnObs = pre + "Obs", fnFoto = pre + "Foto", fnRemoveFoto = pre + "RemoveFoto";
+  const fnToggle = pre + "ToggleAmb", fnFiltro = pre + "Filtro", fnExpandAll = pre + "ExpandAll";
   const esc1 = s => s.replace(/'/g, "\\'");
+
+  const passa = (amb, key, item) => {
+    if(filtro === "pendente") return item.status === "pendente";
+    if(filtro === "vazio") return !item.status;
+    if(filtro === "foto") return (item.fotos || []).length > 0;
+    if(filtro === "anterior"){ const p = itemAnteriorVistoria(anterior, amb, key); return !!(p && p.status === "pendente"); }
+    return true;
+  };
+
+  let pendAnterior = 0;
+  if(anterior){
+    AMBIENTES_VISTORIA.forEach(a => categoriasParaAmbiente(a).forEach(c => {
+      const p = itemAnteriorVistoria(anterior, a, c.key);
+      if(p && p.status === "pendente") pendAnterior++;
+    }));
+  }
 
   const ambientesHtml = AMBIENTES_VISTORIA.map(amb => {
     const ambJs = esc1(amb);
     const dadosAmb = d.ambientes[amb];
     const catsAmb = categoriasParaAmbiente(amb);
+    const catsVisiveis = catsAmb.filter(c => passa(amb, c.key, dadosAmb[c.key]));
+    if(filtro !== "todos" && catsVisiveis.length === 0) return "";
     const preenchidos = catsAmb.filter(c => dadosAmb[c.key].status).length;
     const pendencias = catsAmb.filter(c => dadosAmb[c.key].status === "pendente").length;
-    const isOpen = expandedSet.has(amb);
+    const isOpen = filtro !== "todos" ? true : expandedSet.has(amb);
 
-    const catsHtml = catsAmb.map(c => {
+    const dots = catsAmb.map(c => {
+      const s = dadosAmb[c.key].status;
+      return `<i class="vist-dot${s ? ' d-' + s : ''}" title="${escapeHtml(c.label)}"></i>`;
+    }).join('');
+
+    const catsHtml = catsVisiveis.map(c => {
       const item = dadosAmb[c.key];
       const fotos = item.fotos || [];
       const btn = (val, label) => {
@@ -5764,43 +5905,92 @@ function construirVistoriaAccordionHtml(d, expandedSet, apt){
       };
       const thumbs = fotos.map((f, i) => `
         <div class="vist-foto-thumb">
-          <img src="${f}">
+          <img src="${f}" onclick="window.__vistVerFoto(this.src)">
           <span class="vist-foto-remove" onclick="${fnRemoveFoto}(${argPrefix}'${ambJs}', '${c.key}', ${i})">×</span>
         </div>`).join('');
-      return `<div class="vist-cat">
-        <div class="vist-cat-label">${escapeHtml(c.label)}</div>
-        <div class="vist-btn-row">
-          ${btn('ok','Conforme')}${btn('pendente','Não conforme')}${btn('na','N/A')}
+      const ant = itemAnteriorVistoria(anterior, amb, c.key);
+      const antHtml = (ant && ant.status === "pendente")
+        ? `<div class="vist-anterior">⚠ Não conforme na ${ordinalVistoria(nAnterior)}${ant.obs ? ': ' + escapeHtml(ant.obs) : ''}</div>${(ant.fotos || []).length ? `<div class="vist-thumbs" style="opacity:.85;">${ant.fotos.map(f => `<div class="vist-foto-thumb" title="Foto da ${ordinalVistoria(nAnterior)}"><img src="${f}" onclick="window.__vistVerFoto(this.src)" style="width:44px;height:44px;"></div>`).join('')}</div>` : ''}`
+        : '';
+      return `<div class="vist-cat st-${item.status || 'vazio'}">
+        <div class="vist-cat-top">
+          <div class="vist-cat-label">${escapeHtml(c.label)}</div>
+          <div class="vist-btn-row">${btn('ok','✓ Conforme')}${btn('pendente','✕ Não conforme')}${btn('na','N/A')}</div>
         </div>
-        <input type="text" class="vist-obs-input" placeholder="Observação (opcional)" value="${escapeHtml(item.obs||'')}" oninput="${fnObs}(${argPrefix}'${ambJs}', '${c.key}', this.value)">
-        <div>${thumbs}</div>
-        <label class="vist-foto-add">📷 Adicionar foto
-          <input type="file" accept="image/*" style="display:none;" onchange="${fnFoto}(${argPrefix}'${ambJs}', '${c.key}', this)">
-        </label>
+        ${antHtml}
+        <div class="vist-cat-extra">
+          <input type="text" class="vist-obs-input" placeholder="${item.status === 'pendente' ? 'Descreva o problema' : 'Observação (opcional)'}" value="${escapeHtml(item.obs||'')}" oninput="${fnObs}(${argPrefix}'${ambJs}', '${c.key}', this.value)">
+          <label class="vist-foto-add">📷 Foto
+            <input type="file" accept="image/*" style="display:none;" onchange="${fnFoto}(${argPrefix}'${ambJs}', '${c.key}', this)">
+          </label>
+        </div>
+        ${thumbs ? `<div class="vist-thumbs">${thumbs}</div>` : ''}
       </div>`;
     }).join('');
 
+    const badgeClasse = pendencias > 0 ? ' warn' : (preenchidos === catsAmb.length ? ' done' : '');
     return `<div class="vist-ambiente${isOpen ? ' open' : ''}">
       <div class="vist-ambiente-header" onclick="${fnToggle}(${argPrefix}'${ambJs}')">
         <span><span class="vist-chev">▸</span>&nbsp; ${escapeHtml(amb)}</span>
         <span class="vist-ambiente-header-right">
-          <span class="vist-ambiente-badge${pendencias > 0 ? ' warn' : ''}">${preenchidos}/${catsAmb.length}${pendencias > 0 ? ' · ' + pendencias + ' não conf.' : ''}</span>
+          <span class="vist-dots">${dots}</span>
+          <span class="vist-ambiente-badge${badgeClasse}">${preenchidos}/${catsAmb.length}${pendencias > 0 ? ' · ' + pendencias + ' ✕' : ''}</span>
         </span>
       </div>
       <div class="vist-ambiente-body">${catsHtml}</div>
     </div>`;
   }).join('');
 
-  const prog = progressoVistoria(d);
-  const pct = prog.total ? Math.round(prog.preenchidos / prog.total * 100) : 0;
+  const c = contagemStatusVistoria(d);
+  const chip = (val, label, n, extra) => `<button type="button" class="vist-chip${extra || ''}${filtro === val ? ' ativo' : ''}" onclick="${fnFiltro}(${argPrefix}'${val}')">${label} (${n})</button>`;
 
   return `
-    <div class="vist-topo-progresso">
-      <div class="vist-progresso-barra"><div class="vist-progresso-barra-fill" style="width:${pct}%;"></div></div>
-      <span style="font-size:12px; color:var(--text-dim); white-space:nowrap;">${prog.preenchidos}/${prog.total} avaliados${prog.pendencias > 0 ? ' · ' + prog.pendencias + ' não conforme' : ''}</span>
+    ${resumoVistoriaHtml(d)}
+    <div class="vist-filtros">
+      ${chip('todos', 'Todos', c.total)}
+      ${chip('pendente', 'Não conformes', c.pendente, ' chip-pendente')}
+      ${chip('vazio', 'A avaliar', c.vazio)}
+      ${chip('foto', 'Com foto', c.itensComFoto)}
+      ${anterior && pendAnterior ? chip('anterior', 'Pendências da ' + ordinalVistoria(nAnterior), pendAnterior, ' chip-pendente') : ''}
+      ${filtro === 'todos' ? `<span class="vist-expand-all" onclick="${fnExpandAll}(${argPrefix}true)">abrir todos</span><span class="vist-expand-all" style="margin-left:0;" onclick="${fnExpandAll}(${argPrefix}false)">fechar todos</span>` : ''}
     </div>
-    ${ambientesHtml}
+    ${ambientesHtml || '<div class="vist-vazio-filtro">Nenhum item nesse filtro.</div>'}
   `;
+}
+
+// Versão só-leitura (rodadas anteriores): mostra só o que foi avaliado, fácil de bater o olho.
+function construirVistoriaLeituraHtml(d){
+  const rotulo = { ok: "Conforme", pendente: "Não conforme", na: "N/A" };
+  const ambs = AMBIENTES_VISTORIA.map(amb => {
+    const dadosAmb = d.ambientes[amb] || {};
+    const linhas = categoriasParaAmbiente(amb).map(c => {
+      const it = dadosAmb[c.key];
+      if(!it || !(it.status || it.obs || (it.fotos || []).length)) return "";
+      const s = it.status || "vazio";
+      const thumbs = (it.fotos || []).map(f => `<div class="vist-foto-thumb"><img src="${f}" onclick="window.__vistVerFoto(this.src)"></div>`).join('');
+      return `<div class="vist-leitura-linha st-${s}">
+        <span class="vist-pill p-${s}">${rotulo[it.status] || 'A avaliar'}</span><b>${escapeHtml(c.label)}</b>
+        ${it.obs ? `<div class="vist-leitura-obs">${escapeHtml(it.obs)}</div>` : ''}
+        ${thumbs ? `<div class="vist-thumbs">${thumbs}</div>` : ''}
+      </div>`;
+    }).join('');
+    if(!linhas) return "";
+    return `<div class="vist-leitura-amb"><div class="vist-leitura-amb-titulo">${escapeHtml(amb)}</div>${linhas}</div>`;
+  }).join('');
+  return resumoVistoriaHtml(d) + (ambs || '<div class="vist-vazio-filtro">Nenhum item avaliado nessa vistoria.</div>');
+}
+
+// Quadro vermelho de observações gerais (editável ou só leitura).
+function obsGeralQuadroHtml(cfg){
+  // cfg: { vistoriaObs, oninputVistoria, equipeObs, oninputEquipe, leitura }
+  const campo = (label, valor, oninput, placeholder) => cfg.leitura
+    ? `<label>${label}</label><div class="vist-obs-leitura">${valor ? escapeHtml(valor) : '—'}</div>`
+    : `<label>${label}</label><textarea placeholder="${placeholder}" oninput="${oninput}">${escapeHtml(valor || '')}</textarea>`;
+  let html = `<div class="vist-obs-geral"><div class="vist-obs-geral-titulo">⚠ Observações gerais</div>`;
+  html += campo(cfg.labelVistoria || "Da vistoria", cfg.vistoriaObs, cfg.oninputVistoria, "Algo mais a registrar sobre a vistoria");
+  if(cfg.oninputEquipe !== undefined || cfg.equipeObs) html += campo("Da equipe (interna — sai no PDF, não aparece no link do cliente)", cfg.equipeObs, cfg.oninputEquipe, "Observação interna da equipe");
+  html += `</div>`;
+  return html;
 }
 
 const DOCUMENTOS_ENTREGA = [
@@ -5831,6 +6021,12 @@ async function loadEntregaUnit(apt){
     if(res){
       const dados = JSON.parse(res.value);
       delete dados.checklist; // campo antigo, substituído pela vistoria por ambiente
+      // Migração: antes do botão "Apartamento entregue", entregue = data de entrega + todos os documentos.
+      if(typeof dados.entregue !== "boolean"){
+        const docsOk = DOCUMENTOS_ENTREGA.every(doc => dados.documentos && dados.documentos[doc.key] && dados.documentos[doc.key].entregue);
+        dados.entregue = !!(dados.dataEntrega && docsOk);
+        dados.entregueEm = dados.entregue ? dados.dataEntrega : "";
+      }
       entregaState[apt] = dados;
       return;
     }
@@ -5851,10 +6047,9 @@ async function saveEntregaUnit(apt){
 function entregaStatusApt(apt){
   const d = entregaState[apt];
   if(!d) return "empty";
+  if(d.entregue) return "complete";
   const docsEntregues = DOCUMENTOS_ENTREGA.filter(doc => d.documentos[doc.key].entregue);
-  if(docsEntregues.length === 0 && !d.dataEntrega) return "empty";
-  const docsOk = DOCUMENTOS_ENTREGA.every(doc => d.documentos[doc.key].entregue);
-  if(d.dataEntrega && docsOk) return "complete";
+  if(docsEntregues.length === 0 && !d.dataEntrega && !d.dataVistoria) return "empty";
   return "partial";
 }
 
@@ -5876,6 +6071,46 @@ function updateEntregaDocData(apt, key, data){
 function updateEntregaCampo(apt, campo, valor){
   entregaState[apt][campo] = valor;
   saveEntregaUnit(apt).then(renderSidebar);
+}
+
+function hojeISO(){
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function dataBR(iso){
+  if(!iso) return "—";
+  const p = String(iso).slice(0, 10).split("-");
+  return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso;
+}
+
+async function marcarApartamentoEntregue(apt){
+  const d = entregaState[apt];
+  const st = window.__EV_CACHE[apt];
+  const pend = st ? progressoVistoria(st.d).pendencias : 0;
+  let msg = "Confirma que o Apto " + apt + " foi entregue ao cliente? A data de hoje fica registrada como data da entrega.";
+  if(pend > 0) msg += " Atenção: a vistoria atual ainda tem " + pend + " item(ns) não conforme(s).";
+  const ok = await askConfirm("Apartamento entregue", msg, "Cancelar", "Marcar como entregue");
+  if(!ok) return;
+  d.entregue = true;
+  d.entregueEm = hojeISO();
+  if(!d.dataEntrega) d.dataEntrega = d.entregueEm;
+  await saveEntregaUnit(apt);
+  registrarAtividade("Entrega", "Apto " + apt + " marcado como entregue");
+  renderSidebar();
+  renderEntrega(apt);
+}
+
+async function desfazerApartamentoEntregue(apt){
+  const ok = await askConfirm("Desfazer entrega", "O Apto " + apt + " volta a aparecer como em andamento. A data de entrega das chaves continua preenchida (apague manualmente se precisar).", "Cancelar", "Desfazer");
+  if(!ok) return;
+  const d = entregaState[apt];
+  d.entregue = false;
+  d.entregueEm = "";
+  await saveEntregaUnit(apt);
+  registrarAtividade("Entrega", "Entrega do Apto " + apt + " desfeita");
+  renderSidebar();
+  renderEntrega(apt);
 }
 
 async function renderEntrega(apt){
@@ -5901,7 +6136,25 @@ async function renderEntrega(apt){
     </tr>`;
   }).join('');
 
+  const cardEntregue = d.entregue
+    ? `<div class="entrega-card entregue">
+        <div>
+          <div class="entrega-card-titulo">✓ Apartamento entregue</div>
+          <div class="entrega-card-sub">Entregue em ${dataBR(d.entregueEm || d.dataEntrega)}${cliente ? ' · ' + escapeHtml(cliente) : ''}</div>
+        </div>
+        <button class="btn btn-ghost" onclick="desfazerApartamentoEntregue(${apt})">Desfazer</button>
+      </div>`
+    : `<div class="entrega-card">
+        <div>
+          <div class="entrega-card-titulo">Apartamento ainda não entregue</div>
+          <div class="entrega-card-sub">Quando as chaves forem entregues ao cliente, marque aqui.</div>
+        </div>
+        <button class="btn-entregue" onclick="marcarApartamentoEntregue(${apt})">🔑 Apartamento entregue</button>
+      </div>`;
+
   document.getElementById("content").innerHTML = `
+    ${cardEntregue}
+
     <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:18px;">
       <div>
         <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Data da vistoria</label>
@@ -5913,16 +6166,15 @@ async function renderEntrega(apt){
       </div>
     </div>
 
-    <div class="toolbar" style="margin-bottom:16px;">
+    <div class="toolbar" style="margin-bottom:16px; flex-wrap:wrap;">
       <button class="btn btn-ghost" onclick="exportarEntregaPDF(${apt})">📄 Exportar ficha (PDF)</button>
       <button class="btn btn-ghost" onclick="copiarLinkClienteVistoria(${apt})">🔗 Copiar link para o cliente</button>
       <button class="btn btn-ghost" onclick="gerarNovoLinkCliente(${apt})" title="Use se o link antigo vazou ou foi parar com a pessoa errada">🔄 Gerar novo link</button>
-      <button class="btn btn-ghost" onclick="novaRodadaVistoria(${apt})" title="Arquiva a vistoria atual e começa um formulário novo, pro mesmo link">🆕 Novo formulário</button>
-      <button class="btn btn-ghost" style="color:var(--danger); border-color:rgba(178,59,59,0.35);" onclick="apagarVistoriaCliente(${apt})" title="Apaga o checklist preenchido (pede senha)">🗑️ Apagar formulário</button>
+      <button class="btn btn-ghost" style="color:var(--danger); border-color:rgba(178,59,59,0.35);" onclick="apagarVistoriaCliente(${apt})" title="Apaga o checklist preenchido da vistoria atual (pede senha)">🗑️ Apagar vistoria atual</button>
     </div>
 
-    <h3 style="margin:0 0 4px;">Vistoria</h3>
-    <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:10px;">Preencha aqui mesmo durante a visita (você ou o técnico), ou envie o link acima pro cliente preencher pelo celular dele. É o mesmo checklist.</div>
+    <h3 style="margin:0 0 4px;">Vistorias</h3>
+    <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:10px;">Preencha aqui mesmo durante a visita (você ou o técnico), ou envie o link acima pro cliente preencher pelo celular dele. É o mesmo checklist. Para uma re-vistoria, use "Nova vistoria" — a atual fica guardada no histórico.</div>
     <div id="vistoriaUnificada">Carregando...</div>
     <div id="vistoriaHistorico"></div>
 
@@ -5934,21 +6186,25 @@ async function renderEntrega(apt){
     </table>
     </div>
 
-    <div style="margin:18px 0;">
-      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Observação geral (equipe)</label>
-      <input type="text" style="width:100%; max-width:420px;" placeholder="Sem observação" value="${escapeHtml(d.obs || "")}" oninput="updateEntregaCampo(${apt}, 'obs', this.value)">
-    </div>
+    <div id="vistoriaObsGeral"></div>
   `;
 
+  // Ao abrir o apê, busca a versão mais recente (o cliente pode ter preenchido pelo link).
+  delete window.__EV_CACHE[apt];
+  delete window.__EV_HIST[apt];
+  window.__EV_VIEW[apt] = null;
   renderVistoriaUnificada(apt);
-  renderVistoriaHistorico(apt);
 }
 
 // ---------- Checklist de vistoria unificado (mesmo dado do link do cliente) ----------
 window.__EV_CACHE = window.__EV_CACHE || {};
 window.__EV_EXPANDED = window.__EV_EXPANDED || {};
+window.__EV_HIST = window.__EV_HIST || {};     // apt -> [rodadas arquivadas]
+window.__EV_VIEW = window.__EV_VIEW || {};     // apt -> null (vistoria atual) | índice da rodada arquivada
+window.__EV_FILTRO = window.__EV_FILTRO || {}; // apt -> filtro do checklist
 
-async function carregarVistoriaUnificada(apt){
+async function carregarVistoriaUnificada(apt, forcar){
+  if(!forcar && window.__EV_CACHE[apt]) return window.__EV_CACHE[apt];
   const key = "entrega_cliente:apt_" + apt;
   let d;
   try{
@@ -5968,32 +6224,84 @@ async function salvarVistoriaUnificada(apt){
   try{ await window.storage.set("entrega_cliente:apt_" + apt, JSON.stringify(st.d), true); }catch(e){ console.error(e); }
 }
 
+async function historicoVistoriaCache(apt){
+  if(!window.__EV_HIST[apt]){
+    const h = await carregarHistoricoVistoria(apt);
+    h.forEach(r => garantirEstruturaVistoria(r));
+    window.__EV_HIST[apt] = h;
+  }
+  return window.__EV_HIST[apt];
+}
+
 async function renderVistoriaUnificada(apt){
   const el = document.getElementById("vistoriaUnificada");
   if(!el) return;
   const st = await carregarVistoriaUnificada(apt);
-  if(!document.getElementById("vistoriaUnificada")) return; // usuário navegou pra outro apto enquanto carregava
+  const historico = await historicoVistoriaCache(apt);
+  if(!document.getElementById("vistoriaUnificada") || currentApt !== apt) return; // usuário navegou pra outro apto enquanto carregava
   const { d } = st;
   const prog = progressoVistoria(d);
+  const nAtual = historico.length + 1;
+  let view = window.__EV_VIEW[apt];
+  if(view !== null && view !== undefined && !historico[view]) view = window.__EV_VIEW[apt] = null;
 
-  document.getElementById("summaryPill").innerHTML = `Vistoria <b>${prog.preenchidos}/${prog.total}</b> avaliados` + (prog.pendencias > 0 ? ` · <b>${prog.pendencias}</b> não conforme` : '') + (d.enviadoEm ? ` · concluída em ${new Date(d.enviadoEm).toLocaleDateString('pt-BR')}` : '');
+  const dEnt = entregaState[apt] || {};
+  document.getElementById("summaryPill").innerHTML = (dEnt.entregue ? `<b style="color:var(--ok);">✓ Entregue</b> · ` : '') + `${ordinalVistoria(nAtual)} <b>${prog.preenchidos}/${prog.total}</b> avaliados` + (prog.pendencias > 0 ? ` · <b style="color:var(--danger);">${prog.pendencias}</b> não conforme` : '') + (d.enviadoEm ? ` · concluída em ${new Date(d.enviadoEm).toLocaleDateString('pt-BR')}` : '');
 
-  el.innerHTML = `
-    <div style="margin-bottom:14px; max-width:420px;">
-      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; font-weight:600;">RESPONSÁVEL PELA VISTORIA:</label>
-      <input type="text" placeholder="Nome de quem está preenchendo" value="${escapeHtml(d.nomeCliente||'')}" oninput="window.__evNome(${apt}, this.value)">
-    </div>
-    ${construirVistoriaAccordionHtml(d, window.__EV_EXPANDED[apt], apt)}
-    <div style="margin:16px 0; max-width:480px;">
-      <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px;">Observação geral da vistoria</label>
-      <input type="text" style="width:100%;" placeholder="Algo mais a registrar" value="${escapeHtml(d.obs||'')}" oninput="window.__evGeral(${apt}, this.value)">
-    </div>
-    <button type="button" class="btn btn-accent" onclick="window.__evConcluir(${apt})">✓ Marcar vistoria como concluída</button>
-    ${d.enviadoEm ? `<span style="margin-left:10px; font-size:12px; color:var(--text-dim);">Concluída em ${new Date(d.enviadoEm).toLocaleString('pt-BR')} — ainda pode editar</span>` : ''}
-  `;
+  const abas = historico.map((h, i) => {
+    const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : "";
+    return `<button type="button" class="vist-rodada-tab${view === i ? ' ativa' : ''}" onclick="window.__evVerRodada(${apt}, ${i})">${ordinalVistoria(h.rodada || (i + 1))}${data ? ' · ' + data : ''}</button>`;
+  }).join('') + `<button type="button" class="vist-rodada-tab${view === null || view === undefined ? ' ativa' : ''}" onclick="window.__evVerRodada(${apt}, null)">${ordinalVistoria(nAtual)} · atual</button>`;
+
+  const barraRodadas = `<div class="vist-rodadas">
+    ${abas}
+    <button type="button" class="btn btn-accent vist-rodada-nova" onclick="novaRodadaVistoria(${apt})">➕ Nova vistoria</button>
+  </div>`;
+
+  const obsEl = document.getElementById("vistoriaObsGeral");
+
+  if(view === null || view === undefined){
+    const anterior = historico.length ? historico[historico.length - 1] : null;
+    el.innerHTML = `
+      ${barraRodadas}
+      <div style="margin-bottom:14px; max-width:420px;">
+        <label style="font-size:12px; color:var(--text-dim); display:block; margin-bottom:4px; font-weight:600;">RESPONSÁVEL PELA VISTORIA:</label>
+        <input type="text" placeholder="Nome de quem está preenchendo" value="${escapeHtml(d.nomeCliente||'')}" oninput="window.__evNome(${apt}, this.value)">
+      </div>
+      ${construirVistoriaAccordionHtml(d, window.__EV_EXPANDED[apt], apt, { filtro: window.__EV_FILTRO[apt] || 'todos', anterior, nAnterior: historico.length })}
+      <div style="margin-top:14px;">
+        <button type="button" class="btn btn-accent" onclick="window.__evConcluir(${apt})">✓ Marcar vistoria como concluída</button>
+        ${d.enviadoEm ? `<span style="margin-left:10px; font-size:12px; color:var(--text-dim);">Concluída em ${new Date(d.enviadoEm).toLocaleString('pt-BR')} — ainda pode editar</span>` : ''}
+      </div>
+    `;
+    if(obsEl) obsEl.innerHTML = obsGeralQuadroHtml({
+      labelVistoria: "Da vistoria (o cliente também vê pelo link)",
+      vistoriaObs: d.obs, oninputVistoria: `window.__evGeral(${apt}, this.value)`,
+      equipeObs: dEnt.obs, oninputEquipe: `updateEntregaCampo(${apt}, 'obs', this.value)`
+    });
+  } else {
+    const h = historico[view];
+    const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleString('pt-BR') : "—";
+    el.innerHTML = `
+      ${barraRodadas}
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; font-size:12.5px; color:var(--text-dim);">
+        <span>Arquivada em ${data}${h.nomeCliente ? ' · Responsável: ' + escapeHtml(h.nomeCliente) : ''} · só leitura</span>
+        <button class="btn btn-ghost" onclick="exportarHistoricoVistoriaPDF(${apt}, ${view})">📄 PDF desta vistoria</button>
+      </div>
+      ${construirVistoriaLeituraHtml(h)}
+    `;
+    if(obsEl) obsEl.innerHTML = obsGeralQuadroHtml({ leitura: true, labelVistoria: "Da " + ordinalVistoria(h.rodada || (view + 1)), vistoriaObs: h.obs, equipeObs: dEnt.obs });
+  }
 }
 
+window.__evVerRodada = function(apt, i){ window.__EV_VIEW[apt] = i; renderVistoriaUnificada(apt); };
+window.__evFiltro = function(apt, f){ window.__EV_FILTRO[apt] = f; renderVistoriaUnificada(apt); };
+window.__evExpandAll = function(apt, abrir){
+  window.__EV_EXPANDED[apt] = abrir ? new Set(AMBIENTES_VISTORIA) : new Set();
+  renderVistoriaUnificada(apt);
+};
 window.__evToggleAmb = function(apt, amb){
+  if(window.__EV_FILTRO[apt] && window.__EV_FILTRO[apt] !== 'todos') return; // com filtro ativo tudo fica aberto
   const set = window.__EV_EXPANDED[apt];
   if(set.has(amb)) set.delete(amb); else set.add(amb);
   renderVistoriaUnificada(apt);
@@ -6065,46 +6373,200 @@ async function gerarNovoLinkCliente(apt){
 }
 
 // Monta e baixa o PDF de uma vistoria (atual ou de uma rodada arquivada).
-// tituloExtra aparece junto ao título (ex.: "— Rodada 1 (arquivada em 03/10/2026)").
+// Tabela colorida por status + quadro vermelho de observações gerais + registro fotográfico.
+const PDF_STATUS_LABEL = { ok: "Conforme", pendente: "Não conforme", na: "N/A", "": "A avaliar" };
+const PDF_STATUS_COR = { ok: [63,122,83], pendente: [178,59,59], na: [91,107,133], "": [140,140,140] };
+
 function gerarPdfVistoriaSnapshot(apt, vd, dEntrega, tituloExtra, nomeArquivo){
   const cliente = CLIENTES[apt] || "";
-  const head1 = ["Ambiente", "Categoria", "Status", "Observação"];
-  const body1 = [];
-  AMBIENTES_VISTORIA.forEach(amb => {
-    const ambData = vd.ambientes[amb];
-    const catsAmb = categoriasParaAmbiente(amb);
-    const temAlgo = catsAmb.some(c => ambData[c.key].status || ambData[c.key].obs || (ambData[c.key].fotos && ambData[c.key].fotos.length));
-    if(!temAlgo) return;
-    catsAmb.forEach((c, i) => {
-      const item = ambData[c.key];
-      const fotoNota = item.fotos && item.fotos.length ? ` (${item.fotos.length} foto${item.fotos.length > 1 ? 's' : ''} anexada${item.fotos.length > 1 ? 's' : ''})` : '';
-      body1.push([i === 0 ? amb : '', c.label, ENTREGA_STATUS_LABEL[item.status] || "—", (item.obs || "") + fotoNota]);
-    });
-  });
-  if(body1.length === 0) body1.push(["—", "Nenhum ambiente avaliado ainda", "", ""]);
-
-  let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
-  if(dEntrega) subtitulo += "\nVistoria: " + (dEntrega.dataVistoria || "—") + " · Entrega das chaves: " + (dEntrega.dataEntrega || "—");
-  if(vd.nomeCliente) subtitulo += "\nPreenchido por: " + vd.nomeCliente;
-  if(vd.obs) subtitulo += "\n" + vd.obs;
-  if(dEntrega && dEntrega.obs) subtitulo += "\nObs. da equipe: " + dEntrega.obs;
-
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const margem = 14;
+  const larguraUtil = pageW - margem * 2;
+  const limiteY = pageH - 18;
+
+  let subtitulo = "Apartamento " + apt + (cliente ? " · " + cliente : "");
+  if(dEntrega){
+    subtitulo += "\nData da vistoria: " + dataBR(dEntrega.dataVistoria) + " · Entrega das chaves: " + dataBR(dEntrega.dataEntrega);
+    if(dEntrega.entregue) subtitulo += " · APARTAMENTO ENTREGUE em " + dataBR(dEntrega.entregueEm || dEntrega.dataEntrega);
+  }
+  if(vd.nomeCliente) subtitulo += "\nResponsável pela vistoria: " + vd.nomeCliente;
+  if(vd.enviadoEm) subtitulo += "\nVistoria concluída em " + new Date(vd.enviadoEm).toLocaleDateString('pt-BR');
+
   const titulo = "Vistoria de Entrega — Apartamento " + apt + (tituloExtra ? " " + tituloExtra : "");
-  const yLinha = cabecalhoPDF(doc, titulo, subtitulo);
-  doc.autoTable({ head: [head1], body: body1, startY: yLinha + 4, styles: { fontSize: 8, cellPadding: 2 }, headStyles: { fillColor: [28,58,94], textColor: 255 }, columnStyles: { 0: { fontStyle: 'bold' } }, margin: { left: 14, right: 14 } });
-  rodapePDF(doc);
+  let y = cabecalhoPDF(doc, titulo, subtitulo) + 7;
+
+  // Resumo colorido
+  const c = contagemStatusVistoria(vd);
+  const blocos = [
+    { n: c.ok, t: "conformes", cor: PDF_STATUS_COR.ok },
+    { n: c.pendente, t: "não conformes", cor: PDF_STATUS_COR.pendente },
+    { n: c.na, t: "N/A", cor: PDF_STATUS_COR.na },
+    { n: c.vazio, t: "a avaliar", cor: PDF_STATUS_COR[""] }
+  ];
+  const wBloco = (larguraUtil - 9) / 4;
+  blocos.forEach((b, i) => {
+    const x = margem + i * (wBloco + 3);
+    doc.setFillColor(b.cor[0], b.cor[1], b.cor[2]);
+    doc.roundedRect(x, y - 5, wBloco, 11, 1.5, 1.5, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont(undefined, "bold"); doc.setFontSize(11);
+    doc.text(String(b.n), x + 3, y + 2.2);
+    const wNum = doc.getTextWidth(String(b.n));
+    doc.setFont(undefined, "normal"); doc.setFontSize(8.5);
+    doc.text(b.t, x + 3 + wNum + 2, y + 2);
+  });
+  doc.setTextColor(20, 20, 20);
+  y += 11;
+
+  // Tabela: um bloco por ambiente avaliado, fotos numeradas como "Fig. N"
+  const fotosLista = [];
+  const body = [];
+  AMBIENTES_VISTORIA.forEach(amb => {
+    const ambData = vd.ambientes[amb] || {};
+    const catsAmb = categoriasParaAmbiente(amb);
+    const temAlgo = catsAmb.some(cat => { const it = ambData[cat.key]; return it && (it.status || it.obs || (it.fotos || []).length); });
+    if(!temAlgo) return;
+    catsAmb.forEach((cat, i) => {
+      const item = ambData[cat.key] || { status: "", obs: "", fotos: [] };
+      const fotos = item.fotos || [];
+      let obsTxt = item.obs || "";
+      if(fotos.length){
+        const ini = fotosLista.length + 1;
+        fotos.forEach(src => fotosLista.push({ src, amb, cat: cat.label, status: item.status || "", obs: item.obs || "" }));
+        const fim = fotosLista.length;
+        obsTxt += (obsTxt ? "  " : "") + "[" + (ini === fim ? "Fig. " + ini : "Figs. " + ini + "–" + fim) + "]";
+      }
+      const linha = [];
+      if(i === 0) linha.push({ content: amb, rowSpan: catsAmb.length, styles: { fontStyle: "bold", valign: "middle", fillColor: [236,238,232] } });
+      linha.push(cat.label);
+      linha.push({ content: PDF_STATUS_LABEL[item.status || ""], _status: item.status || "" });
+      linha.push(obsTxt);
+      body.push(linha);
+    });
+  });
+  if(body.length === 0) body.push([{ content: "Nenhum ambiente avaliado ainda", colSpan: 4, styles: { halign: "center", textColor: [120,120,120] } }]);
+
+  doc.autoTable({
+    head: [["Ambiente", "Item", "Status", "Observação"]],
+    body,
+    startY: y,
+    styles: { fontSize: 8.5, cellPadding: 2, lineColor: [210,210,205], lineWidth: 0.1, valign: "middle" },
+    headStyles: { fillColor: [28,58,94], textColor: 255 },
+    columnStyles: { 0: { cellWidth: 38 }, 1: { cellWidth: 38 }, 2: { cellWidth: 26 } },
+    margin: { left: margem, right: margem, bottom: 18 },
+    didParseCell: function(data){
+      if(data.section !== "body") return;
+      const raw = data.cell.raw;
+      if(data.column.index === 2 && raw && typeof raw === "object" && "_status" in raw){
+        const cor = PDF_STATUS_COR[raw._status];
+        data.cell.styles.textColor = cor;
+        data.cell.styles.fontStyle = "bold";
+      }
+      const linha = data.row.raw || [];
+      const stCell = linha.find(x => x && typeof x === "object" && "_status" in x);
+      if(stCell && stCell._status === "pendente" && data.column.index !== 0){
+        data.cell.styles.fillColor = [251,234,234];
+      }
+    }
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // Quadro vermelho de observações gerais
+  const obsPartes = [];
+  if(vd.obs && vd.obs.trim()) obsPartes.push(vd.obs.trim());
+  if(dEntrega && dEntrega.obs && dEntrega.obs.trim()) obsPartes.push("Equipe: " + dEntrega.obs.trim());
+  const obsTexto = obsPartes.length ? obsPartes.join("\n\n") : "Nenhuma observação geral registrada.";
+  doc.setFontSize(10);
+  doc.setFont(undefined, "bold");
+  const linhasObs = doc.splitTextToSize(obsTexto, larguraUtil - 10);
+  const alturaBox = 13 + linhasObs.length * 4.8;
+  if(y + alturaBox > limiteY){ doc.addPage(); y = 20; }
+  doc.setDrawColor(178, 59, 59);
+  doc.setLineWidth(0.8);
+  doc.setFillColor(252, 238, 238);
+  doc.roundedRect(margem, y, larguraUtil, alturaBox, 2, 2, "FD");
+  doc.setTextColor(178, 59, 59);
+  doc.setFontSize(11);
+  doc.text("OBSERVAÇÕES GERAIS", margem + 5, y + 7);
+  doc.setFontSize(10);
+  doc.text(linhasObs, margem + 5, y + 13);
+  doc.setFont(undefined, "normal");
+  doc.setLineWidth(0.2);
+  doc.setTextColor(20, 20, 20);
+  y += alturaBox + 10;
+
+  // Registro fotográfico (3 por linha, legenda embaixo)
+  if(fotosLista.length){
+    doc.addPage();
+    y = 18;
+    doc.setFontSize(13); doc.setFont(undefined, "bold");
+    doc.text("Registro fotográfico", margem, y);
+    doc.setFont(undefined, "normal"); doc.setFontSize(9); doc.setTextColor(120);
+    doc.text(fotosLista.length + " foto" + (fotosLista.length > 1 ? "s" : "") + " · Apartamento " + apt, margem, y + 5);
+    doc.setTextColor(20, 20, 20);
+    y += 11;
+    const cols = 3, gap = 5;
+    const wCel = (larguraUtil - gap * (cols - 1)) / cols;
+    const hImg = wCel * 0.75;
+    const hCel = hImg + 16;
+    fotosLista.forEach((f, i) => {
+      const col = i % cols;
+      if(col === 0 && i > 0) y += hCel + 4;
+      if(col === 0 && y + hCel > limiteY){ doc.addPage(); y = 18; }
+      const x = margem + col * (wCel + gap);
+      // moldura
+      doc.setDrawColor(210, 210, 205);
+      doc.rect(x, y, wCel, hImg);
+      try{
+        const props = doc.getImageProperties(f.src);
+        const escala = Math.min(wCel / props.width, hImg / props.height);
+        const w = props.width * escala, h = props.height * escala;
+        const fmt = (f.src.indexOf("image/png") >= 0) ? "PNG" : "JPEG";
+        doc.addImage(f.src, fmt, x + (wCel - w) / 2, y + (hImg - h) / 2, w, h, undefined, "FAST");
+      }catch(e){
+        doc.setFontSize(8); doc.setTextColor(150);
+        doc.text("Imagem indisponível", x + 3, y + hImg / 2);
+        doc.setTextColor(20, 20, 20);
+      }
+      const cor = PDF_STATUS_COR[f.status];
+      doc.setFontSize(8); doc.setFont(undefined, "bold");
+      doc.text("Fig. " + (i + 1) + " — " + f.amb, x, y + hImg + 4, { maxWidth: wCel });
+      doc.setFont(undefined, "normal");
+      doc.setTextColor(cor[0], cor[1], cor[2]);
+      doc.text(f.cat + " · " + PDF_STATUS_LABEL[f.status], x, y + hImg + 8, { maxWidth: wCel });
+      if(f.obs){
+        doc.setTextColor(90);
+        const l = doc.splitTextToSize(f.obs, wCel).slice(0, 2);
+        doc.text(l, x, y + hImg + 12);
+      }
+      doc.setTextColor(20, 20, 20);
+    });
+  }
+
+  // Rodapé com numeração em todas as páginas
+  const total = doc.getNumberOfPages();
+  for(let p = 1; p <= total; p++){
+    doc.setPage(p);
+    doc.setFontSize(8);
+    doc.setTextColor(130);
+    doc.text("Emitido em " + new Date().toLocaleDateString('pt-BR') + " · Absoluta Construtora e Incorporadora", margem, pageH - 10);
+    doc.text("Página " + p + " de " + total, pageW - margem, pageH - 10, { align: "right" });
+  }
   doc.save(nomeArquivo);
 }
 
 async function exportarEntregaPDF(apt){
   const d = entregaState[apt];
   const st = await carregarVistoriaUnificada(apt);
-  gerarPdfVistoriaSnapshot(apt, st.d, d, "", "vistoria_apto_" + apt + ".pdf");
+  const historico = await historicoVistoriaCache(apt);
+  const n = historico.length + 1;
+  gerarPdfVistoriaSnapshot(apt, st.d, d, "— " + ordinalVistoria(n), "vistoria_apto_" + apt + (n > 1 ? "_" + n + "a" : "") + ".pdf");
 }
 
-// ---------- Apagar / iniciar nova rodada de vistoria ----------
+// ---------- Apagar / iniciar nova vistoria (rodada) ----------
 function historicoKeyFor(apt){ return "entrega_cliente_historico:apt_" + apt; }
 
 async function carregarHistoricoVistoria(apt){
@@ -6123,66 +6585,57 @@ async function apagarVistoriaCliente(apt){
     return;
   }
   const ok = await askConfirm(
-    "Apagar vistoria",
-    "Isso apaga todo o checklist preenchido do Apto " + apt + " (não mexe no histórico de rodadas já arquivadas). Não pode ser desfeito.",
+    "Apagar vistoria atual",
+    "Isso apaga todo o checklist preenchido na vistoria atual do Apto " + apt + " (as vistorias anteriores, já arquivadas, não são afetadas). Não pode ser desfeito.",
     "Cancelar", "Apagar"
   );
   if(!ok) return;
   await carregarVistoriaUnificada(apt);
   window.__EV_CACHE[apt].d = novaVistoriaVazia();
   await salvarVistoriaUnificada(apt);
+  window.__EV_VIEW[apt] = null;
   await renderVistoriaUnificada(apt);
-  renderVistoriaHistorico(apt);
   flashSaved();
   registrarAtividade("Entrega", "Vistoria do Apto " + apt + " apagada");
 }
 
 async function novaRodadaVistoria(apt){
+  await carregarVistoriaUnificada(apt);
+  const historico = await historicoVistoriaCache(apt);
+  const nAtual = historico.length + 1;
+  const atual = window.__EV_CACHE[apt].d;
+  const pend = progressoVistoria(atual).pendencias;
   const ok = await askConfirm(
-    "Nova rodada de vistoria",
-    "A vistoria preenchida agora do Apto " + apt + " vai ficar guardada no histórico, e um formulário novo e vazio começa pra essa unidade — o link do cliente continua o mesmo. Continuar?",
-    "Cancelar", "Começar nova rodada"
+    "Nova vistoria",
+    "A " + ordinalVistoria(nAtual) + " do Apto " + apt + " fica guardada no histórico (dá pra consultar e exportar o PDF depois) e começa a " + ordinalVistoria(nAtual + 1) + " em branco. O link do cliente continua o mesmo." + (pend ? " Os " + pend + " itens não conformes vão aparecer marcados na nova vistoria pra conferência." : ""),
+    "Cancelar", "Começar " + ordinalVistoria(nAtual + 1)
   );
   if(!ok) return;
-  await carregarVistoriaUnificada(apt);
-  const atual = window.__EV_CACHE[apt].d;
-  const historico = await carregarHistoricoVistoria(apt);
-  historico.push(JSON.parse(JSON.stringify(Object.assign({}, atual, { arquivadoEm: new Date().toISOString(), rodada: historico.length + 1 }))));
+  historico.push(JSON.parse(JSON.stringify(Object.assign({}, atual, { arquivadoEm: new Date().toISOString(), rodada: nAtual }))));
   try{ await window.storage.set(historicoKeyFor(apt), JSON.stringify(historico), true); }catch(e){ console.error(e); }
+  window.__EV_HIST[apt] = historico;
   window.__EV_CACHE[apt].d = novaVistoriaVazia();
   await salvarVistoriaUnificada(apt);
+  window.__EV_VIEW[apt] = null;
+  window.__EV_FILTRO[apt] = pend ? "anterior" : "todos";
   await renderVistoriaUnificada(apt);
-  renderVistoriaHistorico(apt);
   flashSaved();
-  registrarAtividade("Entrega", "Nova rodada de vistoria iniciada no Apto " + apt);
+  registrarAtividade("Entrega", ordinalVistoria(nAtual + 1) + " iniciada no Apto " + apt);
 }
 
+// Mantida por compatibilidade: as rodadas anteriores agora aparecem como abas dentro da vistoria.
 async function renderVistoriaHistorico(apt){
   const el = document.getElementById("vistoriaHistorico");
-  if(!el) return;
-  const historico = await carregarHistoricoVistoria(apt);
-  if(!document.getElementById("vistoriaHistorico")) return;
-  if(!historico.length){ el.innerHTML = ""; return; }
-  const linhas = historico.map((h, i) => {
-    const prog = progressoVistoria(h);
-    const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : "—";
-    return `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
-      <span style="font-size:12.5px;">Rodada ${h.rodada || (i + 1)} · arquivada em ${data} · ${prog.preenchidos}/${prog.total} avaliados</span>
-      <button class="btn btn-ghost" style="padding:4px 10px; font-size:11.5px;" onclick="exportarHistoricoVistoriaPDF(${apt}, ${i})">📄 PDF</button>
-    </div>`;
-  }).join('');
-  el.innerHTML = `
-    <h3 style="margin:22px 0 8px;">Rodadas anteriores</h3>
-    ${linhas}
-  `;
+  if(el) el.innerHTML = "";
 }
 
 async function exportarHistoricoVistoriaPDF(apt, indice){
-  const historico = await carregarHistoricoVistoria(apt);
+  const historico = await historicoVistoriaCache(apt);
   const h = historico[indice];
   if(!h) return;
+  const n = h.rodada || (indice + 1);
   const data = h.arquivadoEm ? new Date(h.arquivadoEm).toLocaleDateString('pt-BR') : "";
-  gerarPdfVistoriaSnapshot(apt, h, null, "— Rodada " + (h.rodada || (indice + 1)) + (data ? " (arquivada em " + data + ")" : ""), "vistoria_apto_" + apt + "_rodada" + (h.rodada || (indice + 1)) + ".pdf");
+  gerarPdfVistoriaSnapshot(apt, h, null, "— " + ordinalVistoria(n) + (data ? " (arquivada em " + data + ")" : ""), "vistoria_apto_" + apt + "_" + n + "a.pdf");
 }
 
 
@@ -6198,28 +6651,50 @@ const LEVA_1_ENTREGA = [92, 72, 82, 51, 71, 52, 112, 101, 22, 42, 31];
 const LEVA_2_ENTREGA = [41, 21, 62, 81, 11, 121, 32, 122, 61, 12, 91, 102, 111];
 const PRAZO_VISTORIA_ENTREGA = "03/11/2026";
 
+function levaStatusTexto(u){
+  const d = entregaState[u];
+  if(d && d.entregue) return "Entregue em " + dataBR(d.entregueEm || d.dataEntrega);
+  return "";
+}
+
+async function abrirUnidadeDaLeva(u){
+  await switchEntregaSubTab('unidade');
+  selectUnit(u);
+}
+
 function levaTableHtml(unidades, tituloLeva){
-  const linhas = unidades.map((u, i) => `
-    <tr>
+  const entreguesLeva = unidades.filter(u => entregaState[u] && entregaState[u].entregue).length;
+  const linhas = unidades.map((u, i) => {
+    const ent = entregaState[u] && entregaState[u].entregue;
+    return `
+    <tr onclick="abrirUnidadeDaLeva(${u})" title="Abrir vistoria da unidade" style="cursor:pointer;${ent ? ' background:rgba(63,122,83,0.08);' : ''}">
       <td style="width:40px;"><b style="color:var(--ok);">${i + 1}.</b></td>
       <td><b>Unidade ${u}</b></td>
       <td>${escapeHtml(CLIENTES[u] || '')}</td>
-    </tr>
-  `).join('');
+      <td>${ent ? `<span class="fin-badge fin-badge-pago">✓ ${levaStatusTexto(u)}</span>` : `<span class="fin-badge fin-badge-vazio">— Não entregue</span>`}</td>
+    </tr>`;
+  }).join('');
   return `
     <h3 style="margin:22px 0 8px;">${tituloLeva}</h3>
-    <div class="subtitle" style="margin-bottom:10px;">${unidades.length} unidades</div>
-    <table class="fin-table">
+    <div class="subtitle" style="margin-bottom:10px;">${unidades.length} unidades · <b style="color:var(--ok);">${entreguesLeva} entregue${entreguesLeva === 1 ? '' : 's'}</b></div>
+    <table class="fin-table" style="table-layout:fixed;">
+      <colgroup><col style="width:48px;"><col style="width:150px;"><col><col style="width:200px;"></colgroup>
       <tbody>${linhas}</tbody>
     </table>
   `;
 }
 
-function renderLevasEntrega(){
+async function renderLevasEntrega(){
   document.getElementById("unitTitle").textContent = "Entregas - Vista Park";
   document.getElementById("unitSubtitle").textContent = "Levas de entrega por unidade";
   document.getElementById("summaryPill").innerHTML = `Prazo final para Vistorias: <b>${PRAZO_VISTORIA_ENTREGA}</b>`;
   const content = document.getElementById("content");
+  content.innerHTML = `<div class="empty-state">Carregando…</div>`;
+  for(const u of LEVA_1_ENTREGA.concat(LEVA_2_ENTREGA)){
+    if(!(u in entregaState)) await loadEntregaUnit(u);
+  }
+  const todas = LEVA_1_ENTREGA.concat(LEVA_2_ENTREGA);
+  const entregues = todas.filter(u => entregaState[u] && entregaState[u].entregue).length;
   content.innerHTML = `
     <div class="toolbar" style="justify-content:flex-end; margin-bottom:10px;">
       <button class="btn btn-ghost" onclick="exportarLevasEntregaPDF()">📄 Exportar PDF</button>
@@ -6227,15 +6702,23 @@ function renderLevasEntrega(){
     ${levaTableHtml(LEVA_1_ENTREGA, "1ª Leva de Entrega")}
     ${levaTableHtml(LEVA_2_ENTREGA, "2ª Leva de Entrega")}
     <div style="margin-top:18px; padding-top:12px; border-top:1px solid var(--border); font-weight:600;">
-      Total geral: ${LEVA_1_ENTREGA.length + LEVA_2_ENTREGA.length} unidades
+      Total geral: ${todas.length} unidades · <span style="color:var(--ok);">${entregues} entregues</span>
     </div>
   `;
 }
 
 function exportarLevasEntregaPDF(){
-  const head = ["#", "Unidade", "Cliente"];
-  const bodyLeva1 = LEVA_1_ENTREGA.map((u, i) => [String(i + 1), "Unidade " + u, CLIENTES[u] || ""]);
-  const bodyLeva2 = LEVA_2_ENTREGA.map((u, i) => [String(i + 1), "Unidade " + u, CLIENTES[u] || ""]);
+  const head = ["#", "Unidade", "Cliente", "Status"];
+  const linha = (u, i) => [String(i + 1), "Unidade " + u, CLIENTES[u] || "", levaStatusTexto(u) || "Não entregue"];
+  const bodyLeva1 = LEVA_1_ENTREGA.map(linha);
+  const bodyLeva2 = LEVA_2_ENTREGA.map(linha);
+  const corStatus = function(data){
+    if(data.section === "body" && data.column.index === 3){
+      const ent = String(data.cell.raw).indexOf("Entregue") === 0;
+      data.cell.styles.textColor = ent ? [63,122,83] : [140,140,140];
+      data.cell.styles.fontStyle = ent ? "bold" : "normal";
+    }
+  };
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   const yLinha = cabecalhoPDF(doc, "Entregas - Vista Park", "Prazo final para Vistorias de Entregas: " + PRAZO_VISTORIA_ENTREGA);
@@ -6248,7 +6731,8 @@ function exportarLevasEntregaPDF(){
     startY: yLinha + 14,
     styles: { fontSize: 9, cellPadding: 2 },
     headStyles: { fillColor: [28,58,94], textColor: 255 },
-    margin: { left: 14, right: 14 }
+    margin: { left: 14, right: 14 },
+    didParseCell: corStatus
   });
   let y2 = doc.lastAutoTable.finalY + 12;
   if(y2 > doc.internal.pageSize.getHeight() - 40){ doc.addPage(); y2 = 20; }
@@ -6260,7 +6744,8 @@ function exportarLevasEntregaPDF(){
     startY: y2 + 4,
     styles: { fontSize: 9, cellPadding: 2 },
     headStyles: { fillColor: [28,58,94], textColor: 255 },
-    margin: { left: 14, right: 14 }
+    margin: { left: 14, right: 14 },
+    didParseCell: corStatus
   });
   rodapePDF(doc);
   doc.save("entregas_vista_park.pdf");
