@@ -237,6 +237,11 @@
   .fin-table td{ vertical-align:middle; }
   .fin-etapa-label{ font-weight:600; }
   .fin-obs-input{ width:100%; font-size:12px; color:var(--text-dim); }
+  .fin-extra-label{ width:100%; font-weight:600; }
+  .fin-extra-cell{ display:flex; align-items:center; gap:6px; }
+  .fin-extra-tag{ font-size:10px; text-transform:uppercase; letter-spacing:.04em; color:var(--text-dim); background:var(--surface-2); border:1px solid var(--border); border-radius:6px; padding:2px 6px; white-space:nowrap; }
+  .fin-del-btn{ background:none; border:none; cursor:pointer; color:var(--text-dim); font-size:16px; padding:4px 6px; border-radius:6px; }
+  .fin-del-btn:hover{ color:var(--danger); background:var(--surface-2); }
   .fin-apt-row-total{ font-weight:700; }
 
   /* Controle Financeiro — gráficos */
@@ -5240,6 +5245,33 @@ const FIN_ETAPAS = [
   { key: "extras", label: "Instalação de Revestimentos Extras", color: "#6b5b95" }
 ];
 const FIN_STATUS_LABEL = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
+// Itens avulsos (pendências adicionadas à mão em cada apê) entram nessa categoria nos resumos.
+const FIN_AVULSOS = { key: "_avulsos", label: "Outros (itens adicionados)", color: "#7a7a7a" };
+const FIN_CATS = [...FIN_ETAPAS, FIN_AVULSOS];
+
+function finExtras(apt){
+  const d = financeiroState[apt];
+  if(!Array.isArray(d._extras)) d._extras = [];
+  return d._extras;
+}
+function finGetItem(apt, key){
+  if(key.startsWith("x_")) return finExtras(apt).find(x => x.id === key);
+  return financeiroState[apt][key];
+}
+// Todas as linhas do apê: etapas fixas + pendências adicionadas.
+function finLinhasApt(apt){
+  const d = financeiroState[apt];
+  return [
+    ...FIN_ETAPAS.map(e => ({ key: e.key, label: e.label, item: d[e.key] || finVazio(), custom: false })),
+    ...finExtras(apt).map(x => ({ key: x.id, label: x.label || "Nova pendência", item: x, custom: true }))
+  ];
+}
+// Itens de um apê dentro de uma categoria (para os resumos por categoria).
+function finItensCategoria(apt, catKey){
+  if(catKey === FIN_AVULSOS.key) return finExtras(apt).map(x => ({ key: x.id, label: x.label || "Nova pendência", item: x }));
+  const e = FIN_ETAPAS.find(e => e.key === catKey);
+  return [{ key: catKey, label: e.label, item: financeiroState[apt][catKey] || finVazio() }];
+}
 
 function finItem(valor, status, obs){
   return { valor: (valor === null || valor === undefined) ? "" : valor, status: status || "", obs: obs || "" };
@@ -5307,9 +5339,9 @@ async function saveFinanceiroUnit(apt){
 function financeiroStatusApt(apt){
   const d = financeiroState[apt];
   if(!d) return "empty";
-  const preenchidos = FIN_ETAPAS.filter(e => d[e.key] && (d[e.key].valor !== "" || d[e.key].obs));
+  const preenchidos = finLinhasApt(apt).filter(l => l.item.valor !== "" || l.item.obs);
   if(preenchidos.length === 0) return "empty";
-  const pendentes = preenchidos.filter(e => d[e.key].status === "pendente" || d[e.key].status === "parcial");
+  const pendentes = preenchidos.filter(l => l.item.status === "pendente" || l.item.status === "parcial");
   return pendentes.length === 0 ? "complete" : "partial";
 }
 
@@ -5383,21 +5415,74 @@ function finBadgeHtml(apt, etapaKey, status){
 
 function cicleFinStatus(apt, etapaKey){
   const ordem = ["", "pendente", "parcial", "pago"];
-  const atual = financeiroState[apt][etapaKey].status || "";
+  const it = finGetItem(apt, etapaKey);
+  if(!it) return;
+  const atual = it.status || "";
   const idx = ordem.indexOf(atual);
-  financeiroState[apt][etapaKey].status = ordem[(idx + 1) % ordem.length];
+  it.status = ordem[(idx + 1) % ordem.length];
+  saveFinanceiroUnit(apt).then(renderSidebar);
+  if(currentApt === apt) renderFinanceiro(apt); else renderFinanceiroResumo();
+}
+
+function updateFinValor(apt, etapaKey, valor){
+  const it = finGetItem(apt, etapaKey);
+  if(!it) return;
+  it.valor = valor;
+  saveFinanceiroUnit(apt).then(renderSidebar);
+  finAtualizaPill(apt);
+}
+
+function updateFinObs(apt, etapaKey, obs){
+  const it = finGetItem(apt, etapaKey);
+  if(!it) return;
+  it.obs = obs;
+  saveFinanceiroUnit(apt);
+}
+
+function addFinExtra(apt){
+  const id = "x_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+  finExtras(apt).push({ id, label: "", valor: "", status: "pendente", obs: "" });
+  saveFinanceiroUnit(apt).then(renderSidebar);
+  renderFinanceiro(apt).then(() => {
+    const el = document.getElementById("fin-label-" + id);
+    if(el) el.focus();
+  });
+}
+
+function updateFinExtraLabel(apt, id, label){
+  const it = finGetItem(apt, id);
+  if(!it) return;
+  it.label = label;
+  saveFinanceiroUnit(apt);
+}
+
+function removeFinExtra(apt, id){
+  const it = finGetItem(apt, id);
+  if(!it) return;
+  if(!confirm('Excluir a pendência "' + (it.label || "Nova pendência") + '"?')) return;
+  financeiroState[apt]._extras = finExtras(apt).filter(x => x.id !== id);
   saveFinanceiroUnit(apt).then(renderSidebar);
   renderFinanceiro(apt);
 }
 
-function updateFinValor(apt, etapaKey, valor){
-  financeiroState[apt][etapaKey].valor = valor;
-  saveFinanceiroUnit(apt).then(renderSidebar);
+function finTotaisApt(apt){
+  let pago = 0, pendente = 0, parcial = 0;
+  finLinhasApt(apt).forEach(l => {
+    const v = parseFloat(l.item.valor);
+    if(isNaN(v)) return;
+    if(l.item.status === "pago") pago += v;
+    else if(l.item.status === "pendente") pendente += v;
+    else if(l.item.status === "parcial") parcial += v;
+  });
+  return { pago, pendente, parcial, total: pago + pendente + parcial };
 }
 
-function updateFinObs(apt, etapaKey, obs){
-  financeiroState[apt][etapaKey].obs = obs;
-  saveFinanceiroUnit(apt);
+function finAtualizaPill(apt){
+  if(currentApt !== apt) return;
+  const pill = document.getElementById("summaryPill");
+  if(!pill) return;
+  const t = finTotaisApt(apt);
+  pill.innerHTML = `Total <b>${finFmt(t.total)}</b> · Pago <b>${finFmt(t.pago)}</b> · Pendente <b>${finFmt(t.pendente + t.parcial)}</b>`;
 }
 
 function updateFinAptObs(apt, obs){
@@ -5413,23 +5498,23 @@ async function renderFinanceiro(apt){
   document.getElementById("unitSubtitle").textContent = cliente + " · Controle Financeiro";
   const content = document.getElementById("content");
 
-  let totalPago = 0, totalPendente = 0, totalParcial = 0;
-  FIN_ETAPAS.forEach(e => {
-    const item = d[e.key];
-    const v = parseFloat(item.valor);
-    if(!isNaN(v)){
-      if(item.status === "pago") totalPago += v;
-      else if(item.status === "pendente") totalPendente += v;
-      else if(item.status === "parcial") totalParcial += v;
-    }
-  });
-  const totalGeral = totalPago + totalPendente + totalParcial;
-  document.getElementById("summaryPill").innerHTML = `Total <b>${finFmt(totalGeral)}</b> · Pago <b>${finFmt(totalPago)}</b> · Pendente <b>${finFmt(totalPendente + totalParcial)}</b>`;
+  const t = finTotaisApt(apt);
+  document.getElementById("summaryPill").innerHTML = `Total <b>${finFmt(t.total)}</b> · Pago <b>${finFmt(t.pago)}</b> · Pendente <b>${finFmt(t.pendente + t.parcial)}</b>`;
 
-  const rows = FIN_ETAPAS.map(e => {
-    const item = d[e.key];
+  const rows = finLinhasApt(apt).map(l => {
+    const e = l;
+    const item = l.item;
+    const labelCell = l.custom
+      ? `<td><div class="fin-extra-cell">
+           <input type="text" id="fin-label-${l.key}" class="fin-extra-label" placeholder="Descrição da pendência" value="${escapeHtml(item.label || "")}" oninput="updateFinExtraLabel(${apt}, '${l.key}', this.value)">
+           <span class="fin-extra-tag">Avulso</span>
+         </div></td>`
+      : `<td class="fin-etapa-label">${e.label}</td>`;
+    const delCell = l.custom
+      ? `<button class="fin-del-btn" title="Excluir pendência" onclick="removeFinExtra(${apt}, '${l.key}')">🗑</button>`
+      : '';
     return `<tr>
-      <td class="fin-etapa-label">${e.label}</td>
+      ${labelCell}
       <td style="width:170px;">
         <input type="text" inputmode="numeric" placeholder="0,00" value="${item.valor === "" ? "" : finFmtPlain(parseFloat(item.valor))}" oninput="finMaskInput(this, ${apt}, '${e.key}')">
       </td>
@@ -5437,6 +5522,7 @@ async function renderFinanceiro(apt){
       <td>
         <input type="text" class="fin-obs-input" placeholder="Observação (opcional)" value="${escapeHtml(item.obs || "")}" oninput="updateFinObs(${apt}, '${e.key}', this.value)">
       </td>
+      <td style="width:44px; text-align:center;">${delCell}</td>
     </tr>`;
   }).join('');
 
@@ -5453,12 +5539,14 @@ async function renderFinanceiro(apt){
           <th>Valor (R$)</th>
           <th>Status</th>
           <th>Observação</th>
+          <th></th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
     </table>
     </div>
     <div class="toolbar">
+      <button class="btn" onclick="addFinExtra(${apt})">＋ Adicionar pendência</button>
       <button class="btn btn-ghost" onclick="exportarFinanceiroPDF(${apt})">📄 Exportar relatório (PDF)</button>
     </div>
   `;
@@ -5468,10 +5556,11 @@ function exportarFinanceiroPDF(apt){
   const d = financeiroState[apt];
   const cliente = CLIENTES[apt] || "";
   const head = ["Etapa", "Valor", "Status", "Observação"];
-  const body = FIN_ETAPAS.map(e => {
-    const item = d[e.key];
+  const linhasApt = finLinhasApt(apt);
+  const body = linhasApt.map(l => {
+    const item = l.item;
     return [
-      e.label,
+      l.label,
       item.valor === "" ? "—" : finFmt(item.valor),
       FIN_STATUS_LABEL[item.status] || "—",
       item.obs || ""
@@ -5479,10 +5568,10 @@ function exportarFinanceiroPDF(apt){
   });
 
   let totalPago = 0, totalPendente = 0;
-  FIN_ETAPAS.forEach(e => {
-    const v = parseFloat(d[e.key].valor);
+  linhasApt.forEach(l => {
+    const v = parseFloat(l.item.valor);
     if(!isNaN(v)){
-      if(d[e.key].status === "pago") totalPago += v; else totalPendente += v;
+      if(l.item.status === "pago") totalPago += v; else totalPendente += v;
     }
   });
   body.push(["", "", "", ""]);
@@ -5502,7 +5591,7 @@ function exportarFinanceiroPDF(apt){
 
 // Exporta o PDF de uma categoria específica (ex.: Marmoraria) com todos os apês que têm valor lançado ali.
 async function exportarFinanceiroCategoriaPDF(key){
-  const etapa = FIN_ETAPAS.find(e => e.key === key);
+  const etapa = FIN_CATS.find(e => e.key === key);
   for(const apt of APTS){
     if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
   }
@@ -5510,17 +5599,20 @@ async function exportarFinanceiroCategoriaPDF(key){
   let totalPago = 0, totalPendente = 0;
   const linhas = [];
   APTS.forEach(apt => {
-    const item = financeiroState[apt][key];
-    const v = parseFloat(item.valor);
-    if(isNaN(v)) return;
-    if(item.status === "pago") totalPago += v; else totalPendente += v;
-    linhas.push([
-      "Apto " + apt,
-      CLIENTES[apt] || "",
-      finFmt(v),
-      FIN_STATUS_LABEL[item.status] || "—",
-      item.obs || ""
-    ]);
+    finItensCategoria(apt, key).forEach(l => {
+      const item = l.item;
+      const v = parseFloat(item.valor);
+      if(isNaN(v)) return;
+      if(item.status === "pago") totalPago += v; else totalPendente += v;
+      const obs = key === FIN_AVULSOS.key ? l.label + (item.obs ? " — " + item.obs : "") : (item.obs || "");
+      linhas.push([
+        "Apto " + apt,
+        CLIENTES[apt] || "",
+        finFmt(v),
+        FIN_STATUS_LABEL[item.status] || "—",
+        obs
+      ]);
+    });
   });
   linhas.sort((a, b) => parseFloat(b[2].replace(/\D/g,'')) - parseFloat(a[2].replace(/\D/g,'')));
   linhas.push(["", "", "", "", ""]);
@@ -5544,14 +5636,15 @@ async function exportarFinanceiroResumoPDF(modo){
   if(modo === 'categoria'){
     const head = ["Categoria", "Total", "Pago", "Pendente", "% Pago"];
     let totalGeral = 0, totalPago = 0, totalPendente = 0;
-    const linhas = FIN_ETAPAS.map(e => {
+    const linhas = FIN_CATS.map(e => {
       let total = 0, pago = 0, pendente = 0;
       APTS.forEach(apt => {
-        const item = financeiroState[apt][e.key];
-        const v = parseFloat(item.valor);
-        if(isNaN(v)) return;
-        total += v;
-        if(item.status === "pago") pago += v; else pendente += v;
+        finItensCategoria(apt, e.key).forEach(l => {
+          const v = parseFloat(l.item.valor);
+          if(isNaN(v)) return;
+          total += v;
+          if(l.item.status === "pago") pago += v; else pendente += v;
+        });
       });
       totalGeral += total; totalPago += pago; totalPendente += pendente;
       const pct = total > 0 ? Math.round(pago / total * 100) + "%" : "—";
@@ -5571,11 +5664,11 @@ async function exportarFinanceiroResumoPDF(modo){
     const linhas = APTS.map(apt => {
       const d = financeiroState[apt];
       let subtotal = 0, subtotalPago = 0, subtotalPendente = 0;
-      FIN_ETAPAS.forEach(e => {
-        const v = parseFloat(d[e.key].valor);
+      finLinhasApt(apt).forEach(l => {
+        const v = parseFloat(l.item.valor);
         if(isNaN(v)) return;
         subtotal += v;
-        if(d[e.key].status === "pago") subtotalPago += v; else subtotalPendente += v;
+        if(l.item.status === "pago") subtotalPago += v; else subtotalPendente += v;
       });
       totalGeral += subtotal; totalPago += subtotalPago; totalPendente += subtotalPendente;
       return ["Apto " + apt, CLIENTES[apt] || "", finFmt(subtotal), finFmt(subtotalPago), finFmt(subtotalPendente)];
@@ -5611,31 +5704,32 @@ function renderFinanceiroResumo(modo){
     let totalGeral = 0, totalPago = 0, totalPendente = 0;
     const linhasApt = [];
     const porCategoria = {};
-    FIN_ETAPAS.forEach(e => porCategoria[e.key] = { total: 0, pago: 0, pendente: 0, itens: [] });
+    FIN_CATS.forEach(e => porCategoria[e.key] = { total: 0, pago: 0, pendente: 0, itens: [] });
 
     for(const apt of APTS){
       if(!(apt in financeiroState)) await loadFinanceiroUnit(apt);
       const d = financeiroState[apt];
       let subtotal = 0, subtotalPago = 0, subtotalPendente = 0;
-      FIN_ETAPAS.forEach(e => {
-        const item = d[e.key];
-        const v = parseFloat(item.valor);
-        if(!isNaN(v)){
+      FIN_CATS.forEach(e => {
+        finItensCategoria(apt, e.key).forEach(l => {
+          const item = l.item;
+          const v = parseFloat(item.valor);
+          if(isNaN(v)) return;
           subtotal += v;
           const cat = porCategoria[e.key];
           cat.total += v;
           if(item.status === "pago") { subtotalPago += v; cat.pago += v; }
           else { subtotalPendente += v; cat.pendente += v; }
-          cat.itens.push({ apt, cliente: CLIENTES[apt] || "", valor: v, status: item.status, obs: item.obs || "" });
-        }
+          cat.itens.push({ apt, key: l.key, label: l.label, cliente: CLIENTES[apt] || "", valor: v, status: item.status, obs: item.obs || "" });
+        });
       });
       totalGeral += subtotal; totalPago += subtotalPago; totalPendente += subtotalPendente;
       linhasApt.push({ apt, cliente: CLIENTES[apt] || "", obs: d._obs || "", subtotal, subtotalPago, subtotalPendente });
     }
 
     const pagoPct = totalGeral > 0 ? (totalPago / totalGeral * 100) : 0;
-    const maxCatTotal = Math.max(1, ...FIN_ETAPAS.map(e => porCategoria[e.key].total));
-    const barsHtml = FIN_ETAPAS.map(e => {
+    const maxCatTotal = Math.max(1, ...FIN_CATS.map(e => porCategoria[e.key].total));
+    const barsHtml = FIN_CATS.map(e => {
       const cat = porCategoria[e.key];
       if(cat.total === 0) return '';
       return `
@@ -5692,15 +5786,16 @@ function renderFinanceiroResumo(modo){
 
     if(modo === 'categoria'){
       const statusLabel = { pago: "Pago", pendente: "Pendente", parcial: "Parcial", "": "—" };
-      const catCardsHtml = FIN_ETAPAS.map(e => {
+      const catCardsHtml = FIN_CATS.map(e => {
         const cat = porCategoria[e.key];
+        if(e.key === FIN_AVULSOS.key && cat.itens.length === 0) return '';
         const itensOrdenados = cat.itens.slice().sort((a,b) => b.valor - a.valor);
         const linhasCat = itensOrdenados.map(it => `
           <tr onclick="selectUnit(${it.apt})" style="cursor:pointer;">
             <td><b>Apto ${it.apt}</b></td>
-            <td>${escapeHtml(it.cliente)}</td>
+            <td>${escapeHtml(it.cliente)}${e.key === FIN_AVULSOS.key ? `<div style="font-size:11px; color:var(--text-dim);">${escapeHtml(it.label)}</div>` : ''}</td>
             <td>${finFmt(it.valor)}</td>
-            <td>${finBadgeHtml(it.apt, e.key, it.status)}</td>
+            <td onclick="event.stopPropagation()">${finBadgeHtml(it.apt, it.key, it.status)}</td>
           </tr>`).join('');
         const pctPago = cat.total > 0 ? Math.round((cat.pago / cat.total) * 100) : 0;
         return `
