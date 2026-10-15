@@ -1298,7 +1298,7 @@
       <ul class="unit-list" id="unitList"></ul>
     </div>
     <div class="sidebar-footer">
-      <button class="btn btn-ghost" style="width:100%;" onclick="abrirAtividade()">🕘 Atividade recente</button>
+      <button onclick="abrirAtividade()" aria-label="." style="all:unset;cursor:pointer;display:block;margin-left:auto;font-size:11px;line-height:1;padding:4px;opacity:.18;filter:grayscale(1)">🕘</button>
     </div>
   </div>
 
@@ -2161,6 +2161,38 @@ async function renderAtividade(){
     document.getElementById("content").innerHTML = `<div class="empty-state">Não foi possível carregar a atividade.</div>`;
     console.error(e);
   }
+}
+
+
+// ---------- Alterações (versão com filtros) ----------
+let _atFiltro="7",_atPessoa="",_atAuto=false;
+const _AT_AUTO=/^(Programação ajustada|Programação \d|Reta final · .*pendências passadas pra|Reta final · .*passou sozinha)/i;
+async function renderAtividade(){
+  document.getElementById("unitTitle").textContent="Atividade";
+  document.getElementById("unitSubtitle").textContent="Quem editou o quê, e quando";
+  document.getElementById("summaryPill").textContent="";
+  const c=document.getElementById("content");c.innerHTML=`${_acAbas("alt")}<div class="empty-state">Carregando…</div>`;
+  try{
+    const snap=await firebaseDb.ref("vistapark/_log").limitToLast(3000).once("value");
+    const todos=Object.values(snap.val()||{}).filter(e=>e&&e.timestamp).sort((a,b)=>b.timestamp-a.timestamp);
+    const ini=new Date();ini.setHours(0,0,0,0);const lim=_atFiltro==="hoje"?ini.getTime():_atFiltro==="7"?Date.now()-7*864e5:_atFiltro==="30"?Date.now()-30*864e5:0;
+    const pk=e=>(e.email||e.usuario||"Desconhecido").toLowerCase();
+    const per=todos.filter(e=>e.timestamp>=lim),semAuto=per.filter(e=>_atAuto||!_AT_AUTO.test(e.detalhe||""));
+    const res=new Map();semAuto.forEach(e=>{const k=pk(e);if(!res.has(k))res.set(k,{e,n:0,sec:new Map()});const r=res.get(k);r.n++;r.sec.set(e.secao,(r.sec.get(e.secao)||0)+1)});
+    const E=semAuto.filter(e=>!_atPessoa||pk(e)===_atPessoa);
+    const fmt=t=>{const d=new Date(t);return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})};
+    const bt=(on,js,l)=>`<button class="btn${on?"":" btn-ghost"}" onclick="${js}">${l}</button>`;
+    const nAuto=per.length-per.filter(e=>!_AT_AUTO.test(e.detalhe||"")).length;
+    c.innerHTML=`${_acAbas("alt")}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px">${[["hoje","Hoje"],["7","7 dias"],["30","30 dias"],["tudo","Tudo"]].map(([v,l])=>bt(_atFiltro===v,`_atFiltro='${v}';renderAtividade()`,l)).join("")}</div>
+      <label style="display:flex;gap:6px;align-items:center;font-size:13px;margin-bottom:10px"><input type="checkbox" ${_atAuto?"checked":""} onchange="_atAuto=this.checked;renderAtividade()"> Mostrar ajustes automáticos do sistema${nAuto?` (${nAuto} escondido${nAuto===1?"":"s"})`:""}</label>
+      ${res.size?`<h3 style="margin:4px 0 8px">Quem mexeu · ${res.size} pessoa${res.size===1?"":"s"}</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px">${bt(!_atPessoa,`_atPessoa='';renderAtividade()`,`Todos (${semAuto.length})`)}${[...res.entries()].sort((a,b)=>b[1].n-a[1].n).map(([k,r])=>bt(_atPessoa===k,`_atPessoa=decodeURIComponent('${encodeURIComponent(k)}');renderAtividade()`,`${escapeHtml(r.e.usuario||"Desconhecido")} (${r.n})`)).join("")}</div>
+      <div style="overflow-x:auto;"><table><thead><tr><th>Quando</th><th>Quem</th><th>Onde</th><th>O quê</th></tr></thead><tbody>
+      ${E.slice(0,500).map(e=>`<tr><td style="white-space:nowrap">${fmt(e.timestamp)}</td><td><b>${escapeHtml(e.usuario||"Desconhecido")}</b>${e.email?`<div class="descritivo-m2">${escapeHtml(e.email)}</div>`:""}</td><td>${escapeHtml(e.secao||"")}</td><td>${escapeHtml(e.detalhe||"")}</td></tr>`).join("")}
+      </tbody></table></div>${E.length>500?`<p class="descritivo-m2">Mostrando as 500 mais recentes de ${E.length}.</p>`:""}`:`<div class="empty-state">Nenhuma alteração nesse período.</div>`}
+      <p class="descritivo-m2" style="margin-top:14px">Aqui aparece só quem <b>editou</b>. Quem só abriu pra olhar aparece em 🔒 Acessos.</p>`;
+  }catch(e){c.innerHTML=`${_acAbas("alt")}<div class="empty-state">Não foi possível carregar a atividade.</div>`;console.error(e)}
 }
 
 function renderSubcamadaBloqueada(section){
