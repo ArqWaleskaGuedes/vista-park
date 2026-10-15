@@ -2091,8 +2091,9 @@ async function registrarAcesso(onde,extra){
     _acLS(chave,String(Date.now()));
   }catch(e){console.error("Erro ao registrar acesso",e)}
 }
-let _acFiltro="7";
+let _acFiltro="7",_acLiberado=false;const SENHA_ACESSOS="vista1717";
 async function renderAcessos(){
+  if(!_acLiberado){let erro="";while(true){const sv=await askPassword("Senha da lista de acessos (só Waleska)",erro);if(sv===null){renderAtividade();return}if(sv===SENHA_ACESSOS){_acLiberado=true;break}erro="Senha incorreta. Tente novamente."}}
   document.getElementById("unitTitle").textContent="Acessos";
   document.getElementById("unitSubtitle").textContent="Quem abriu o sistema, onde e quando";
   document.getElementById("summaryPill").textContent="";
@@ -2119,7 +2120,7 @@ async function renderAcessos(){
       <p class="descritivo-m2" style="margin-top:14px">Cada aparelho ganha um código (ex.: aparelho k3f9x2) pra você saber que é o mesmo celular, mesmo sem nome. Quem entra com a conta Google aparece com o nome confirmado. Pelo QR code, a pessoa digita o nome uma vez no celular. Acessos repetidos do mesmo aparelho no mesmo lugar em menos de 20 minutos contam uma vez só.</p>`;
   }catch(e){c.innerHTML=`${_acAbas("acessos")}<div class="empty-state">Não foi possível carregar os acessos.</div>`;console.error(e)}
 }
-function _acAbas(on){return `<div style="display:flex;gap:6px;margin-bottom:10px"><button class="btn${on==="alt"?"":" btn-ghost"}" onclick="renderAtividade()">Alterações</button><button class="btn${on==="acessos"?"":" btn-ghost"}" onclick="renderAcessos()">Acessos</button></div>`}
+function _acAbas(on){return `<div style="display:flex;gap:6px;margin-bottom:10px"><button class="btn${on==="alt"?"":" btn-ghost"}" onclick="renderAtividade()">Alterações</button><button class="btn${on==="acessos"?"":" btn-ghost"}" onclick="renderAcessos()">🔒 Acessos</button></div>`}
 
 async function renderAtividade(){
   document.getElementById("unitTitle").textContent = "Atividade recente";
